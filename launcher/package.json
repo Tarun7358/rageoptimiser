@@ -1,0 +1,93 @@
+{
+  "name": "clutch-nation-launcher",
+  "version": "1.0.0",
+  "description": "Clutch Nation Enterprise Discord Security Platform – One-Click Launcher",
+  "main": "electron.js",
+  "scripts": {
+    "start": ".\\node_modules\\electron\\dist\\electron.exe .",
+    "make:icon": "node make-icon.js",
+    "prebuild:exe": "node make-icon.js",
+    "build:exe": "electron-builder build --win --x64",
+    "build:dir": "electron-builder build --win --dir"
+  },
+  "build": {
+    "appId": "com.clutchnation.launcher",
+    "productName": "ClutchNation",
+    "copyright": "Clutch Nation",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeader": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Clutch Nation"
+    },
+    "extraResources": [
+      {
+        "from": "../backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "../clutch-music",
+        "to": "clutch-music",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
+      },
+      {
+        "from": "../dist",
+        "to": "dashboard",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../public",
+        "to": "public",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "files": [
+      "electron.js",
+      "preload.js",
+      "splash.html",
+      "config.json",
+      "ProcessManager.js",
+      "HealthMonitor.js",
+      "Logger.js",
+      "assets/**/*"
+    ]
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^32.3.3",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.1"
+  }
+}

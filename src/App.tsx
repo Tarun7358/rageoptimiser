@@ -1,0 +1,432 @@
+import React, { useState, useEffect } from 'react';
+import { Layout } from './components/Layout';
+import { SearchOverlay } from './components/SearchOverlay';
+import { RestoreWizard } from './components/RestoreWizard';
+import { TotpVerificationModal } from './components/TotpVerificationModal';
+import { useActivityFeed } from './hooks/useActivityFeed';
+import { useDiscordSync } from './hooks/useDiscordSync';
+
+// Pages
+import { Login } from './pages/Login';
+import { OAuthCallback } from './pages/OAuthCallback';
+import { ServerSelection } from './pages/ServerSelection';
+import { Landing } from './pages/Landing';
+import { DashboardHome } from './pages/DashboardHome';
+import { DiscordDashboard } from './pages/DiscordDashboard';
+import { ConfigHealth } from './pages/ConfigHealth';
+import { Security } from './pages/Security';
+import { Moderation } from './pages/Moderation';
+import { Community } from './pages/Community';
+import { Automation } from './pages/Automation';
+import { Logging } from './pages/Logging';
+import { Analytics } from './pages/Analytics';
+import { Settings } from './pages/Settings';
+import { OwnerPanel } from './pages/OwnerPanel';
+import { Tickets } from './pages/Tickets';
+import { Verification } from './pages/Verification';
+import { Backups } from './pages/Backups';
+import { VoicePresence } from './pages/VoicePresence';
+import { Music } from './pages/Music';
+import { Roles } from './pages/Roles';
+import { WhitelistOverview } from './pages/whitelist/Overview';
+import { BotWhitelist } from './pages/whitelist/BotWhitelist';
+import { MemberWhitelist } from './pages/whitelist/MemberWhitelist';
+import { RoleWhitelist } from './pages/whitelist/RoleWhitelist';
+import { WhitelistActivity } from './pages/whitelist/Activity';
+import { WhitelistAudit } from './pages/whitelist/AuditLogs';
+import { WhitelistSettings } from './pages/whitelist/Settings';
+import { Incidents } from './pages/Incidents';
+import { ApprovalCenter } from './pages/ApprovalCenter';
+import { PublicDashboard } from './pages/PublicDashboard';
+import { Automod } from './pages/Automod';
+import { useAuth } from './hooks/useAuth';
+
+interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'danger' | 'warning' | 'info';
+}
+
+function App() {
+  const isPublicRoute = window.location.pathname === '/public';
+  const isOAuthCallback = window.location.pathname === '/auth/callback';
+  const { isAuthenticated, user, logout, activeGuildId, setActiveGuildId } = useAuth();
+
+  const [activePage, setActivePage] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [restoreWizardOpen, setRestoreWizardOpen] = useState(false);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  // For guild_manager: track if they've selected a guild yet
+  const [guildSelected, setGuildSelected] = useState(!!activeGuildId);
+
+  const {
+    events,
+    notifications,
+    latency,
+    uptime,
+    isLive,
+    setIsLive,
+    markAllNotificationsRead,
+    clearNotifications,
+    pushManualEvent
+  } = useActivityFeed();
+
+  const {
+    registry,
+    modules,
+    syncLogs,
+    globalSettings,
+    refreshSync,
+    updateModuleConfig,
+    simulateDiscordAction
+  } = useDiscordSync();
+
+  // Watch for module error additions to trigger live warnings toast
+  const [prevErrorsCount, setPrevErrorsCount] = useState(0);
+  const currentErrorsCount = (modules || []).reduce((acc, m) => acc + (m?.errors?.length || 0), 0);
+
+  useEffect(() => {
+    if (currentErrorsCount > prevErrorsCount) {
+      triggerToast('Configuration validation alert! Please check the Config Health page.', 'danger');
+    }
+    setPrevErrorsCount(currentErrorsCount);
+  }, [currentErrorsCount]);
+
+  // Handle Ctrl+K shortcut to toggle search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const triggerToast = (message: string, type: ToastItem['type'] = 'success') => {
+    const id = `toast-${Date.now()}`;
+    setToasts(prev => [...prev, { id, message, type }]);
+
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  };
+
+  const handleNavigate = (page: string, tab?: string) => {
+    setActivePage(page);
+    if (tab) {
+      setActiveTab(tab);
+    }
+  };
+
+  const renderActivePage = () => {
+    switch (activePage) {
+      case 'dashboard':
+        return (
+          <DashboardHome 
+            events={events} 
+            latency={latency} 
+            uptime={uptime} 
+            onNavigate={handleNavigate} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+          />
+        );
+      case 'health':
+        return (
+          <ConfigHealth 
+            modules={modules}
+            registry={registry}
+            syncLogs={syncLogs}
+            onRefreshSync={refreshSync}
+            onNavigate={handleNavigate}
+            onSimulateAction={simulateDiscordAction}
+          />
+        );
+      case 'discord-dashboard':
+        return (
+          <DiscordDashboard 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent}
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'security':
+        return (
+          <Security 
+            initialTab={activeTab} 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'automod':
+        return (
+          <Automod 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'moderation':
+        return (
+          <Moderation 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'community':
+        return (
+          <Community 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent}
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'automation':
+        return (
+          <Automation 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent}
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'logs':
+        return (
+          <Logging 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'analytics':
+        return <Analytics modules={modules} registry={registry} syncLogs={syncLogs} />;
+      case 'settings':
+        return (
+          <Settings 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'voice':
+        return (
+          <VoicePresence 
+            modules={modules}
+            registry={registry}
+            syncLogs={syncLogs}
+            onNavigate={handleNavigate}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'music':
+        return (
+          <Music 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'owner':
+        return (
+          <OwnerPanel 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            globalSettings={globalSettings}
+          />
+        );
+      case 'roles':
+        return <Roles />;
+      case 'whitelist-overview':
+        return <WhitelistOverview modules={modules} registry={registry} onNavigate={handleNavigate} />;
+      case 'whitelist-bots':
+        return <BotWhitelist modules={modules} registry={registry} />;
+      case 'whitelist-members':
+        return <MemberWhitelist modules={modules} registry={registry} />;
+      case 'whitelist-roles':
+        return <RoleWhitelist modules={modules} registry={registry} />;
+      case 'whitelist-activity':
+        return <WhitelistActivity />;
+      case 'whitelist-audit':
+        return <WhitelistAudit />;
+      case 'whitelist-settings':
+        return <WhitelistSettings modules={modules} registry={registry} onSave={() => triggerToast('Settings saved successfully.')} />;
+      case 'incidents':
+        return <Incidents syncLogs={syncLogs} onNavigate={handleNavigate} />;
+      case 'tickets':
+        return (
+          <Tickets 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'verification':
+        return (
+          <Verification 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'backups':
+        return (
+          <Backups 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            onOpenRestoreWizard={() => setRestoreWizardOpen(true)} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'approval':
+        return (
+          <ApprovalCenter
+            notifications={notifications}
+            latency={latency}
+            uptime={uptime}
+            isLive={isLive}
+            onToggleLive={() => setIsLive(!isLive)}
+            onMarkAllRead={markAllNotificationsRead}
+            onClearNotifications={clearNotifications}
+            onOpenSearch={() => setSearchOpen(true)}
+            modules={modules}
+          />
+        );
+      default:
+        return (
+          <DashboardHome 
+            events={events} 
+            latency={latency} 
+            uptime={uptime} 
+            onNavigate={handleNavigate} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+          />
+        );
+    }
+  };
+
+  // === ROUTE GUARDS ===
+
+  // Handle Discord OAuth callback
+  if (isOAuthCallback) {
+    return (
+      <OAuthCallback
+        onSuccess={() => {
+          setGuildSelected(false); // Show server selection after OAuth
+          window.history.replaceState({}, '', '/');
+        }}
+      />
+    );
+  }
+
+  // Public status dashboard
+  if (isPublicRoute) {
+    return <PublicDashboard />;
+  }
+
+  // Not authenticated → show landing at /, login at /login
+  if (!isAuthenticated) {
+    const isLoginRoute = window.location.pathname === '/login';
+    if (isLoginRoute) {
+      return (
+        <>
+          <Login />
+          <div className="toast-container">
+            {toasts.map((toast) => (
+              <div key={toast.id} className={`toast toast-${toast.type}`}>
+                <span>{toast.message}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    }
+    return <Landing onGetStarted={() => { window.history.pushState({}, '', '/login'); window.location.reload(); }} />;
+  }
+
+  // Guild manager who hasn't selected a guild yet → server selection
+  if (user?.role === 'guild_manager' && !guildSelected) {
+    return (
+      <ServerSelection
+        onSelectGuild={(guildId) => {
+          setActiveGuildId(guildId);
+          setGuildSelected(true);
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Layout
+        activePage={activePage}
+        onPageChange={handleNavigate}
+        notifications={notifications}
+        latency={latency}
+        uptime={uptime}
+        isLive={isLive}
+        onToggleLive={() => setIsLive(!isLive)}
+        onMarkAllRead={markAllNotificationsRead}
+        onClearNotifications={clearNotifications}
+        onOpenSearch={() => setSearchOpen(true)}
+        onLogout={logout}
+        modules={modules}
+      >
+        {renderActivePage()}
+      </Layout>
+
+      {/* Modal Overlays */}
+      <SearchOverlay
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onNavigate={handleNavigate}
+      />
+
+      <RestoreWizard
+        isOpen={restoreWizardOpen}
+        onClose={() => setRestoreWizardOpen(false)}
+        onSuccess={(msg) => triggerToast(msg, 'success')}
+      />
+
+      <TotpVerificationModal />
+
+      {/* Toast Notification Container */}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast toast-${toast.type}`}>
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export default App;

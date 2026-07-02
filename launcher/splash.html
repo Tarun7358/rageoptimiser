@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clutch Nation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #050508;
+      color: #e2e8f0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-app-region: drag;
+    }
+
+    /* Animated background */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: pulse-glow 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    /* Glass card */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 480px;
+      background: rgba(15, 15, 25, 0.85);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 20px;
+      padding: 40px 44px;
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 80px rgba(99, 102, 241, 0.08);
+    }
+
+    /* Logo area */
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .logo-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-ring::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 16px;
+      background: conic-gradient(from 0deg, rgba(99, 102, 241, 0.8), transparent 60%, rgba(99, 102, 241, 0.4), transparent);
+      animation: spin-border 3s linear infinite;
+      z-index: 0;
+    }
+
+    .logo-ring::after {
+      content: '';
+      position: absolute;
+      inset: 1px;
+      border-radius: 14px;
+      background: rgba(15, 15, 25, 0.9);
+      z-index: 1;
+    }
+
+    @keyframes spin-border {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .logo-img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+    }
+
+    .logo-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #e2e8f0 0%, #a5b4fc 50%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+    }
+
+    .logo-text .subtitle {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 3px;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.3), transparent);
+      margin-bottom: 24px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-bottom: 20px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: #9ca3af;
+      font-weight: 500;
+    }
+
+    .progress-pct {
+      font-size: 12px;
+      color: #818cf8;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4f46e5, #818cf8, #a5b4fc);
+      border-radius: 100px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #a5b4fc;
+      box-shadow: 0 0 8px rgba(165, 180, 252, 0.8);
+    }
+
+    /* Current step display */
+    .current-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 10px 14px;
+      background: rgba(99, 102, 241, 0.07);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: 10px;
+      min-height: 42px;
+    }
+
+    .step-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(99, 102, 241, 0.3);
+      border-top-color: #818cf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .step-spinner.done {
+      border: 2px solid #10b981;
+      border-top-color: #10b981;
+      animation: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") center no-repeat;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: #e2e8f0;
+      font-weight: 500;
+    }
+
+    /* Step log list */
+    .step-log {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 140px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .step-log::-webkit-scrollbar { width: 4px; }
+    .step-log::-webkit-scrollbar-track { background: transparent; }
+    .step-log::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 2px; }
+
+    .log-entry {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #6b7280;
+      padding: 2px 0;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-entry.completed { color: #9ca3af; }
+    .log-entry .log-icon { font-size: 11px; flex-shrink: 0; }
+    .log-entry.completed .log-icon { color: #10b981; }
+
+    /* Error state */
+    .error-panel {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 10px;
+    }
+
+    .error-panel.visible { display: block; }
+
+    .error-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f87171;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .error-msg {
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.5;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      -webkit-app-region: no-drag;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-retry {
+      background: linear-gradient(135deg, #4f46e5, #818cf8);
+      color: white;
+      flex: 1;
+    }
+
+    .btn-retry:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .btn-exit {
+      background: rgba(255, 255, 255, 0.07);
+      color: #9ca3af;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex: 1;
+    }
+
+    .btn-exit:hover { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    /* Footer */
+    .footer {
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .version-badge {
+      font-size: 11px;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4f46e5;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+
+    .dot.success { background: #10b981; animation: none; }
+    .dot.error { background: #ef4444; animation: none; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Success overlay */
+    .success-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .success-overlay.visible { display: flex; }
+
+    .success-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="card">
+    <!-- Logo -->
+    <div class="logo-area">
+      <div class="logo-ring">
+        <img class="logo-img" src="../public/cn-logo.png" alt="CN" onerror="this.style.display='none';this.nextElementSibling.style.display='block';" />
+        <span style="display:none;font-size:24px;position:relative;z-index:2;">🛡️</span>
+      </div>
+      <div class="logo-text">
+        <h1>Clutch Nation</h1>
+        <div class="subtitle">Enterprise Discord Security Platform</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Starting services...</span>
+        <span class="progress-pct" id="pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Current active step -->
+    <div class="current-step" id="currentStep">
+      <div class="step-spinner" id="stepSpinner"></div>
+      <span class="step-text" id="stepText">Initializing launcher...</span>
+    </div>
+
+    <!-- Completed steps log -->
+    <div class="step-log" id="stepLog"></div>
+
+    <!-- Error panel -->
+    <div class="error-panel" id="errorPanel">
+      <div class="error-title">⚠ Startup Failed</div>
+      <div class="error-msg" id="errorMsg">An error occurred.</div>
+      <div class="error-actions">
+        <button class="btn-retry" id="btnRetry">🔄 Retry</button>
+        <button class="btn-exit" id="btnExit">✕ Exit</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span class="version-badge" id="versionBadge">v1.0.0</span>
+      <div class="status-dot">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusText">Starting...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STEPS = [
+      'Verifying required files...',
+      'Loading configuration...',
+      'Initializing logging system...',
+      'Starting backend API...',
+      'Connecting WebSocket server...',
+      'Connecting Discord bot...',
+      'Starting dashboard server...',
+      'Verifying all connections...',
+      'Opening dashboard...',
+      'Launch complete!'
+    ];
+
+    let completedSteps = [];
+
+    function updateProgress(pct) {
+      const bar = document.getElementById('progressBar');
+      const pctEl = document.getElementById('pct');
+      bar.style.width = pct + '%';
+      pctEl.textContent = Math.round(pct) + '%';
+    }
+
+    function setStep(data) {
+      const { step, label, index, total } = data;
+      document.getElementById('stepText').textContent = label || step || 'Working...';
+      document.getElementById('stepSpinner').className = 'step-spinner';
+    }
+
+    function addLogEntry(label) {
+      const log = document.getElementById('stepLog');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry completed';
+      entry.innerHTML = `<span class="log-icon">✓</span><span>${label}</span>`;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function showError(data) {
+      const { step, error } = data;
+      document.getElementById('errorMsg').textContent = `${step}: ${error}`;
+      document.getElementById('errorPanel').classList.add('visible');
+      document.getElementById('stepSpinner').style.display = 'none';
+      document.getElementById('statusDot').className = 'dot error';
+      document.getElementById('statusText').textContent = 'Failed';
+      document.getElementById('progressBar').style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+    }
+
+    function showComplete() {
+      document.getElementById('stepSpinner').className = 'step-spinner done';
+      document.getElementById('stepText').textContent = 'All systems operational!';
+      document.getElementById('statusDot').className = 'dot success';
+      document.getElementById('statusText').textContent = 'Running';
+      document.querySelector('.progress-label').textContent = 'Ready';
+    }
+
+    // Wire up buttons
+    document.getElementById('btnRetry').addEventListener('click', () => {
+      if (window.launcher) window.launcher.retry();
+      else location.reload();
+    });
+
+    document.getElementById('btnExit').addEventListener('click', () => {
+      if (window.launcher) window.launcher.exit();
+    });
+
+    // Listen for events from main process
+    if (window.launcher) {
+      window.launcher.onProgress((pct) => updateProgress(pct));
+      window.launcher.onStep((data) => {
+        if (data.prev) addLogEntry(data.prev);
+        setStep(data);
+      });
+      window.launcher.onError((data) => showError(data));
+      window.launcher.onComplete(() => {
+        updateProgress(100);
+        showComplete();
+      });
+      window.launcher.onLog((msg) => {
+        // Optional: could show in a debug console
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "appName": "Clutch Nation",
+  "ports": {
+    "dashboard": 4680,
+    "backend": 5000,
+    "websocket": 5001
+  },
+  "paths": {
+    "backend": "backend",
+    "dashboard": ".",
+    "logs": "logs",
+    "backups": "backups",
+    "config": "config",
+    "database": "database",
+    "temp": "temp",
+    "cache": "cache"
+  },
+  "process": {
+    "maxRestarts": 3,
+    "restartWindowMs": 60000,
+    "shutdownTimeoutMs": 5000
+  },
+  "health": {
+    "checkIntervalMs": 5000,
+    "startupTimeoutMs": 60000
+  },
+  "logging": {
+    "maxDays": 7,
+    "maxFileSizeMB": 10
+  },
+  "dashboard": {
+    "autoOpen": true,
+    "url": "http://localhost:4680"
+  }
+}

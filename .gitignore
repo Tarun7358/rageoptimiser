@@ -1,0 +1,55 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local Environment & Secrets
+.env
+.env.local
+.env.*.local
+firebase-key.json
+**/firebase-key.json
+
+# Local database and state data
+database.json
+**/database.json
+guilds_data/
+**/guilds_data/
+
+# Binaries and large media
+yt-dlp.exe
+**/yt-dlp.exe
+ffmpeg
+ffprobe
+
+# Temporary/experimental artifacts
+*-player-script.js
+**/scratch.ts
+**/test*.js
+
+# Production builds
+dist/
+dist-ssr/
+backend/dist/
+clutch-music/dist/
+
