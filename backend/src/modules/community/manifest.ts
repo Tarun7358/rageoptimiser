@@ -183,7 +183,7 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_help',
       handler: async (client: any, interaction: any, context: any) => {
         const embed = new EmbedBuilder()
-          .setTitle('CLUTCH NATION Commands')
+          .setTitle('RAGE OPTIMISER Commands')
           .setDescription('Here are some available commands:')
           .addFields(
             { name: '🛡️ Moderation', value: '`/ban`, `/kick`, `/timeout`, `/warn`, `/purge`, `/lock`, `/slowmode`' },
@@ -257,7 +257,7 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_weather',
       handler: async (client: any, interaction: any, context: any) => {
         const location = interaction.options.getString('location');
-        await interaction.reply(`☀️ The weather in **${location}** is looking sunny with a chance of CLUTCH! (Mock API response)`);
+        await interaction.reply(`☀️ The weather in **${location}** is looking sunny with a chance of RAGE! (Mock API response)`);
       }
     },
     {

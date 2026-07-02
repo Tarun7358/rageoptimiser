@@ -117,12 +117,12 @@ class ProcessManager {
 
   async spawnMusicBot(basePath) {
     const musicPath = path.resolve(basePath, 'clutch-music');
-    this.logger.info(`Starting Clutch Music from: ${musicPath}`);
+    this.logger.info(`Starting Rage Music from: ${musicPath}`);
 
     return new Promise((resolve, reject) => {
       const envFile = path.join(musicPath, '.env');
       if (!fs.existsSync(envFile)) {
-        this.logger.warn(`Clutch Music .env not found, it will use fallback/shared config.`);
+        this.logger.warn(`Rage Music .env not found, it will use fallback/shared config.`);
       }
 
       const proc = spawn('node', ['node_modules/tsx/dist/cli.mjs', 'src/index.ts'], {
@@ -142,7 +142,7 @@ class ProcessManager {
         this.logger.info(`[MUSIC_BOT] ${text.trim()}`);
         this.onEvent('musicBot:log', text.trim());
 
-        if (!resolved && (text.includes('Clutch Music bot fully booted') || text.includes('Discord client connected'))) {
+        if (!resolved && (text.includes('Rage Music bot fully booted') || text.includes('Discord client connected'))) {
           resolved = true;
           resolve(proc);
         }

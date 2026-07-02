@@ -85,7 +85,7 @@ export function Incidents({ syncLogs, onNavigate }: IncidentsProps) {
         <div className="page-title-row">
           <div>
             <h1 className="page-title">Incident Center</h1>
-            <p className="page-subtitle">Unified real-time view of all CLUTCH NATION security incidents, WTPS violations, and system alerts.</p>
+            <p className="page-subtitle">Unified real-time view of all RAGE OPTIMISER security incidents, WTPS violations, and system alerts.</p>
           </div>
           <button className="btn btn-secondary btn-sm" onClick={fetchIncidents} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <RefreshCw size={14} /> Refresh

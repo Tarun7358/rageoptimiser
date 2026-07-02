@@ -1,4 +1,4 @@
-# Contributing to Clutch Nation
+# Contributing to Rage Optimiser
 
 This codebase is a private, proprietary software project. Contributions are limited to authorized team members and internal developers.
 

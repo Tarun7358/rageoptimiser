@@ -236,7 +236,7 @@ export function VoicePresence({ modules, registry, syncLogs, onNavigate, onUpdat
             lineHeight: 1.6
           }}>
             <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>💡 Persistent Voice Info</p>
-            Make sure CLUTCH NATION has <strong>View Channel</strong> and <strong>Connect</strong> permissions inside the target voice channel. Disconnection heartbeats are self-healing.
+            Make sure RAGE OPTIMISER has <strong>View Channel</strong> and <strong>Connect</strong> permissions inside the target voice channel. Disconnection heartbeats are self-healing.
           </div>
 
         </div>

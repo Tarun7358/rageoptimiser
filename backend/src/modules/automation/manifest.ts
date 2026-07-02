@@ -85,9 +85,9 @@ export const AutomationManifest: ModuleManifest = {
 
         try {
           const content = message.content?.toLowerCase();
-          if (content === '!clutch') {
-            await message.reply('🔥 **CLUTCH NATION Core System is Online!** ⚡\nEverything is operational. Manage your settings on the local Dashboard.');
-            context.logSyncEvent(`Automation Studio: Handled keyword trigger "!clutch" in #${message.channel.name}.`, 'success');
+          if (content === '!rage') {
+            await message.reply('🔥 **RAGE OPTIMISER Core System is Online!** ⚡\nEverything is operational. Manage your settings on the local Dashboard.');
+            context.logSyncEvent(`Automation Studio: Handled keyword trigger "!rage" in #${message.channel.name}.`, 'success');
           } else if (content === '!support' || content?.includes('need help')) {
             await message.reply('🎫 Need help? Please open a support ticket using the ticket board or by running the `/setup-tickets` slash command!');
             context.logSyncEvent(`Automation Studio: Handled keyword trigger for support help in #${message.channel.name}.`, 'info');

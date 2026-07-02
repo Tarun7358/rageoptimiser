@@ -296,7 +296,7 @@ export const WhitelistManifest: ModuleManifest = {
             const pendingBots = wtps.bots.filter((b: WhitelistBot) => b.status === 'pending').length;
             await interaction.reply({
               content: [
-                '## 🛡️ CLUTCH NATION — Whitelist & Trust Overview',
+                '## 🛡️ RAGE OPTIMISER — Whitelist & Trust Overview',
                 `**Protected Users:** ${userCount}`,
                 `**Protected Roles:** ${roleCount}`,
                 `**Tracked Bots:** ${botCount} (${pendingBots} pending review)`,

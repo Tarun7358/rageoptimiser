@@ -11,10 +11,11 @@ interface OwnerPanelProps {
 
 export function OwnerPanel({ onSaveConfig, onManualTrigger, globalSettings }: OwnerPanelProps) {
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
-  const [apiKey, setApiKey] = useState('clutch_live_pk_392019485892019485aa02381ff');
+  const [apiKey, setApiKey] = useState('rage_live_pk_392019485892019485aa02381ff');
   const maintenanceMode = globalSettings?.maintenanceMode || false;
 
-  const { requireElevation, token } = useAuth();
+  const { requireElevation, token, user } = useAuth();
+  const isOwnerCredentials = user?.role === 'owner';
   const [staff, setStaff] = useState<any[]>([]);
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPass, setNewStaffPass] = useState('');
@@ -71,7 +72,7 @@ export function OwnerPanel({ onSaveConfig, onManualTrigger, globalSettings }: Ow
 
   const handleRotateKey = () => {
     requireElevation(() => {
-      const fakeKey = `clutch_live_pk_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
+      const fakeKey = `rage_live_pk_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
       setApiKey(fakeKey);
       onSaveConfig('Primary bot API token rotated.');
       onManualTrigger('Owner Panel: Rotated primary bot API token. Updating config points.', 'purple', 'System');
@@ -266,23 +267,25 @@ export function OwnerPanel({ onSaveConfig, onManualTrigger, globalSettings }: Ow
           </div>
 
           {/* Platform Broadcast Announcer */}
-          <div className="section-panel">
-            <div className="panel-header">
-              <span className="panel-title"><Radio size={16} /> Global Announcements Broadcaster</span>
+          {isOwnerCredentials && (
+            <div className="section-panel">
+              <div className="panel-header">
+                <span className="panel-title"><Radio size={16} /> Global Announcements Broadcaster</span>
+              </div>
+              <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <textarea
+                  className="form-input-text"
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                  placeholder="Compose a platform announcement to send to all server owners via bot DM..."
+                  value={broadcastMessage}
+                  onChange={e => setBroadcastMessage(e.target.value)}
+                />
+                <button className="btn btn-primary" onClick={handleBroadcast} disabled={broadcasting || !broadcastMessage.trim()} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Send size={12} /> {broadcasting ? 'Broadcasting...' : 'Broadcast Message'}
+                </button>
+              </div>
             </div>
-            <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <textarea
-                className="form-input-text"
-                style={{ minHeight: 80, resize: 'vertical' }}
-                placeholder="Compose a platform announcement to send to all server owners via bot DM..."
-                value={broadcastMessage}
-                onChange={e => setBroadcastMessage(e.target.value)}
-              />
-              <button className="btn btn-primary" onClick={handleBroadcast} disabled={broadcasting || !broadcastMessage.trim()} style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Send size={12} /> {broadcasting ? 'Broadcasting...' : 'Broadcast Message'}
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Database API keys */}
           <div className="section-panel">
@@ -324,65 +327,67 @@ export function OwnerPanel({ onSaveConfig, onManualTrigger, globalSettings }: Ow
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Staff Manager */}
-          <div className="section-panel">
-            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="panel-title">
-                <UserCheck size={16} />
-                <span>Authorized Dashboard Users</span>
-              </div>
-            </div>
-            <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'rgba(255,255,255,0.02)', padding: 12, borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <input className="form-input-text" placeholder="Username" style={{ flex: 1 }} value={newStaffName} onChange={e => setNewStaffName(e.target.value)} />
-                  <input className="form-input-text" type="password" placeholder="Password" style={{ flex: 1 }} value={newStaffPass} onChange={e => setNewStaffPass(e.target.value)} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <select className="form-input-text" style={{ width: 120 }} value={newStaffRole} onChange={e => setNewStaffRole(e.target.value)}>
-                    <option value="staff">Staff Mod</option>
-                    <option value="owner">Co-Owner</option>
-                  </select>
-                  <button className="btn btn-secondary btn-sm" onClick={handleAddStaff} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Plus size={12} /> Add User
-                  </button>
+          {isOwnerCredentials && (
+            <div className="section-panel">
+              <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="panel-title">
+                  <UserCheck size={16} />
+                  <span>Authorized Dashboard Users</span>
                 </div>
               </div>
+              <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'rgba(255,255,255,0.02)', padding: 12, borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input className="form-input-text" placeholder="Username" style={{ flex: 1 }} value={newStaffName} onChange={e => setNewStaffName(e.target.value)} />
+                    <input className="form-input-text" type="password" placeholder="Password" style={{ flex: 1 }} value={newStaffPass} onChange={e => setNewStaffPass(e.target.value)} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <select className="form-input-text" style={{ width: 120 }} value={newStaffRole} onChange={e => setNewStaffRole(e.target.value)}>
+                      <option value="staff">Staff Mod</option>
+                      <option value="owner">Co-Owner</option>
+                    </select>
+                    <button className="btn btn-secondary btn-sm" onClick={handleAddStaff} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Plus size={12} /> Add User
+                    </button>
+                  </div>
+                </div>
 
-              <div className="table-container">
-                <table className="custom-table" style={{ fontSize: '12px' }}>
-                  <thead>
-                    <tr>
-                      <th>Staff Account</th>
-                      <th>Access Profile</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {staff.map((user, i) => (
-                      <tr key={i}>
-                        <td style={{ fontWeight: 600 }}>{user.username}</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>{user.role} ({user.access || 'Staff Level'})</td>
-                        <td>
-                          <span style={{ fontSize: '10px', color: 'var(--color-success)', fontWeight: 600 }}>
-                            Active
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {user.username !== 'admin' && (
-                            <button onClick={() => handleDeleteStaff(user.username)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
-                              <Trash2 size={12} />
-                            </button>
-                          )}
-                        </td>
+                <div className="table-container">
+                  <table className="custom-table" style={{ fontSize: '12px' }}>
+                    <thead>
+                      <tr>
+                        <th>Staff Account</th>
+                        <th>Access Profile</th>
+                        <th>Status</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {staff.map((user, i) => (
+                        <tr key={i}>
+                          <td style={{ fontWeight: 600 }}>{user.username}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{user.role} ({user.access || 'Staff Level'})</td>
+                          <td>
+                            <span style={{ fontSize: '10px', color: 'var(--color-success)', fontWeight: 600 }}>
+                              Active
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {user.username !== 'admin' && (
+                              <button onClick={() => handleDeleteStaff(user.username)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Shard diagnostics console */}
           <div className="section-panel">

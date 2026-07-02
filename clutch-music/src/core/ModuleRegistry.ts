@@ -187,7 +187,7 @@ export class ModuleRegistry {
   }
 
   public saveDatabase() {
-    // Clutch Music Bot: Read-only access to prevent race conditions with Core Backend.
+    // Rage Music Bot: Read-only access to prevent race conditions with Core Backend.
     // Sync logs are pushed via HTTP, config updates are made via Dashboard/Core.
   }
 

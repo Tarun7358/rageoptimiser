@@ -136,7 +136,7 @@ export function Automation({
                     <tbody>
                       <tr>
                         <td style={{ fontFamily: 'monospace' }}>!ip</td>
-                        <td style={{ color: 'var(--text-secondary)' }}>Connect via play.clutchnation.net</td>
+                        <td style={{ color: 'var(--text-secondary)' }}>Connect via play.rageoptimiser.com</td>
                       </tr>
                       <tr>
                         <td style={{ fontFamily: 'monospace' }}>!help</td>

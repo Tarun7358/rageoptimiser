@@ -55,7 +55,7 @@ export class SecurityService {
    */
   public static generateTotpSecret(username: string) {
     const secret = generateSecret();
-    const uri = generateURI({ label: username, issuer: 'Clutch Nation', secret });
+    const uri = generateURI({ label: username, issuer: 'Rage Optimiser', secret });
     return { secret, uri };
   }
 

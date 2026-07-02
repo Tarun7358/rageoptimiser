@@ -2,7 +2,7 @@
 
 ## 🔒 Security Architectures
 
-Clutch Nation implements several layers of active defence mechanisms:
+Rage Optimiser implements several layers of active defence mechanisms:
 
 ### 1. Privilege Elevation (TOTP)
 * Any route affecting system configuration (such as enabling/disabling modules, adding staff, or changing anti-nuke rules) requires a short-lived elevated token (`X-Elevated-Token`).

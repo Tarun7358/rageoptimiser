@@ -135,7 +135,7 @@ export function Verification({
             >
               {wizardStep === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <h3 style={{ fontSize: '15px', color: 'var(--text-primary)' }}>Clutch CAPTCHA Gate</h3>
+                  <h3 style={{ fontSize: '15px', color: 'var(--text-primary)' }}>Rage CAPTCHA Gate</h3>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Protect the server against self-bot join raids. New users are assigned an Unverified Role 
                     and must complete a challenge to earn the Verified Member role.

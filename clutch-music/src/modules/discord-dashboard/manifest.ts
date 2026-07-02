@@ -26,7 +26,7 @@ function generateDashboardEmbed(guild: any, page: string, client: any) {
   switch (page) {
     case 'home':
       embed.setTitle('🏠 **System Overview**')
-        .setDescription('> Welcome to the **Clutch Nation Control Panel**. Use the interactive console below to navigate through live server telemetry and configurations.')
+        .setDescription('> Welcome to the **Rage Optimiser Control Panel**. Use the interactive console below to navigate through live server telemetry and configurations.')
         .addFields(
           { name: '👥 Population', value: `**Total:** \`${stats.totalMembers}\`\n**Online:** \`${stats.onlineMembers}\``, inline: true },
           { name: '🚀 Server Power', value: `**Boosts:** \`${stats.boosts}\`\n**Tier:** \`Premium\``, inline: true },

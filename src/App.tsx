@@ -39,6 +39,7 @@ import { Incidents } from './pages/Incidents';
 import { ApprovalCenter } from './pages/ApprovalCenter';
 import { PublicDashboard } from './pages/PublicDashboard';
 import { Automod } from './pages/Automod';
+import { Download } from './pages/Download';
 import { useAuth } from './hooks/useAuth';
 
 interface ToastItem {
@@ -50,6 +51,7 @@ interface ToastItem {
 function App() {
   const isPublicRoute = window.location.pathname === '/public';
   const isOAuthCallback = window.location.pathname === '/auth/callback';
+  const isDownloadRoute = window.location.pathname === '/download' || window.location.pathname === '/downloads';
   const { isAuthenticated, user, logout, activeGuildId, setActiveGuildId } = useAuth();
 
   const [activePage, setActivePage] = useState('dashboard');
@@ -349,6 +351,11 @@ function App() {
   // Public status dashboard
   if (isPublicRoute) {
     return <PublicDashboard />;
+  }
+
+  // Downloads page
+  if (isDownloadRoute) {
+    return <Download />;
   }
 
   // Not authenticated → show landing at /, login at /login

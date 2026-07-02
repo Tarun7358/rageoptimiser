@@ -438,10 +438,10 @@ export function Welcome() {
             <div style={{ padding: '16px', minHeight: 200 }}>
               {/* Bot message */}
               <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #7C5CFC, #4F8CFF)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#fff' }}>CN</div>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #ff3b30, #ff9500)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, color: '#fff' }}>RO</div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Clutch Nation</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Rage Optimiser</span>
                     <span style={{ fontSize: 11, color: '#72767d' }}>Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <EmbedPreview embed={config.embed} message={activeTab === 'leave' ? config.leaveMessage : config.message} />

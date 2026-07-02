@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Clutch Nation project are documented here.
+All notable changes to the Rage Optimiser project are documented here.
 
 ## [1.0.0] - 2026-07-02
 ### Added

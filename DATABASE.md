@@ -1,6 +1,6 @@
 # Database Schema & Firestore Collections
 
-Clutch Nation utilizes Google Firebase Firestore for all persistent configurations and credentials.
+Rage Optimiser utilizes Google Firebase Firestore for all persistent configurations and credentials.
 
 ---
 
@@ -68,7 +68,7 @@ Tracks approvals for server registration requests.
   ```json
   {
     "guildId": "1508399161798819840",
-    "guildName": "Clutch Server",
+    "guildName": "Rage Server",
     "status": "approved",
     "requestedBy": "user_id",
     "requestedAt": "timestamp"

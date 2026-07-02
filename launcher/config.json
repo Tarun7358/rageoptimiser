@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "appName": "Clutch Nation",
+  "appName": "Rage Optimiser",
   "ports": {
     "dashboard": 4680,
     "backend": 5000,

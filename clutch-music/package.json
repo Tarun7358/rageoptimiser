@@ -1,7 +1,7 @@
 {
-  "name": "clutch-nation-backend",
+  "name": "rage-music-backend",
   "version": "1.0.0",
-  "description": "Backend API and Discord Bot server for CLUTCH NATION dashboard.",
+  "description": "Backend API and Discord Bot server for Rage Music bot.",
   "main": "src/index.ts",
   "type": "module",
   "scripts": {

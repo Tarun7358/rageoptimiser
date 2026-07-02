@@ -23,7 +23,7 @@ export class AuthService {
 
       if (snapshot.empty) {
         console.log('[AuthService] No admin user found. Provisioning default owner account.');
-        const rawPassword = process.env.DASHBOARD_PASSWORD || 'clutchnation123';
+        const rawPassword = process.env.DASHBOARD_PASSWORD || 'rageoptimiser123';
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(rawPassword, salt);
 

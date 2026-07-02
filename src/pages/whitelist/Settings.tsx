@@ -88,6 +88,7 @@ export function WhitelistSettings({ modules, registry, onSave }: WhitelistSettin
                   channels={registry?.channels || []}
                   selectedChannelId={auditChannel}
                   onChange={(id) => setAuditChannel(id)}
+                  typeFilter={['text']}
                   helpText="Select a secure channel to pipe raw JSON and embed alerts for the WTPS audit trail."
                 />
               </div>

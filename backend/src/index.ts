@@ -145,5 +145,5 @@ gateway.registerModuleManifests([
 ]);
 
 gateway.connect();
-console.log('Backend server fully booted with discord-dashboard manifest');
+console.log('Backend server fully booted with Rage Optimiser manifest');
 export { registry, webServer, gateway };

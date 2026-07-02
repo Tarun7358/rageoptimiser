@@ -1,6 +1,6 @@
 # Commands Directory
 
-Clutch Nation supports two types of command execution:
+Rage Optimiser supports two types of command execution:
 1. **Slash Commands:** Integrated directly into Discord (`/`).
 2. **Prefix Commands:** Available via the custom prefix (default `c!`) for the Music module.
 

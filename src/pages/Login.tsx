@@ -30,10 +30,16 @@ export function Login() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/status')
-      .then(res => res.json())
-      .then(data => setStatus(data))
-      .catch(err => console.error('Failed to fetch status:', err));
+    const fetchStatus = () => {
+      fetch('http://localhost:5000/api/status')
+        .then(res => res.json())
+        .then(data => setStatus(data))
+        .catch(err => console.error('Failed to fetch status:', err));
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleDiscordLogin = async () => {
@@ -130,9 +136,9 @@ export function Login() {
           className="login-branding"
         >
           <div className="branding-header">
-            <img src="/cn-logo.png" alt="Clutch Nation Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+            <img src="/ro-logo.png" alt="Rage Optimiser Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
             <div>
-              <h1 className="branding-title">CLUTCH NATION</h1>
+              <h1 className="branding-title">RAGE OPTIMISER</h1>
               <h2 className="branding-subtitle">Enterprise Discord Security Platform</h2>
             </div>
           </div>
@@ -223,51 +229,40 @@ export function Login() {
                     {discordLoading ? 'Redirecting to Discord...' : 'Login with Discord'}
                   </button>
 
-                  {/* Divider */}
+                  {/* OR Divider */}
                   <div className="auth-divider">
                     <span>or</span>
                   </div>
 
-                  {/* Admin username/password form */}
+                  {/* Username/Password Form */}
                   <form onSubmit={handleLogin} className="login-form">
-                    <div style={{ marginBottom: 4 }}>
-                      <label style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Platform Owner Login</label>
+                    <div className="input-with-icon">
+                      <User size={16} />
+                      <input 
+                        type="text" 
+                        placeholder="Administrator Username" 
+                        value={username} 
+                        onChange={e => setUsername(e.target.value)} 
+                      />
                     </div>
-                    <div className="form-group">
-                      <div className="input-with-icon">
-                        <User size={16} />
-                        <input
-                          type="text"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Enter your username"
-                          autoComplete="username"
-                        />
-                      </div>
+                    <div className="input-with-icon">
+                      <Key size={16} />
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="Access Password" 
+                        value={password} 
+                        onChange={e => setPassword(e.target.value)} 
+                      />
+                      <button 
+                        type="button" 
+                        className="reveal-btn" 
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
-
-                    <div className="form-group">
-                      <div className="input-with-icon">
-                        <Key size={16} />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Enter your password"
-                          autoComplete="current-password"
-                        />
-                        <button
-                          type="button"
-                          className="btn-icon reveal-btn"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary login-submit">
-                      <Lock size={14} /> Authenticate
+                    <button type="submit" className="login-submit">
+                      Authenticate Override
                     </button>
                   </form>
                 </motion.div>
@@ -303,7 +298,7 @@ export function Login() {
 
             <div className="login-footer">
               <span>v1.0.0</span>
-              <span>Powered by Clutch Nation</span>
+              <span>Powered by Rage Optimiser</span>
             </div>
           </div>
         </motion.div>

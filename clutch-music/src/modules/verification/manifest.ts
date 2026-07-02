@@ -84,7 +84,7 @@ export const VerificationManifest: ModuleManifest = {
             .setTitle('🛡️ Member Verification Required')
             .setDescription('To gain access to the channels and features of this server, please click the verification button below.')
             .setColor('#2b2d31')
-            .setFooter({ text: `${interaction.guild?.name || 'Clutch Nation'} Gatekeeper` })
+            .setFooter({ text: `${interaction.guild?.name || 'Rage Optimiser'} Gatekeeper` })
             .setTimestamp();
 
           const btn = new ButtonBuilder()

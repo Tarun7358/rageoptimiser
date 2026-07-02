@@ -21,6 +21,6 @@ function tryDecrypt(keyStr: string) {
   }
 }
 
-tryDecrypt('clutchnation_super_secret_jwt_key_2025');
+tryDecrypt('rageoptimiser_super_secret_jwt_key_2025');
 tryDecrypt('fallback_secret');
 tryDecrypt('');

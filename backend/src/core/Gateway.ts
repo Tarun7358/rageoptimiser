@@ -202,7 +202,7 @@ export class Gateway {
           if (botOwner) {
             const embed = new EmbedBuilder()
               .setTitle('🛡️ New Server Approval Request')
-              .setDescription(`Clutch Nation joined **${guild.name}**. All features are locked until approved.`)
+              .setDescription(`Rage Optimiser joined **${guild.name}**. All features are locked until approved.`)
               .addFields(
                 { name: 'Guild ID', value: guild.id, inline: true },
                 { name: 'Owner', value: `${owner.user.tag} (${owner.id})`, inline: true },
@@ -228,7 +228,7 @@ export class Gateway {
 
           await owner.user.send({
             embeds: [{
-              title: '👋 Thanks for inviting Clutch Nation!',
+              title: '👋 Thanks for inviting Rage Optimiser!',
               description: `Your server **${guild.name}** has been registered and is now **Pending Review**.\nOur team will review your server and you'll receive a DM once approved (usually within 24 hours).`,
               fields: [
                 {
@@ -237,13 +237,13 @@ export class Gateway {
                   inline: false
                 },
                 {
-                  name: '🎵 Add Clutch Music Bot (Optional)',
-                  value: `Music features run on a **separate dedicated bot** for best performance.\nYou can add it now — it will activate automatically once your server is approved!\n[Invite Clutch Music to ${guild.name}](${musicInviteUrl})`,
+                  name: '🎵 Add Rage Music Bot (Optional)',
+                  value: `Music features run on a **separate dedicated bot** for best performance.\nYou can add it now — it will activate automatically once your server is approved!\n[Invite Rage Music to ${guild.name}](${musicInviteUrl})`,
                   inline: false
                 }
               ],
-              color: 0x7c5cfc,
-              footer: { text: 'Clutch Nation Enterprise Platform • Approval usually takes under 24 hours' },
+              color: 0xff4500,
+              footer: { text: 'Rage Optimiser Enterprise Platform • Approval usually takes under 24 hours' },
               timestamp: new Date().toISOString()
             }]
           }).catch(() => {}); // Silently fail if owner has DMs closed
@@ -293,7 +293,7 @@ export class Gateway {
 
       const isPublic = (ch: any) => ch.permissionsFor?.(ch.guild.roles.everyone)?.has(PermissionFlagsBits.ViewChannel);
       if (isPublic(channel)) {
-        this.publicFeed.addEvent('Server', `Channel **#${(channel as any).name}** was deleted`);
+        this.publicFeed?.addEvent('Server', `Channel **#${(channel as any).name}** was deleted`);
       }
     });
 
@@ -305,7 +305,7 @@ export class Gateway {
 
       const isPublic = (ch: any) => ch.permissionsFor?.(ch.guild.roles.everyone)?.has(PermissionFlagsBits.ViewChannel);
       if (isPublic(channel)) {
-        this.publicFeed.addEvent('Server', `Channel **#${(channel as any).name}** was created`);
+        this.publicFeed?.addEvent('Server', `Channel **#${(channel as any).name}** was created`);
       }
     });
 
@@ -328,7 +328,7 @@ export class Gateway {
       this.logSyncEvent(guildId, `Discord Event: User "${member.user.tag}" joined guild.`, 'info');
       this.syncRegistry(guildId);
       this.dispatchEvent('guildMemberAdd', member);
-      this.publicFeed.addEvent('Members', `**${member.user.username}** joined the server`);
+      this.publicFeed?.addEvent('Members', `**${member.user.username}** joined the server`);
       AnalyticsService.incrementMetric(guildId, 'joins').catch(() => {});
     });
 
@@ -337,7 +337,7 @@ export class Gateway {
       this.logSyncEvent(guildId, `Discord Event: User "${member.user.tag}" left guild.`, 'info');
       this.syncRegistry(guildId);
       this.dispatchEvent('guildMemberRemove', member);
-      this.publicFeed.addEvent('Members', `**${member.user.username}** left the server`);
+      this.publicFeed?.addEvent('Members', `**${member.user.username}** left the server`);
       AnalyticsService.incrementMetric(guildId, 'leaves').catch(() => {});
     });
 
@@ -391,15 +391,15 @@ export class Gateway {
 
       if (!oldState.channelId && newState.channelId) {
         if (isPublic(newState.channel)) {
-          this.publicFeed.addEvent('Voice', `**${member.user.username}** joined ${newState.channel?.name}`);
+          this.publicFeed?.addEvent('Voice', `**${member.user.username}** joined ${newState.channel?.name}`);
         }
       } else if (oldState.channelId && !newState.channelId) {
         if (isPublic(oldState.channel)) {
-          this.publicFeed.addEvent('Voice', `**${member.user.username}** left ${oldState.channel?.name}`);
+          this.publicFeed?.addEvent('Voice', `**${member.user.username}** left ${oldState.channel?.name}`);
         }
       } else if (oldState.channelId && newState.channelId && oldState.channelId !== newState.channelId) {
         if (isPublic(newState.channel)) {
-          this.publicFeed.addEvent('Voice', `**${member.user.username}** moved to ${newState.channel?.name}`);
+          this.publicFeed?.addEvent('Voice', `**${member.user.username}** moved to ${newState.channel?.name}`);
         }
       }
     });
@@ -451,7 +451,7 @@ export class Gateway {
           if (approvalStatus !== 'Approved') {
             if (interaction.isRepliable()) {
               await interaction.reply({ 
-                content: '🚫 **Server Pending Approval**\nThis server has not yet been approved by the Clutch Nation owner.\nPlease wait until approval is granted. All features are currently locked.',
+                content: '🚫 **Server Pending Approval**\nThis server has not yet been approved by the Rage Optimiser owner.\nPlease wait until approval is granted. All features are currently locked.',
                 ephemeral: true 
               }).catch(() => {});
             }
@@ -1003,7 +1003,7 @@ export class Gateway {
 
       if (action === 'approve') {
         if (owner) {
-          await owner.send(`✅ Your server **${guild.name}** has been approved for Clutch Nation! Message me for having the dashboard.`).catch(() => {});
+          await owner.send(`✅ Your server **${guild.name}** has been approved for Rage Optimiser! Message me for having the dashboard.`).catch(() => {});
         }
       } else if (action === 'reject' || action === 'blacklist') {
         const textChannel = guild.channels.cache.find((c: any) => c.isTextBased() && c.permissionsFor(guild.members.me!)?.has('SendMessages'));
@@ -1014,7 +1014,7 @@ export class Gateway {
         }
         
         if (owner) {
-          await owner.send(`❌ Your server **${guild.name}** was rejected from using Clutch Nation. Reason: ${reason || 'No reason provided'}. The bot has left your server.`).catch(() => {});
+          await owner.send(`❌ Your server **${guild.name}** was rejected from using Rage Optimiser. Reason: ${reason || 'No reason provided'}. The bot has left your server.`).catch(() => {});
         }
         
         await guild.leave();

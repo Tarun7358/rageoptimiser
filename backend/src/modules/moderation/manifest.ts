@@ -73,7 +73,7 @@ export const ModerationManifest: ModuleManifest = {
         }).join('\n') : 'Status matrix currently unavailable.';
 
         await interaction.reply({
-          content: `### 🛡️ CLUTCH NATION Module Health Matrix\n${lines}`,
+          content: `### 🛡️ RAGE OPTIMISER Module Health Matrix\n${lines}`,
           ephemeral: true
         });
       }

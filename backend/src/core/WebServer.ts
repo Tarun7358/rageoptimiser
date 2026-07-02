@@ -302,6 +302,11 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       const { username, password } = req.body;
       if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
 
+      // Enforce credentials login is reserved exclusively for the platform owner
+      if (username !== 'admin') {
+        return res.status(401).json({ error: 'Access denied: Credentials login is reserved for the platform owner.' });
+      }
+
       const user = await AuthService.authenticate(username, password);
       
       if (!user) {
@@ -510,6 +515,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
 
   // --- STAFF MANAGEMENT ENDPOINTS ---
   app.get('/api/system/staff', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     try {
       const db = Database.getDb();
       if (!db) {
@@ -608,9 +614,9 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
                   embeds: [{
                     title: '📢 Global Platform Announcement',
                     description: message,
-                    color: 0x7c5cfc,
+                    color: 0xff4500,
                     timestamp: new Date().toISOString(),
-                    footer: { text: 'Sent by Clutch Nation Platform Owner' }
+                    footer: { text: 'Sent by Rage Optimiser Platform Owner' }
                   }]
                 });
                 successCount++;
@@ -717,7 +723,8 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   // --- APPROVAL SYSTEM ENDPOINTS ---
-  app.get('/api/approvals', authenticateToken, async (req, res) => {
+  app.get('/api/approvals', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     try {
       const db = Database.getDb();
       if (!db) return res.json([]);
@@ -744,7 +751,8 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.json(result);
   });
 
-  app.post('/api/approvals/:guildId/action', authenticateToken, async (req, res) => {
+  app.post('/api/approvals/:guildId/action', authenticateToken, async (req: any, res) => {
+    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     const db = Database.getDb();
     if (!db) return res.status(503).json({ error: 'Database not connected' });
 
@@ -799,8 +807,8 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
               if (action === 'approve') {
                 await ownerUser.send({
                   embeds: [{
-                    title: '✅ Server Approved — Clutch Nation',
-                    description: `Your server **${guildData.guildName}** has been **approved**! You now have full access to the Clutch Nation dashboard and all features.`,
+                    title: '✅ Server Approved — Rage Optimiser',
+                    description: `Your server **${guildData.guildName}** has been **approved**! You now have full access to the Rage Optimiser dashboard and all features.`,
                     fields: [
                       {
                         name: '🖥️ Step 1 — Access Your Dashboard',
@@ -808,32 +816,32 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
                         inline: false
                       },
                       {
-                        name: '🎵 Step 2 — Add Clutch Music Bot',
-                        value: `Music playback runs on a **separate dedicated bot**.\n[Click here to invite Clutch Music to ${guildData.guildName}](${musicInviteUrl})\n*(Required for /play, /queue, Spotify & YouTube support)*`,
+                        name: '🎵 Step 2 — Add Rage Music Bot',
+                        value: `Music playback runs on a **separate dedicated bot**.\n[Click here to invite Rage Music to ${guildData.guildName}](${musicInviteUrl})\n*(Required for /play, /queue, Spotify & YouTube support)*`,
                         inline: false
                       },
                       {
                         name: '💡 Why two bots?',
-                        value: 'Music playback requires a dedicated voice bot to ensure zero interruption to moderation and security features. Clutch Music handles audio independently.',
+                        value: 'Music playback requires a dedicated voice bot to ensure zero interruption to moderation and security features. Rage Music handles audio independently.',
                         inline: false
                       }
                     ],
                     color: 0x22c55e,
-                    footer: { text: 'Clutch Nation Enterprise Platform • Both bots must be in your server for full functionality' },
+                    footer: { text: 'Rage Optimiser Enterprise Platform • Both bots must be in your server for full functionality' },
                     timestamp: new Date().toISOString()
                   }]
                 }).catch(() => {});
               } else if (action === 'reject') {
                 await ownerUser.send({
                   embeds: [{
-                    title: '❌ Server Rejected — Clutch Nation',
-                    description: `Your server **${guildData.guildName}** was **rejected** and will not gain access to Clutch Nation features.`,
+                    title: '❌ Server Rejected — Rage Optimiser',
+                    description: `Your server **${guildData.guildName}** was **rejected** and will not gain access to Rage Optimiser features.`,
                     fields: [
                       { name: '📝 Reason', value: reason || 'No reason provided', inline: false },
                       { name: 'ℹ️ What to do', value: 'You may re-invite the bot and apply again after addressing the issue. Contact support if you believe this was a mistake.', inline: false }
                     ],
                     color: 0xef4444,
-                    footer: { text: 'Clutch Nation Enterprise Platform' },
+                    footer: { text: 'Rage Optimiser Enterprise Platform' },
                     timestamp: new Date().toISOString()
                   }]
                 }).catch(() => {});

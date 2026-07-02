@@ -1,13 +1,13 @@
 # Project Structure
 
-This document outlines the folder layout and architectural boundaries of the Clutch Nation codebase.
+This document outlines the folder layout and architectural boundaries of the Rage Optimiser codebase.
 
 ---
 
 ## 📂 Directory Layout
 
 ```
-CLUTCH NATION/
+RAGE OPTIMISER/
 ├── backend/                  # Core bot backend & Express server
 │   ├── src/
 │   │   ├── core/             # Gateway client, registry, servers
@@ -49,5 +49,5 @@ graph TD
     API -->|Read/Write| DB[(Firebase Firestore)]
     Gateway[Discord Gateway Client] -->|State Sync| API
     Gateway -->|Dispatch Events| Modules[Anti-Nuke / Event Modules]
-    Music[Clutch Music Bot] -->|POST Internal Logs / State| API
+    Music[Rage Music Bot] -->|POST Internal Logs / State| API
 ```

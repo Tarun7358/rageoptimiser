@@ -1,6 +1,6 @@
-# Clutch Nation Platform
+# Rage Optimiser Platform
 
-An enterprise-grade, real-time Discord community management platform. Clutch Nation provides advanced server moderation, bot whitelisting, automation, logging, backups, role verification, and a high-fidelity music bot, all managed through a premium web dashboard with Two-Factor Authentication (TOTP) security.
+An enterprise-grade, real-time Discord community management platform. Rage Optimiser provides advanced server moderation, bot whitelisting, automation, logging, backups, role verification, and a high-fidelity music bot, all managed through a premium web dashboard with Two-Factor Authentication (TOTP) security.
 
 ---
 
@@ -17,7 +17,7 @@ An enterprise-grade, real-time Discord community management platform. Clutch Nat
 
 ## 🛠️ System Architecture
 
-Clutch Nation is architected as three main components:
+Rage Optimiser is architected as three main components:
 1. **Frontend Dashboard:** React/TS Single Page App communicating with the API via REST and WebSockets.
 2. **Core Backend Server:** Express.js REST API + main Discord Bot Client managing the server state, gateway dispatches, and Firestore database interactions.
 3. **Music Bot:** A lightweight, secondary Discord client focused solely on high-performance audio playback.
@@ -40,8 +40,8 @@ Clutch Nation is architected as three main components:
 ### 1. Clone & Install Dependencies
 ```bash
 # Clone the repository
-git clone https://github.com/Tarun7358/Clutchnation.git
-cd Clutchnation
+git clone https://github.com/Tarun7358/RageOptimiser.git
+cd RageOptimiser
 
 # Install project dependencies
 npm install

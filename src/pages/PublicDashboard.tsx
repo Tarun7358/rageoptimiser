@@ -149,8 +149,21 @@ export function PublicDashboard() {
       <div style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', padding: '40px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
-            <img src="/cn-logo.png" alt="CN Logo" style={{ width: '32px', height: '32px' }} />
-            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}> SERVER ACTIVITY</h1>
+            <div className="brand-badge-icon" style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'linear-gradient(135deg, #ff5e3a 0%, #ff2a6d 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: '14px',
+              boxShadow: '0 0 12px rgba(255, 94, 58, 0.4)',
+              flexShrink: 0
+            }}>RO</div>
+            <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', margin: 0 }}> SERVER ACTIVITY</h1>
           </div>
           <h2 style={{ fontSize: '20px', color: 'var(--accent-primary)', fontWeight: 600 }}>Aura XtremeZ</h2>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>

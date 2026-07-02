@@ -81,8 +81,10 @@ export function Layout({
     { id: 'voice', label: 'Voice Presence', icon: <Volume2 size={18} /> },
     { id: 'music', label: 'Music System', icon: <Music size={18} /> },
     { id: 'settings', label: 'Global Settings', icon: <Settings size={18} /> },
-    { id: 'owner', label: 'Owner Panel', icon: <ShieldAlert size={18} /> },
-    { id: 'approval', label: 'Server Approvals', icon: <ShieldAlert size={18} color="var(--color-warning)" /> },
+    ...(user?.role === 'owner' ? [
+      { id: 'owner', label: 'Owner Panel', icon: <ShieldAlert size={18} /> },
+      { id: 'approval', label: 'Server Approvals', icon: <ShieldAlert size={18} color="var(--color-warning)" /> },
+    ] : []),
   ];
 
   const handleNavClick = (pageId: string) => {
@@ -135,9 +137,22 @@ export function Layout({
     <div className="app-container">
       {/* Sidebar navigation */}
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-logo">
-          <img src="/cn-logo.png" alt="CN Logo" className="logo-icon" style={{ width: '32px', height: '32px', padding: '0', background: 'transparent' }} />
-          <span className="logo-text">Clutch Nation</span>
+        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="brand-badge-icon" style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #ff5e3a 0%, #ff2a6d 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: '14px',
+            boxShadow: '0 0 12px rgba(255, 94, 58, 0.4)',
+            flexShrink: 0
+          }}>RO</div>
+          <span className="logo-text" style={{ textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em', color: '#fff' }}>RAGE OPTIMISER</span>
           <button 
             style={{ marginLeft: 'auto', display: 'none' }} 
             className="menu-toggle"
@@ -223,7 +238,7 @@ export function Layout({
               {avatarUrl ? (
                 <img src={avatarUrl} alt={user?.username} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
-                <img src="/cn-logo.png" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src="/ro-logo.png" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               )}
             </div>
             <div className="user-info" style={{ flex: 1, minWidth: 0 }}>
@@ -279,10 +294,10 @@ export function Layout({
                 />
               ) : (
                 <div className="server-icon" style={{ padding: 0, overflow: 'hidden', backgroundColor: 'transparent' }}>
-                  <img src="/cn-logo.png" alt="CN" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <img src="/ro-logo.png" alt="RO" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
               )}
-              <span style={{ fontWeight: 600 }}>{activeGuild?.name || 'Clutch Nation'}</span>
+              <span style={{ fontWeight: 600 }}>{activeGuild?.name || 'Rage Optimiser'}</span>
             </div>
           </div>
 

@@ -153,7 +153,7 @@ export const MusicManifest: ModuleManifest = {
               inline: false
             }
           )
-          .setFooter({ text: 'Clutch Nation Ecosystem • Powered by yt-dlp & Discord.js' })
+          .setFooter({ text: 'Rage Optimiser Ecosystem • Powered by yt-dlp & Discord.js' })
           .setTimestamp();
 
         if (interaction.reply) {

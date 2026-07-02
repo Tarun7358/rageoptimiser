@@ -1,6 +1,6 @@
 # Production Deployment Guide
 
-This document outlines the deployment process for running Clutch Nation in a secure, production-ready Linux server environment.
+This document outlines the deployment process for running Rage Optimiser in a secure, production-ready Linux server environment.
 
 ---
 
@@ -56,11 +56,11 @@ Create a site configuration file (e.g. `/etc/nginx/sites-available/clutch`):
 ```nginx
 server {
     listen 80;
-    server_name dashboard.clutchnation.com;
+    server_name dashboard.rageoptimiser.com;
 
     # Static React Frontend
     location / {
-        root /home/ubuntu/Clutchnation/dist;
+        root /home/ubuntu/RageOptimiser/dist;
         try_files $uri $uri/ /index.html;
         expires 30d;
     }
@@ -102,7 +102,7 @@ Secure Nginx using Let's Encrypt SSL certificates:
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d dashboard.clutchnation.com
+sudo certbot --nginx -d dashboard.rageoptimiser.com
 ```
 
 Certbot will automatically verify ownership, acquire the SSL certificates, update the Nginx configuration, and establish a cron job for automatic certificate renewal.

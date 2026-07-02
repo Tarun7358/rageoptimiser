@@ -167,12 +167,12 @@ function GuildCard({
         border: '1px solid rgba(255,255,255,0.04)',
         fontSize: 13, color: '#9CA3AF'
       }}>
-        {status === 'Approved' && '✅ Your server has full access to the Clutch Nation dashboard.'}
-        {status === 'Pending' && '⏳ Your server is awaiting manual review by the Clutch Nation team. You\'ll receive a DM once approved.'}
+        {status === 'Approved' && '✅ Your server has full access to the Rage Optimiser dashboard.'}
+        {status === 'Pending' && '⏳ Your server is awaiting manual review by the Rage Optimiser team. You\'ll receive a DM once approved.'}
         {status === 'Under Review' && '🔍 Your server is currently being reviewed. This usually takes 24–48 hours.'}
         {status === 'Rejected' && `❌ Your server was rejected. Reason: ${approval?.guildName || 'Contact support for more info.'}`}
         {status === 'Suspended' && '⚠️ Your server\'s access has been suspended. Contact support.'}
-        {status === 'Blacklisted' && '🚫 This server has been permanently blacklisted from Clutch Nation.'}
+        {status === 'Blacklisted' && '🚫 This server has been permanently blacklisted from Rage Optimiser.'}
         {status === 'Not Registered' && '🤖 The bot hasn\'t joined this server yet. Invite it to start the approval process.'}
       </div>
 
@@ -206,7 +206,7 @@ function GuildCard({
         {/* Always show music bot invite for non-blacklisted servers */}
         {status !== 'Blacklisted' && status !== 'Not Registered' && (
           <a href={MUSIC_INVITE_URL} target="_blank" rel="noopener noreferrer"
-            title="Clutch Music is a separate bot required for music commands"
+            title="Rage Music is a separate bot required for music commands"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               padding: '11px 16px', borderRadius: 10,
@@ -269,20 +269,20 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg, #7C5CFC, #4F8CFF)',
+            background: 'linear-gradient(135deg, #FF3B30, #FF9500)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 800, fontSize: 14, color: '#fff'
-          }}>CN</div>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: 1 }}>CLUTCH NATION</span>
+          }}>RO</div>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: 1 }}>RAGE OPTIMISER</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={user?.username}
-              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(124,92,252,0.4)' }} />
+              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,59,48,0.4)' }} />
           ) : (
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7C5CFC, #4F8CFF)',
+              background: 'linear-gradient(135deg, #FF3B30, #FF9500)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 700, color: '#fff', fontSize: 14
             }}>
@@ -345,7 +345,7 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#F3F4F6', marginBottom: 4 }}>
-                Clutch Nation (Main Bot)
+                Rage Optimiser (Main Bot)
               </div>
               <div style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.5 }}>
                 Handles moderation, security, logging, tickets, verification, automod, automation & dashboard sync.
@@ -362,7 +362,7 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#F3F4F6', marginBottom: 4 }}>
-                Clutch Music (Separate Bot)
+                Rage Music (Separate Bot)
               </div>
               <div style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.5 }}>
                 Dedicated music playback bot for /play, /queue, Spotify, YouTube & SoundCloud. Must be invited separately per server.

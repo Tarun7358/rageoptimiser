@@ -1,7 +1,7 @@
 {
-  "name": "clutch-nation-launcher",
+  "name": "rage-optimiser-launcher",
   "version": "1.0.0",
-  "description": "Clutch Nation Enterprise Discord Security Platform – One-Click Launcher",
+  "description": "Rage Optimiser Enterprise Discord Security Platform – One-Click Launcher",
   "main": "electron.js",
   "scripts": {
     "start": ".\\node_modules\\electron\\dist\\electron.exe .",
@@ -11,9 +11,9 @@
     "build:dir": "electron-builder build --win --dir"
   },
   "build": {
-    "appId": "com.clutchnation.launcher",
-    "productName": "ClutchNation",
-    "copyright": "Clutch Nation",
+    "appId": "com.rageoptimiser.launcher",
+    "productName": "RageOptimiser",
+    "copyright": "Rage Optimiser",
     "directories": {
       "output": "dist"
     },
@@ -37,7 +37,7 @@
       "installerHeader": "assets/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Clutch Nation"
+      "shortcutName": "Rage Optimiser"
     },
     "extraResources": [
       {

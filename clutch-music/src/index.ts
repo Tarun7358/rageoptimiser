@@ -78,5 +78,5 @@ gateway.registerModuleManifests([
 ]);
 
 gateway.connect();
-console.log('Clutch Music bot fully booted.');
+console.log('Rage Music bot fully booted.');
 export { registry, gateway };

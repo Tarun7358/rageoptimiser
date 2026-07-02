@@ -1,16 +1,30 @@
 module.exports = {
-  apps: [{
-    name: "clutch-nation-backend",
-    script: "npm",
-    args: "start",
-    cwd: "./backend",
-    env: {
-      NODE_ENV: "development",
+  apps: [
+    {
+      name: "rage-optimiser-backend",
+      script: "npm",
+      args: "start",
+      cwd: "./backend",
+      env: {
+        NODE_ENV: "development",
+      },
+      env_production: {
+        NODE_ENV: "production",
+        PORT: 5000,
+        WS_PORT: 5001
+      }
     },
-    env_production: {
-      NODE_ENV: "production",
-      PORT: 5000,
-      WS_PORT: 5001
+    {
+      name: "rage-music-backend",
+      script: "npm",
+      args: "start",
+      cwd: "./clutch-music",
+      env: {
+        NODE_ENV: "development",
+      },
+      env_production: {
+        NODE_ENV: "production"
+      }
     }
-  }]
+  ]
 }

@@ -260,7 +260,7 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
                 <input 
                   type="text" 
                   className="form-input-text" 
-                  placeholder="e.g. Listening in Clutch Main" 
+                  placeholder="e.g. Listening in Rage Main" 
                   value={activityStatus}
                   onChange={(e) => setActivityStatus(e.target.value)}
                 />

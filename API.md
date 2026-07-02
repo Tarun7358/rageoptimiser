@@ -1,6 +1,6 @@
 # REST API Specification
 
-The Clutch Nation backend exposes a REST API to support the frontend React dashboard. 
+The Rage Optimiser backend exposes a REST API to support the frontend React dashboard. 
 
 ---
 

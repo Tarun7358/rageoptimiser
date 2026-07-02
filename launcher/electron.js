@@ -96,7 +96,7 @@ function createMainWindow() {
     minHeight: 700,
     center: true,
     frame: true,
-    title: `Clutch Nation v${config.version}`,
+    title: `Rage Optimiser v${config.version}`,
     icon: getIcon(),
     show: false,
     backgroundColor: '#050508',
@@ -128,7 +128,7 @@ function createMainWindow() {
       if (tray) {
         tray.displayBalloon({
           iconType: 'info',
-          title: 'Clutch Nation',
+          title: 'Rage Optimiser',
           content: 'Running in the background. Right-click the tray icon to open or exit.'
         });
       }
@@ -148,11 +148,11 @@ function createMainWindow() {
 function createTray() {
   const icon = getIcon();
   tray = new Tray(icon.isEmpty() ? nativeImage.createFromDataURL('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==') : icon);
-  tray.setToolTip(`Clutch Nation v${config.version}`);
+  tray.setToolTip(`Rage Optimiser v${config.version}`);
 
   const buildMenu = () => Menu.buildFromTemplate([
     {
-      label: `Clutch Nation v${config.version}`,
+      label: `Rage Optimiser v${config.version}`,
       enabled: false
     },
     { type: 'separator' },
@@ -220,11 +220,11 @@ function createTray() {
     },
     {
       label: '🔍  Check Updates',
-      click: () => shell.openExternal('https://github.com/clutchnation')
+      click: () => shell.openExternal('https://github.com/rageoptimiser')
     },
     { type: 'separator' },
     {
-      label: '✕  Exit Clutch Nation',
+      label: '✕  Exit Rage Optimiser',
       click: () => gracefulShutdown()
     }
   ]);
@@ -249,7 +249,7 @@ const STEPS = [
   { label: 'Starting backend API' },
   { label: 'Connecting WebSocket server' },
   { label: 'Connecting Discord bot' },
-  { label: 'Starting Clutch Music bot' },
+  { label: 'Starting Rage Music bot' },
   { label: 'Starting dashboard server' },
   { label: 'Verifying all connections' },
   { label: 'Opening dashboard' },
@@ -276,7 +276,7 @@ function sendError(stepLabel, error) {
 }
 
 async function runStartupSequence() {
-  logger.section('CLUTCH NATION STARTUP');
+  logger.section('RAGE OPTIMISER STARTUP');
   logger.info(`Version: ${config.version}`);
   logger.info(`Base path: ${BASE_PATH}`);
 
@@ -347,15 +347,15 @@ async function runStartupSequence() {
   await sleep(3000); // Give Discord bot a moment to connect
   logger.info('Discord bot initialization in progress...');
 
-  // ── Step 6: Start Clutch Music
+  // ── Step 6: Start Rage Music
   sendStep(6, prevLabel);
   prevLabel = STEPS[6].label;
-  logger.info('Spawning Clutch Music...');
+  logger.info('Spawning Rage Music...');
   try {
     await pm.spawnMusicBot(BASE_PATH);
-    logger.success('Clutch Music started.');
+    logger.success('Rage Music started.');
   } catch (e) {
-    logger.warn(`Clutch Music failed to start: ${e.message}`);
+    logger.warn(`Rage Music failed to start: ${e.message}`);
   }
 
   // ── Step 7: Start dashboard
@@ -402,7 +402,7 @@ async function runStartupSequence() {
   if (splashWin && !splashWin.isDestroyed()) {
     splashWin.webContents.send('startup:complete', {});
   }
-  logger.section('CLUTCH NATION READY');
+  logger.section('RAGE OPTIMISER READY');
 
   // Start health monitor
   hm.start(BASE_PATH);
@@ -423,7 +423,7 @@ async function gracefulShutdown() {
   }
 
   await pm.shutdown();
-  logger.success('Clutch Nation shut down cleanly.');
+  logger.success('Rage Optimiser shut down cleanly.');
 
   if (tray) { tray.destroy(); tray = null; }
   app.quit();
@@ -441,7 +441,7 @@ ipcMain.on('startup:retry', () => {
 ipcMain.on('app:exit', () => gracefulShutdown());
 
 // ─── APP LIFECYCLE ─────────────────────────────────────────────────────────────
-app.setName('Clutch Nation');
+app.setName('Rage Optimiser');
 
 app.whenReady().then(async () => {
   logger.section('ELECTRON APP READY');
