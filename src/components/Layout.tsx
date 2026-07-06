@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Shield, Gavel, Users, Zap, FileText, 
   LineChart, Settings, ShieldAlert, Bell, Search, Play, Pause, 
   Terminal, Server, Activity, ChevronDown, Menu, X, AlertTriangle,
-  Volume2, ShieldCheck, LogOut, LayoutTemplate, Music, RefreshCw
+  Volume2, ShieldCheck, LogOut, LayoutTemplate, Music, RefreshCw,
+  Gift, Send, Sparkles, Award
 } from 'lucide-react';
 import type { NotificationItem } from '../hooks/useActivityFeed';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -56,6 +57,13 @@ export function Layout({
     { id: 'health', label: 'Config Health', icon: <AlertTriangle size={18} color="var(--color-warning)" /> },
     { id: 'security', label: 'Security Panel', icon: <Shield size={18} /> },
     { id: 'moderation', label: 'Moderation', icon: <Gavel size={18} /> },
+    { id: 'blacklist', label: 'Blacklist Manager', icon: <ShieldAlert size={18} /> },
+    { id: 'giveaway', label: 'Giveaways', icon: <Gift size={18} /> },
+    { id: 'announcements', label: 'Announcements', icon: <Send size={18} /> },
+    { id: 'join_to_create', label: 'Join To Create', icon: <Volume2 size={18} /> },
+    { id: 'reaction_roles', label: 'Reaction Roles', icon: <Sparkles size={18} /> },
+    { id: 'leveling', label: 'Leveling & XP', icon: <Award size={18} /> },
+    { id: 'reminders', label: 'Reminder System', icon: <Bell size={18} /> },
     { id: 'community', label: 'Community', icon: <Users size={18} /> },
     { id: 'roles', label: 'Roles Manager', icon: <span style={{ fontSize: 14 }}>🎭</span> },
   ];
@@ -83,7 +91,6 @@ export function Layout({
     { id: 'settings', label: 'Global Settings', icon: <Settings size={18} /> },
     ...(user?.role === 'owner' ? [
       { id: 'owner', label: 'Owner Panel', icon: <ShieldAlert size={18} /> },
-      { id: 'approval', label: 'Server Approvals', icon: <ShieldAlert size={18} color="var(--color-warning)" /> },
     ] : []),
   ];
 

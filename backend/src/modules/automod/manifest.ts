@@ -43,7 +43,7 @@ export const AutomodManifest: ModuleManifest = {
         
         await interaction.reply({
           content: `🤖 **AutoMod Status**: \`${amMod?.status || 'unknown'}\`\nBlocking Links: \`${amMod?.config?.blockLinks ? 'Yes' : 'No'}\``,
-          ephemeral: true
+          flags: 64
         });
       }
     },

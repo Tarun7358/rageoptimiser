@@ -268,7 +268,7 @@ const COMMANDS_DATA = [
   {
     category: 'music',
     name: '/play',
-    desc: 'Stream high-fidelity audio from YouTube or Spotify. (Can also use c!play)',
+    desc: 'Stream high-fidelity audio from YouTube or Spotify. (Can also use r!play)',
     params: [
       { name: 'query', required: true, type: 'STRING', desc: 'Search keywords or video/playlist URL.' }
     ],
@@ -277,43 +277,43 @@ const COMMANDS_DATA = [
   {
     category: 'music',
     name: '/pause',
-    desc: 'Pause the active playback stream. (Can also use c!pause)',
+    desc: 'Pause the active playback stream. (Can also use r!pause)',
     usage: '/pause'
   },
   {
     category: 'music',
     name: '/resume',
-    desc: 'Resume paused audio playback. (Can also use c!resume)',
+    desc: 'Resume paused audio playback. (Can also use r!resume)',
     usage: '/resume'
   },
   {
     category: 'music',
     name: '/stop',
-    desc: 'Stop the playback stream and clear the music queue. (Can also use c!stop)',
+    desc: 'Stop the playback stream and clear the music queue. (Can also use r!stop)',
     usage: '/stop'
   },
   {
     category: 'music',
     name: '/skip',
-    desc: 'Skip the currently playing track. (Can also use c!skip)',
+    desc: 'Skip the currently playing track. (Can also use r!skip)',
     usage: '/skip'
   },
   {
     category: 'music',
     name: '/queue',
-    desc: 'View upcoming tracks in the music queue. (Can also use c!queue)',
+    desc: 'View upcoming tracks in the music queue. (Can also use r!queue)',
     usage: '/queue'
   },
   {
     category: 'music',
     name: '/shuffle',
-    desc: 'Shuffle the tracks in the queue. (Can also use c!shuffle)',
+    desc: 'Shuffle the tracks in the queue. (Can also use r!shuffle)',
     usage: '/shuffle'
   },
   {
     category: 'music',
     name: '/loop',
-    desc: 'Set loop mode. (Can also use c!loop)',
+    desc: 'Set loop mode. (Can also use r!loop)',
     params: [
       { name: 'mode', required: true, type: 'STRING', desc: 'Options are track, queue, off.' }
     ],
@@ -322,7 +322,7 @@ const COMMANDS_DATA = [
   {
     category: 'music',
     name: '/volume',
-    desc: 'Adjust volume of the bot stream. (Can also use c!volume)',
+    desc: 'Adjust volume of the bot stream. (Can also use r!volume)',
     params: [
       { name: 'percent', required: true, type: 'INTEGER', desc: 'Range 0 to 200.' }
     ],
@@ -331,13 +331,13 @@ const COMMANDS_DATA = [
   {
     category: 'music',
     name: '/clear',
-    desc: 'Clear all tracks in the queue except the current one. (Can also use c!clear)',
+    desc: 'Clear all tracks in the queue except the current one. (Can also use r!clear)',
     usage: '/clear'
   },
   {
     category: 'music',
     name: '/remove',
-    desc: 'Remove a track from a specific position in the queue. (Can also use c!remove)',
+    desc: 'Remove a track from a specific position in the queue. (Can also use r!remove)',
     params: [
       { name: 'position', required: true, type: 'INTEGER', desc: 'Position number in queue.' }
     ],

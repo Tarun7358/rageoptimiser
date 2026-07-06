@@ -11,14 +11,20 @@ export class Database {
     if (this.isConnected) return;
 
     try {
+      let keyPath = path.join(process.cwd(), '../backend/firebase-key.json');
+      if (!fs.existsSync(keyPath)) {
+        keyPath = path.join(process.cwd(), 'firebase-key.json');
+      }
+
       if (getApps().length === 0) {
-        const keyPath = path.join(process.cwd(), '../backend/firebase-key.json');
         if (fs.existsSync(keyPath)) {
+          console.log(`[Music Database] Initializing Firebase with key from: ${keyPath}`);
           const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
           initializeApp({
             credential: cert(serviceAccount)
           });
         } else {
+          console.log('[Music Database] Initializing Firebase with applicationDefault...');
           initializeApp({
             credential: applicationDefault()
           });
@@ -28,9 +34,9 @@ export class Database {
       this.firestoreInstance = getFirestore();
       this.isConnected = true;
       console.log('✅ Successfully connected to Firebase Firestore.');
-    } catch (error) {
-      console.error('❌ Failed to connect to Firebase:', error);
-      console.warn('⚠️ Proceeding without database connection.');
+    } catch (error: any) {
+      console.error('❌ Failed to connect to Firebase:', error.message || error);
+      throw error;
     }
   }
 

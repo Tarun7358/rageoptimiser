@@ -4,7 +4,7 @@ import { DiscordResourceRegistry, ModuleManifest, ModuleState } from './types.js
 import { IGuildApproval } from '../models/index.js';
 import { Database } from './Database.js';
 import { calculateRiskScore } from '../utils/riskScoring.js';
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import type { PublicFeedManager } from './PublicFeedManager.js';
 import { AnalyticsService } from './AnalyticsService.js';
 
@@ -187,7 +187,7 @@ export class Gateway {
           joinedAt: Date.now(),
           riskScore: finalRiskScore,
           riskLevel: finalRiskLevel,
-          status: 'Pending',
+          status: 'Approved',
           lastUpdated: Date.now()
         };
 
@@ -201,8 +201,8 @@ export class Gateway {
           const botOwner = await this.client.users.fetch(ownerId);
           if (botOwner) {
             const embed = new EmbedBuilder()
-              .setTitle('🛡️ New Server Approval Request')
-              .setDescription(`Rage Optimiser joined **${guild.name}**. All features are locked until approved.`)
+              .setTitle('🛡️ New Server Registered')
+              .setDescription(`Rage Optimiser joined **${guild.name}**. The server has been auto-approved.`)
               .addFields(
                 { name: 'Guild ID', value: guild.id, inline: true },
                 { name: 'Owner', value: `${owner.user.tag} (${owner.id})`, inline: true },
@@ -211,8 +211,8 @@ export class Gateway {
                 { name: 'Risk Level', value: `${finalRiskLevel} (Score: ${finalRiskScore})`, inline: true }
               )
               .setThumbnail(guild.iconURL() || null)
-              .setColor('#FACC15')
-              .setFooter({ text: 'Awaiting Approval' });
+              .setColor('#22C55E')
+              .setFooter({ text: 'Auto-Approved' });
 
             await botOwner.send({ embeds: [embed] }).catch(() => {});
           }
@@ -220,7 +220,7 @@ export class Gateway {
           console.error('[Gateway] Failed to notify bot owner of new guild:', e);
         }
 
-        // Also DM the guild owner about pending approval + music bot
+        // Also DM the guild owner about approval + music bot
         try {
           const musicClientId = process.env.MUSIC_CLIENT_ID || '1520323151928623125';
           const musicPerms = process.env.MUSIC_BOT_PERMISSIONS || '36700160';
@@ -229,21 +229,21 @@ export class Gateway {
           await owner.user.send({
             embeds: [{
               title: '👋 Thanks for inviting Rage Optimiser!',
-              description: `Your server **${guild.name}** has been registered and is now **Pending Review**.\nOur team will review your server and you'll receive a DM once approved (usually within 24 hours).`,
+              description: `Your server **${guild.name}** has been registered and is now **Approved**.\nYou can configure all features immediately through your real-time dashboard.`,
               fields: [
                 {
-                  name: '⏳ What happens next?',
-                  value: '1. Our team reviews your server for quality & safety\n2. You receive a DM with your dashboard link once approved\n3. All bot features unlock automatically',
+                  name: '⚙️ Configure the Bot',
+                  value: 'Use our real-time dashboard to set up security settings, verification, moderation, logging, levels, backups, and more!',
                   inline: false
                 },
                 {
                   name: '🎵 Add Rage Music Bot (Optional)',
-                  value: `Music features run on a **separate dedicated bot** for best performance.\nYou can add it now — it will activate automatically once your server is approved!\n[Invite Rage Music to ${guild.name}](${musicInviteUrl})`,
+                  value: `Music features run on a **separate dedicated bot** for best performance.\nYou can invite it to your server using the link below:\n[Invite Rage Music to ${guild.name}](${musicInviteUrl})`,
                   inline: false
                 }
               ],
-              color: 0xff4500,
-              footer: { text: 'Rage Optimiser Enterprise Platform • Approval usually takes under 24 hours' },
+              color: 0x22c55e,
+              footer: { text: 'Rage Optimiser Enterprise Platform' },
               timestamp: new Date().toISOString()
             }]
           }).catch(() => {}); // Silently fail if owner has DMs closed
@@ -353,6 +353,43 @@ export class Gateway {
       this.dispatchEvent('messageCreate', message);
       if (message.guildId && !message.author?.bot) {
         AnalyticsService.incrementMetric(message.guildId, 'messages').catch(() => {});
+        
+        // DM notify users who were tagged/mentioned directly
+        if (message.mentions.users.size > 0 && message.guild) {
+          message.mentions.users.forEach(async (user) => {
+            // Do not notify self or other bots
+            if (user.id === message.author.id || user.bot) return;
+
+            try {
+              const guildIcon = message.guild?.iconURL({ size: 256 }) || null;
+              
+              const dmEmbed = new EmbedBuilder()
+                .setTitle('🔔 New Mention Alert')
+                .setDescription(`You have been mentioned by **${message.author.tag}** in **${message.guild?.name}**!`)
+                .setColor('#7C5CFC')
+                .setThumbnail(guildIcon)
+                .addFields(
+                  { name: '📍 Server', value: `\`${message.guild?.name}\``, inline: true },
+                  { name: '💬 Channel', value: `${message.channel.toString()}`, inline: true },
+                  { name: '👤 Mentioned By', value: `${message.author.toString()} (\`${message.author.tag}\`)`, inline: false },
+                  { name: '📝 Message Context', value: message.content ? (message.content.length > 800 ? message.content.substring(0, 800) + '...' : message.content) : '*(No text content)*', inline: false }
+                )
+                .setFooter({ text: 'Rage Optimiser Premium • Real-time Alerts', iconURL: this.client.user?.displayAvatarURL() })
+                .setTimestamp();
+
+              const jumpButton = new ButtonBuilder()
+                .setLabel('Go to Message')
+                .setStyle(ButtonStyle.Link)
+                .setURL(message.url);
+
+              const row = new ActionRowBuilder<ButtonBuilder>().addComponents(jumpButton);
+
+              await user.send({ embeds: [dmEmbed], components: [row] });
+            } catch (err) {
+              // Silently catch errors if user has DMs closed or blocked the bot
+            }
+          });
+        }
       }
     });
 
@@ -427,38 +464,8 @@ export class Gateway {
       this.dispatchEvent('messageReactionRemove', reaction, user);
     });
 
-    this.client.on('messageCreate', (message) => {
-      this.dispatchEvent('messageCreate', message);
-    });
-
     // Slash Command & Component Button routing
     this.client.on('interactionCreate', async (interaction) => {
-      // PRE-FLIGHT CHECK: OWNER APPROVAL SYSTEM
-      if (interaction.guildId && interaction.guildId !== process.env.GUILD_ID) {
-        const isApprovalCommand = interaction.isChatInputCommand() && 
-          ['approve-server', 'reject-server', 'pending-servers', 'blacklisted-servers', 'server-info', 'suspend-server', 'unsuspend-server', 'blacklist-server'].includes(interaction.commandName);
-
-        if (!isApprovalCommand && interaction.user.id !== process.env.OWNER_ID) {
-          let approvalStatus = 'Pending';
-          const db = Database.getDb();
-          if (db) {
-            const docSnap = await db.collection('approvals').doc(interaction.guildId).get();
-            if (docSnap.exists) {
-              approvalStatus = (docSnap.data() as IGuildApproval).status;
-            }
-          }
-
-          if (approvalStatus !== 'Approved') {
-            if (interaction.isRepliable()) {
-              await interaction.reply({ 
-                content: '🚫 **Server Pending Approval**\nThis server has not yet been approved by the Rage Optimiser owner.\nPlease wait until approval is granted. All features are currently locked.',
-                ephemeral: true 
-              }).catch(() => {});
-            }
-            return;
-          }
-        }
-      }
 
       if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
@@ -479,7 +486,7 @@ export class Gateway {
              if (interaction.isRepliable()) {
                await interaction.reply({
                  content: '🚧 **System Maintenance Mode Active**\nThe server is currently in lockdown mode. All public bot commands are temporarily disabled. Please check back later.',
-                 ephemeral: true
+                 flags: 64
                }).catch(() => {});
              }
              return;
@@ -496,21 +503,44 @@ export class Gateway {
           if (manifest.commands) {
             const cmd = manifest.commands.find(c => c.name === commandName);
             if (cmd) {
+              // Check if the module is enabled (bypass for owner/system modules)
+              const isSystemModule = ['owner_commands', 'approval'].includes(manifest.id);
+              if (!isSystemModule) {
+                const modulesState = this.getModulesState(interaction.guildId || undefined);
+                const moduleState = modulesState.find(m => m.id === manifest.id);
+                if (!moduleState || moduleState.status !== 'enabled') {
+                  if (interaction.isRepliable()) {
+                    await interaction.reply({
+                      content: `❌ The **${manifest.name}** module is currently disabled.`,
+                      flags: 64
+                    }).catch(() => {});
+                  }
+                  return;
+                }
+              }
+
               const eventObj = manifest.events?.find(e => e.name === `command_${commandName}`);
               if (eventObj) {
                 try {
                   await eventObj.handler(this.client, interaction, { 
-                    logSyncEvent: this.logSyncEvent,
-                    getModulesState: this.getModulesState,
-                    getRegistry: this.getRegistry,
-                    handleApprovalAction: (g: string, a: string, r?: string) => this.handleApprovalAction(g, a, r)
+                    logSyncEvent: (msgOrGuildId: string | undefined, msgOrType?: string, type?: 'info' | 'warn' | 'success') => {
+                      if (type !== undefined) {
+                        this.logSyncEvent(msgOrGuildId, msgOrType, type);
+                      } else {
+                        this.logSyncEvent(interaction.guildId || undefined, msgOrGuildId, msgOrType as any);
+                      }
+                    },
+                    getModulesState: () => this.getModulesState(interaction.guildId || undefined),
+                    getRegistry: () => this.getRegistry(interaction.guildId || undefined),
+                    handleApprovalAction: (g: string, a: string, r?: string) => this.handleApprovalAction(g, a, r),
+                    updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(interaction.guildId || undefined, id, config)
                   });
                   return;
                 } catch (err) {
                   console.error(`Error executing command ${commandName} handler:`, err);
                   await interaction.reply({
                     content: '❌ An internal error occurred while executing this command.',
-                    ephemeral: true
+                    flags: 64
                   });
                   return;
                 }
@@ -521,10 +551,14 @@ export class Gateway {
 
         await interaction.reply({
           content: `❌ Command /${commandName} is registered but no module handler is currently active.`,
-          ephemeral: true
+          flags: 64
         });
       } else if (interaction.isButton()) {
         this.dispatchEvent(`button_${interaction.customId}`, interaction);
+      } else if (interaction.isAnySelectMenu()) {
+        this.dispatchEvent(`select_${interaction.customId}`, interaction);
+      } else if (interaction.isModalSubmit()) {
+        this.dispatchEvent(`modal_${interaction.customId}`, interaction);
       }
     });
   }
@@ -632,10 +666,10 @@ export class Gateway {
     }
   }
 
-  public async forceDeployCommands() {
+  public async forceDeployCommands(targetGuildId?: string) {
     const token = process.env.DISCORD_TOKEN;
     const clientId = process.env.CLIENT_ID;
-    const guildId = process.env.GUILD_ID;
+    const guildId = targetGuildId || process.env.GUILD_ID;
 
     if (!token || !clientId || !guildId) return;
 
@@ -661,6 +695,7 @@ export class Gateway {
         { body: commands }
       );
       this.logSyncEvent('Slash commands successfully registered on Discord REST API.', 'success');
+      console.log('✅ Slash commands successfully registered on Discord REST API.');
     } catch (error) {
       console.error('Failed to deploy slash commands:', error);
     }
@@ -701,7 +736,13 @@ export class Gateway {
         try {
           ev.handler(this.client, ...args, { 
             guildId,
-            logSyncEvent: (msg: string, type: 'info' | 'warn' | 'success') => this.logSyncEvent(guildId, msg, type),
+            logSyncEvent: (msgOrGuildId: string | undefined, msgOrType?: string, type?: 'info' | 'warn' | 'success') => {
+              if (type !== undefined) {
+                this.logSyncEvent(msgOrGuildId, msgOrType, type);
+              } else {
+                this.logSyncEvent(guildId, msgOrGuildId, msgOrType as any);
+              }
+            },
             getModulesState: () => this.getModulesState(guildId),
             getRegistry: () => this.getRegistry(guildId),
             updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(guildId, id, config)
@@ -854,13 +895,19 @@ export class Gateway {
         this.broadcast({ type: 'STATE_UPDATE', modules, registry: this.getRegistry(guildId), guildId });
       }
 
-      connection.removeAllListeners();
-      connection.on('stateChange', (oldState, newState) => {
+      if ((connection as any)._presenceListener) {
+        try {
+          connection.removeListener('stateChange', (connection as any)._presenceListener);
+        } catch (e) {}
+      }
+      const listener = (oldState: any, newState: any) => {
         if (newState.status === VoiceConnectionStatus.Disconnected) {
           this.logSyncEvent(guildId, `Voice Presence Alert: Unexpectedly disconnected from #${channel.name}!`, 'warn');
           this.handleVoiceDisconnect(guild, channel, reconnectDelay, maxRetries);
         }
-      });
+      };
+      (connection as any)._presenceListener = listener;
+      connection.on('stateChange', listener);
 
     } catch (err: any) {
       this.isConnectingVoice = false;
@@ -983,10 +1030,10 @@ export class Gateway {
             joinedAt: Date.now(),
             riskScore: finalRiskScore,
             riskLevel: finalRiskLevel,
-            status: 'Pending',
+            status: 'Approved',
             lastUpdated: Date.now()
           });
-          this.logSyncEvent(`Synced previously untracked guild "${guild.name}" to Approval System (Pending).`, 'warn');
+          this.logSyncEvent(`Synced previously untracked guild "${guild.name}" to Approval System (Approved).`, 'success');
         }
       } catch (e) {
         console.error(`[Gateway] Failed to sync approval for guild ${guild.id}`, e);
@@ -1005,6 +1052,9 @@ export class Gateway {
         if (owner) {
           await owner.send(`✅ Your server **${guild.name}** has been approved for Rage Optimiser! Message me for having the dashboard.`).catch(() => {});
         }
+        await this.forceDeployCommands(guildId).catch((err) => {
+          console.error(`[Gateway] Failed to deploy commands for approved guild ${guildId}:`, err);
+        });
       } else if (action === 'reject' || action === 'blacklist') {
         const textChannel = guild.channels.cache.find((c: any) => c.isTextBased() && c.permissionsFor(guild.members.me!)?.has('SendMessages'));
         const rejectMessage = `⚠️ The bot owner has deauthorized access for this server. Reason: ${reason || 'No reason provided'}. Leaving now...`;

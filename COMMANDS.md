@@ -2,7 +2,7 @@
 
 Rage Optimiser supports two types of command execution:
 1. **Slash Commands:** Integrated directly into Discord (`/`).
-2. **Prefix Commands:** Available via the custom prefix (default `c!`) for the Music module.
+2. **Prefix Commands:** Available via the custom prefix (default `r!`) for the Music module.
 
 ---
 
@@ -114,56 +114,62 @@ Rage Optimiser supports two types of command execution:
 
 ## 🎵 Music Module
 
-*Note:* These can also be used as prefix commands (e.g. `c!play`).
+*Note:* The Music module has been fully migrated to prefix-only commands (default prefix `r!`). Slash commands are deprecated for the music bot.
 
-### `/play`
+### `r!play`
 * **Description:** Stream high-fidelity audio from YouTube or Spotify.
 * **Parameters:**
-  * `query` (Required, STRING): Search keywords or video/playlist URL.
-* **Usage:** `/play query:lofi beats`
+  * `<query>` (Required, STRING): Search keywords or video/playlist URL.
+* **Usage:** `r!play lofi beats`
 
-### `/pause`
+### `r!pause`
 * **Description:** Pause the active playback stream.
-* **Usage:** `/pause`
+* **Usage:** `r!pause`
 
-### `/resume`
+### `r!resume`
 * **Description:** Resume paused audio playback.
-* **Usage:** `/resume`
+* **Usage:** `r!resume`
 
-### `/stop`
+### `r!stop`
 * **Description:** Stop the playback stream and clear the music queue.
-* **Usage:** `/stop`
+* **Usage:** `r!stop`
 
-### `/skip`
+### `r!skip`
 * **Description:** Skip the currently playing track.
-* **Usage:** `/skip`
+* **Usage:** `r!skip`
 
-### `/queue`
+### `r!back`
+* **Description:** Play the previously played track.
+* **Usage:** `r!back`
+
+### `r!queue`
 * **Description:** View upcoming tracks in the music queue.
-* **Usage:** `/queue`
+* **Usage:** `r!queue`
 
-### `/shuffle`
+### `r!shuffle`
 * **Description:** Shuffle the tracks in the queue.
-* **Usage:** `/shuffle`
+* **Usage:** `r!shuffle`
 
-### `/loop`
+### `r!loop`
 * **Description:** Set loop mode.
 * **Parameters:**
-  * `mode` (Required, STRING): Options are `track`, `queue`, `off`.
-* **Usage:** `/loop mode:queue`
+  * `<mode>` (Required, STRING): Options are `track`, `queue`, `off`.
+* **Usage:** `r!loop queue`
 
-### `/volume`
+### `r!autoplay`
+* **Description:** Toggle autoplay mode.
+* **Usage:** `r!autoplay`
+
+### `r!volume`
 * **Description:** Adjust volume of the bot stream.
 * **Parameters:**
-  * `percent` (Required, INTEGER): Range `0` to `200`.
-* **Usage:** `/volume percent:80`
+  * `<percent>` (Required, INTEGER): Range `0` to `200`.
+* **Usage:** `r!volume 80`
 
-### `/clear`
+### `r!clear`
 * **Description:** Clear all tracks in the queue except the current one.
-* **Usage:** `/clear`
+* **Usage:** `r!clear`
 
-### `/remove`
-* **Description:** Remove a track from a specific position in the queue.
-* **Parameters:**
-  * `position` (Required, INTEGER): Position number in queue.
-* **Usage:** `/remove position:3`
+### `r!help`
+* **Description:** Display the list of all available music bot commands.
+* **Usage:** `r!help`

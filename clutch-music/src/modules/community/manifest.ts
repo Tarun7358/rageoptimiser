@@ -70,12 +70,12 @@ export const CommunityManifest: ModuleManifest = {
         const action = interaction.options.getString('action');
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
-        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', ephemeral: true });
+        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         const modules = context.getModulesState();
         const commMod = modules.find((m: any) => m.id === 'community');
         if (action === 'status') {
           const ch = commMod?.config?.welcomeChannelId;
-          await interaction.reply({ content: `👥 **Community Welcomer**\n- **Status**: \`${commMod?.status || 'unknown'}\`\n- **Welcome Channel**: ${ch ? `<#${ch}>` : 'Not configured'}`, ephemeral: true });
+          await interaction.reply({ content: `👥 **Community Welcomer**\n- **Status**: \`${commMod?.status || 'unknown'}\`\n- **Welcome Channel**: ${ch ? `<#${ch}>` : 'Not configured'}`, flags: 64 });
         } else if (action === 'test' || action === 'leave-test') {
           const isWelcome = action === 'test';
           const defaultEmbed = isWelcome 
@@ -85,7 +85,7 @@ export const CommunityManifest: ModuleManifest = {
           const embedConfig = (isWelcome ? commMod?.config?.welcomeEmbed : commMod?.config?.leaveEmbed) || defaultEmbed;
           const channelId = isWelcome ? commMod?.config?.welcomeChannelId : (embedConfig.channelId || commMod?.config?.welcomeChannelId);
           
-          if (!channelId) return interaction.reply({ content: `❌ No channel configured for ${action}.`, ephemeral: true });
+          if (!channelId) return interaction.reply({ content: `❌ No channel configured for ${action}.`, flags: 64 });
           
           const { EmbedBuilder } = await import('discord.js');
           const channel = interaction.guild?.channels.cache.get(channelId);
@@ -111,9 +111,9 @@ export const CommunityManifest: ModuleManifest = {
             }
 
             await channel.send({ content: isWelcome ? `Hey ${interaction.user}, welcome! (TEST)` : `Goodbye (TEST)`, embeds: [embed] });
-            await interaction.reply({ content: `✅ Test ${action} sent to ${channel}.`, ephemeral: true });
+            await interaction.reply({ content: `✅ Test ${action} sent to ${channel}.`, flags: 64 });
           } else {
-            await interaction.reply({ content: '❌ Target channel not found or not a text channel.', ephemeral: true });
+            await interaction.reply({ content: '❌ Target channel not found or not a text channel.', flags: 64 });
           }
         }
       }

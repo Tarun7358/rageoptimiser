@@ -37,7 +37,7 @@ export const ReactionRolesManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
-        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', ephemeral: true });
+        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         
         const channel = interaction.options.getChannel('channel');
         const modules = context.getModulesState();
@@ -45,7 +45,7 @@ export const ReactionRolesManifest: ModuleManifest = {
         const roleMap = rrMod?.config?.roleMap || {};
         
         if (Object.keys(roleMap).length === 0) {
-          return interaction.reply({ content: '❌ No reaction roles mapped in dashboard.', ephemeral: true });
+          return interaction.reply({ content: '❌ No reaction roles mapped in dashboard.', flags: 64 });
         }
 
         const lines = ['**Self-Assign Roles**\nReact below to assign yourself roles:'];
@@ -58,10 +58,10 @@ export const ReactionRolesManifest: ModuleManifest = {
           for (const emoji of Object.keys(roleMap)) {
             await msg.react(emoji).catch(() => {});
           }
-          await interaction.reply({ content: `✅ Reaction role panel spawned in ${channel}.`, ephemeral: true });
+          await interaction.reply({ content: `✅ Reaction role panel spawned in ${channel}.`, flags: 64 });
           context.logSyncEvent(`Reaction Roles: Panel spawned in #${channel.name}.`, 'success');
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to send panel. Check bot permissions.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to send panel. Check bot permissions.', flags: 64 });
         }
       }
     },

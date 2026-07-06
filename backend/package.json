@@ -23,6 +23,7 @@
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "libsodium-wrappers": "^0.8.4",
+    "opusscript": "^0.1.1",
     "otplib": "^13.4.1",
     "play-dl": "^1.9.7",
     "qrcode": "^1.5.4",

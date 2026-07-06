@@ -327,44 +327,133 @@ export function Community({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h1 className="page-title">Community & Engagement Modules</h1>
-          <p className="page-subtitle">Configure welcome banners, leveling mechanics, suggestions, and reaction role grids.</p>
+      {/* Premium Page Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(124, 92, 252, 0.08) 0%, rgba(79, 140, 255, 0.03) 100%)',
+        padding: '24px 32px',
+        borderRadius: '16px',
+        border: '1px solid rgba(124, 92, 252, 0.15)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        backdropFilter: 'blur(8px)',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '20px'
+      }}>
+        {/* Glow Background */}
+        <div style={{
+          position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px',
+          background: 'radial-gradient(circle, rgba(124, 92, 252, 0.25) 0%, transparent 70%)',
+          filter: 'blur(20px)', pointerEvents: 'none'
+        }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #7C5CFC 0%, #4F8CFF 100%)',
+            padding: '12px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(124, 92, 252, 0.4)',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Users size={28} />
+          </div>
+          <div>
+            <h1 className="page-title" style={{
+              fontSize: '28px',
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #FFF 30%, #A78BFA 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              margin: 0,
+              letterSpacing: '-0.5px'
+            }}>Community Engagement Hub</h1>
+            <p className="page-subtitle" style={{
+              fontSize: '14px',
+              color: '#94A3B8',
+              margin: '4px 0 0 0',
+              fontWeight: 500
+            }}>
+              Configure interactive welcomer modules, custom role assignments, and gamified chat leveling.
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+
+        <div style={{ display: 'flex', gap: '10px', position: 'relative', zIndex: 2 }}>
           <button 
             className={`btn ${commModule?.status === 'enabled' ? 'btn-danger' : 'btn-primary'}`}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              background: commModule?.status === 'enabled' ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #7C5CFC 0%, #5B21B6 100%)',
+              border: 'none',
+              color: '#FFF',
+              boxShadow: commModule?.status === 'enabled' ? '0 4px 14px rgba(239, 68, 68, 0.25)' : '0 4px 14px rgba(124, 92, 252, 0.3)'
+            }}
             onClick={handleToggleModuleEnable}
           >
             {commModule?.status === 'enabled' ? 'Disable Welcomer' : 'Enable Welcomer'}
           </button>
+          
           {activeTab === 'welcome_builder' && (
             <button 
               className="btn btn-primary"
-              style={{ background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{
+                padding: '10px 18px',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)',
+                border: 'none',
+                color: '#FFF',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
               onClick={handleSaveWelcomeConfig}
               disabled={saving}
             >
               <Save size={16} />
-              {saving ? 'Saving...' : 'Save Setter'}
+              {saving ? 'Saving...' : 'Save Configuration'}
             </button>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Navigation Tabs */}
       <div className="section-panel" style={{ background: 'transparent', border: 'none', padding: 0 }}>
-        <div className="tabs-nav" style={{ borderBottom: '1px solid var(--border-color)', marginBottom: '16px' }}>
+        <div className="tabs-nav" style={{
+          display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px', marginBottom: '24px'
+        }}>
           {[
-            { id: 'welcome_builder', label: '👋 Welcome Page Setter' },
-            { id: 'features', label: '🎭 Reaction & Leveling Features' }
+            { id: 'welcome_builder', label: '👋 Welcome Portal Designer' },
+            { id: 'features', label: '🎭 Gamification & Interaction Features' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              style={{
+                background: activeTab === tab.id ? 'linear-gradient(135deg, rgba(124, 92, 252, 0.15) 0%, rgba(79, 140, 255, 0.05) 100%)' : 'transparent',
+                border: activeTab === tab.id ? '1px solid rgba(124, 92, 252, 0.3)' : '1px solid transparent',
+                color: activeTab === tab.id ? '#FFF' : '#94A3B8',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: activeTab === tab.id ? '0 4px 12px rgba(124, 92, 252, 0.1)' : 'none'
+              }}
             >
               {tab.label}
             </button>
@@ -377,14 +466,35 @@ export function Community({
           {activeTab === 'welcome_builder' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Template selector */}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>QUICK TEMPLATES:</span>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(167, 139, 250, 0.8)', letterSpacing: '0.05em' }}>PRESET TEMPLATES:</span>
                 {TEMPLATES.map((tpl, i) => (
                   <button
                     key={i}
                     onClick={() => applyTemplate(tpl)}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontSize: '11px', color: tpl.color, border: `1px solid ${tpl.color}22` }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${tpl.color}33`,
+                      color: tpl.color,
+                      transition: 'all 0.2s',
+                      boxShadow: `0 2px 8px ${tpl.color}11`
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = `${tpl.color}15`; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
                   >
                     {tpl.name}
                   </button>
@@ -397,20 +507,33 @@ export function Community({
                 {/* Editor Left */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {/* Editor Sub Tabs */}
-                  <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <div style={{
+                    display: 'flex',
+                    gap: '6px',
+                    background: 'rgba(15, 23, 42, 0.3)',
+                    padding: '5px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)'
+                  }}>
                     {[
-                      { id: 'welcome', label: 'Welcome Page Configuration' },
-                      { id: 'leave', label: 'Leave Message Setter' },
-                      { id: 'embed', label: 'Embed Builder Options' }
+                      { id: 'welcome', label: '👋 Greetings Config' },
+                      { id: 'leave', label: '🚪 Farewells Config' },
+                      { id: 'embed', label: '🎨 Embed Customizer' }
                     ].map(sub => (
                       <button
                         key={sub.id}
                         onClick={() => setEditorSubTab(sub.id as any)}
                         style={{
-                          flex: 1, padding: '8px 12px', borderRadius: '7px', border: 'none', cursor: 'pointer',
-                          fontSize: '12px', fontWeight: 600, transition: 'all 0.15s',
-                          background: editorSubTab === sub.id ? 'rgba(124,92,252,0.15)' : 'transparent',
-                          color: editorSubTab === sub.id ? '#A78BFA' : 'var(--text-muted)'
+                          flex: 1,
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          transition: 'all 0.2s',
+                          background: editorSubTab === sub.id ? 'linear-gradient(135deg, rgba(124,92,252,0.18) 0%, rgba(79,140,255,0.08) 100%)' : 'transparent',
+                          border: editorSubTab === sub.id ? '1px solid rgba(124,92,252,0.25)' : '1px solid transparent',
+                          color: editorSubTab === sub.id ? '#FFF' : 'rgba(255, 255, 255, 0.6)'
                         }}
                       >
                         {sub.label}
@@ -420,35 +543,40 @@ export function Community({
 
                   {/* SubTab 1: Welcome Settings */}
                   {editorSubTab === 'welcome' && (
-                    <div className="section-panel">
-                      <div className="panel-header">
-                        <span className="panel-title">Welcome Page Settings</span>
-                      </div>
-                      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.25)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#FFF', marginTop: 0, marginBottom: '16px' }}>Welcome Message Settings</h2>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div className="form-group">
-                          <label className="form-label">Welcome Channel Destination</label>
+                          <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>Welcome Log Destination Channel</label>
                           <select 
                             className="form-select" 
                             value={welcomeChannelId} 
                             onChange={e => setWelcomeChannelId(e.target.value)}
+                            style={{ width: '100%', height: '42px' }}
                           >
-                            <option value="">-- Select Channel --</option>
+                            <option value="">-- Choose Target Channel --</option>
                             {registry.channels.filter(c => c.type === 'text').map(c => (
                               <option key={c.id} value={c.id}>#{c.name}</option>
                             ))}
                           </select>
-                          <span className="form-help">Where welcome embeds will be dispatched when a member joins.</span>
+                          <span className="form-help">Where greeting card embeds will be dispatched when a member joins.</span>
                         </div>
 
                         <div className="form-group">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <label className="form-label" style={{ margin: 0 }}>Message Plaintext (Above Embed)</label>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label className="form-label" style={{ margin: 0, fontWeight: 600, color: '#E2E8F0' }}>Plaintext Message Block (Above Embed)</label>
                             <button 
                               onClick={() => setVarOpen(!varOpen)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '10px', height: '24px', padding: '0 8px' }}
+                              style={{ fontSize: '11px', color: '#A78BFA', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}
                             >
-                              {'{}'} Variables Helper
+                              {'{}'} Variable References
                             </button>
                           </div>
                           <textarea
@@ -457,6 +585,18 @@ export function Community({
                             value={welcomeEmbed.content}
                             onChange={e => setWelcomeEmbed({ ...welcomeEmbed, content: e.target.value })}
                             placeholder="Welcome {user} to {server}!"
+                            style={{
+                              width: '100%',
+                              background: 'rgba(15, 23, 42, 0.4)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '8px',
+                              color: '#F1F5F9',
+                              padding: '12px',
+                              fontSize: '13px',
+                              resize: 'vertical',
+                              lineHeight: '1.6',
+                              boxSizing: 'border-box'
+                            }}
                           />
                         </div>
 
@@ -464,13 +604,13 @@ export function Community({
                         <AnimatePresence>
                           {varOpen && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden' }}>
-                              <div style={{ background: 'rgba(124,92,252,0.06)', border: '1px solid rgba(124,92,252,0.2)', borderRadius: '8px', padding: '12px', marginBottom: '10px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#7C5CFC', marginBottom: '8px', textTransform: 'uppercase' }}>Text Replacements</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              <div style={{ background: 'rgba(124, 92, 252, 0.05)', border: '1px solid rgba(124, 92, 252, 0.15)', borderRadius: '12px', padding: '16px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#A78BFA', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Interpolation Tokens</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                   {VARIABLES.map(v => (
-                                    <div key={v.var} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                      <code style={{ background: 'rgba(124,92,252,0.12)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#A78BFA' }}>{v.var}</code>
-                                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{v.desc}</span>
+                                    <div key={v.var} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                      <code style={{ background: 'rgba(124, 92, 252, 0.12)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', color: '#C084FC', width: 'fit-content', fontFamily: 'monospace' }}>{v.var}</code>
+                                      <span style={{ fontSize: '10px', color: '#94A3B8' }}>{v.desc}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -484,34 +624,52 @@ export function Community({
 
                   {/* SubTab 2: Leave Message Settings */}
                   {editorSubTab === 'leave' && (
-                    <div className="section-panel">
-                      <div className="panel-header">
-                        <span className="panel-title">Leave Message Settings</span>
-                      </div>
-                      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.25)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#FFF', marginTop: 0, marginBottom: '16px' }}>Farewell Message Settings</h2>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div className="form-group">
-                          <label className="form-label">Leave Channel Destination</label>
+                          <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>Departure Channel Destination</label>
                           <select 
                             className="form-select" 
                             value={leaveEmbed.channelId} 
                             onChange={e => setLeaveEmbed({ ...leaveEmbed, channelId: e.target.value })}
+                            style={{ width: '100%', height: '42px' }}
                           >
                             <option value="">-- Same as Welcome / Disabled --</option>
                             {registry.channels.filter(c => c.type === 'text').map(c => (
                               <option key={c.id} value={c.id}>#{c.name}</option>
                             ))}
                           </select>
-                          <span className="form-help">Where goodbye messages are broadcast. Leave blank to disable leave messages.</span>
+                          <span className="form-help">Where farewell events are announced. Leave blank to inherit Welcome settings.</span>
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label">Goodbye Plaintext Message</label>
+                          <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>Goodbye Plaintext Message</label>
                           <textarea
                             className="form-input-text"
                             rows={3}
                             value={leaveEmbed.content}
                             onChange={e => setLeaveEmbed({ ...leaveEmbed, content: e.target.value })}
                             placeholder="**{userTag}** has left the server."
+                            style={{
+                              width: '100%',
+                              background: 'rgba(15, 23, 42, 0.4)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              borderRadius: '8px',
+                              color: '#F1F5F9',
+                              padding: '12px',
+                              fontSize: '13px',
+                              resize: 'vertical',
+                              lineHeight: '1.6',
+                              boxSizing: 'border-box'
+                            }}
                           />
                         </div>
                       </div>
@@ -520,93 +678,40 @@ export function Community({
 
                   {/* SubTab 3: Embed Customizer */}
                   {editorSubTab === 'embed' && (
-                    <div className="section-panel">
-                      <div className="panel-header">
-                        <span className="panel-title">Interactive Embed Customizer</span>
-                      </div>
-                      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.25)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#FFF', marginTop: 0, marginBottom: '16px' }}>Interactive Embed Customizer</h2>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                           <div className="form-group">
-                            <label className="form-label">Border Accent Color</label>
+                            <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>Embed Theme Color</label>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                               <input 
                                 type="color" 
                                 value={welcomeEmbed.color} 
                                 onChange={e => setWelcomeEmbed({ ...welcomeEmbed, color: e.target.value })} 
-                                style={{ width: '40px', height: '36px', borderRadius: '6px', border: 'none', padding: 2, cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} 
+                                style={{ width: '44px', height: '40px', borderRadius: '8px', border: 'none', padding: 2, cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} 
                               />
                               <input 
                                 type="text" 
                                 className="form-input-text" 
                                 value={welcomeEmbed.color} 
                                 onChange={e => setWelcomeEmbed({ ...welcomeEmbed, color: e.target.value })} 
-                                style={{ flex: 1 }} 
+                                style={{ flex: 1, height: '40px', background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.08)' }} 
                               />
                             </div>
                           </div>
 
                           <div className="form-group-row" style={{ alignSelf: 'center', marginTop: '16px' }}>
                             <div>
-                              <div className="form-label">Show Avatar Thumbnail</div>
-                            </div>
-                            <label className="switch">
-                              <input 
-                                type="checkbox" 
-                                checked={welcomeEmbed.showAvatar} 
-                                onChange={e => setWelcomeEmbed({ ...welcomeEmbed, showAvatar: e.target.checked })} 
-                              />
-                              <span className="slider"></span>
-                            </label>
-                          </div>
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Embed Header Title</label>
-                          <input 
-                            type="text" 
-                            className="form-input-text" 
-                            value={welcomeEmbed.title} 
-                            onChange={e => setWelcomeEmbed({ ...welcomeEmbed, title: e.target.value })} 
-                            placeholder="e.g. Welcome to {server}!" 
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Embed Description Block</label>
-                          <textarea 
-                            className="form-input-text" 
-                            rows={4} 
-                            value={welcomeEmbed.description} 
-                            onChange={e => setWelcomeEmbed({ ...welcomeEmbed, description: e.target.value })} 
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Banner Image URL (Bottom Image)</label>
-                          <input 
-                            type="text" 
-                            className="form-input-text" 
-                            value={welcomeEmbed.imageUrl} 
-                            onChange={e => setWelcomeEmbed({ ...welcomeEmbed, imageUrl: e.target.value })} 
-                            placeholder="https://example.com/banner.png" 
-                          />
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                          <div className="form-group">
-                            <label className="form-label">Footer Title Text</label>
-                            <input 
-                              type="text" 
-                              className="form-input-text" 
-                              value={welcomeEmbed.footer} 
-                              onChange={e => setWelcomeEmbed({ ...welcomeEmbed, footer: e.target.value })} 
-                              placeholder="User ID: {userId}" 
-                            />
-                          </div>
-
-                          <div className="form-group-row" style={{ alignSelf: 'center', marginTop: '16px' }}>
-                            <div>
-                              <div className="form-label">Enable Timestamp</div>
+                              <div className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>Embed Timestamp</div>
+                              <span style={{ fontSize: '11px', color: '#94A3B8' }}>Render date/time at footer</span>
                             </div>
                             <label className="switch">
                               <input 
@@ -619,17 +724,63 @@ export function Community({
                           </div>
                         </div>
 
+                        {[
+                          { key: 'title', label: 'Header Title' },
+                          { key: 'description', label: 'Body Description Block', multiline: true },
+                          { key: 'author', label: 'Author Header Name' },
+                          { key: 'imageUrl', label: 'Embedded Banner Image URL' },
+                          { key: 'footer', label: 'Footer Tagline Text' }
+                        ].map(field => (
+                          <div key={field.key} className="form-group">
+                            <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>{field.label}</label>
+                            {field.multiline ? (
+                              <textarea
+                                className="form-input-text"
+                                rows={3}
+                                value={(welcomeEmbed as any)[field.key]}
+                                onChange={e => setWelcomeEmbed({ ...welcomeEmbed, [field.key]: e.target.value })}
+                                style={{
+                                  width: '100%',
+                                  background: 'rgba(15, 23, 42, 0.4)',
+                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  borderRadius: '8px',
+                                  color: '#F1F5F9',
+                                  padding: '10px 12px',
+                                  fontSize: '13px',
+                                  resize: 'vertical',
+                                  lineHeight: '1.5',
+                                  boxSizing: 'border-box'
+                                }}
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                className="form-input-text"
+                                value={(welcomeEmbed as any)[field.key]}
+                                onChange={e => setWelcomeEmbed({ ...welcomeEmbed, [field.key]: e.target.value })}
+                                placeholder="Supports {variables}"
+                                style={{
+                                  height: '40px',
+                                  background: 'rgba(15, 23, 42, 0.4)',
+                                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                                  borderRadius: '8px'
+                                }}
+                              />
+                            )}
+                          </div>
+                        ))}
+
                         {/* Embed Fields (Advanced welcome builder items) */}
-                        <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                        <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '16px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Embed Sub-fields</span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#E2E8F0' }}>Structured Grid Fields</span>
                             <button
                               onClick={() => {
                                 const fields = welcomeEmbed.fields || [];
                                 setWelcomeEmbed({ ...welcomeEmbed, fields: [...fields, { name: '', value: '', inline: true }] });
                               }}
                               className="btn btn-secondary btn-sm"
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px', height: '28px' }}
                             >
                               <Plus size={12} /> Add Field
                             </button>
@@ -637,7 +788,7 @@ export function Community({
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {(welcomeEmbed.fields || []).map((f, i) => (
-                              <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+                              <div key={i} style={{ background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 12, padding: 16 }}>
                                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                                   <input 
                                     className="form-input-text" 
@@ -648,14 +799,14 @@ export function Community({
                                       setWelcomeEmbed({ ...welcomeEmbed, fields: newFields });
                                     }} 
                                     placeholder="Title (e.g. 📋 Rules)" 
-                                    style={{ flex: 1 }} 
+                                    style={{ flex: 1, background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.06)' }} 
                                   />
                                   <button 
                                     onClick={() => {
                                       const newFields = welcomeEmbed.fields.filter((_, idx) => idx !== i);
                                       setWelcomeEmbed({ ...welcomeEmbed, fields: newFields });
                                     }} 
-                                    style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '0 4px' }}
+                                    style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#EF4444', borderRadius: '6px', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                   >
                                     <Trash2 size={14} />
                                   </button>
@@ -669,7 +820,7 @@ export function Community({
                                     setWelcomeEmbed({ ...welcomeEmbed, fields: newFields });
                                   }} 
                                   placeholder="Value (e.g. Read #rules-and-info)" 
-                                  style={{ marginBottom: '8px' }} 
+                                  style={{ marginBottom: '8px', background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.06)' }} 
                                 />
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
                                   <input 
@@ -698,18 +849,48 @@ export function Community({
                 <div style={{ position: 'sticky', top: '100px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Eye size={14} color="#7C5CFC" />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#7C5CFC', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live Discord Mockup</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#7C5CFC', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Simulated Discord Viewport</span>
                   </div>
 
-                  <EmbedPreview 
-                    embed={editorSubTab === 'leave' ? { ...leaveEmbed, content: leaveEmbed.content } as any : welcomeEmbed} 
-                    message={editorSubTab === 'leave' ? leaveEmbed.content : welcomeEmbed.content} 
-                  />
+                  <div style={{ background: '#1e1f22', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
+                    {/* Channel header */}
+                    <div style={{ background: '#2b2d31', padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Hash size={18} color="#949ba4" />
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#f2f3f5' }}>
+                        {registry.channels.find(c => c.id === welcomeChannelId)?.name || 'welcome-log'}
+                      </span>
+                    </div>
+                    {/* Messages */}
+                    <div style={{ padding: '20px', minHeight: '220px' }}>
+                      <div style={{ display: 'flex', gap: 14 }}>
+                        {/* Avatar */}
+                        <div style={{
+                          width: '40px', height: '40px', borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #7C5CFC 0%, #4F8CFF 100%)',
+                          flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700, fontSize: '12px', color: '#fff', boxShadow: '0 4px 12px rgba(124, 92, 252, 0.3)'
+                        }}>
+                          CN
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: '15px', fontWeight: 600, color: '#fff' }}>Clutch Nation System</span>
+                            <span style={{ background: '#5865F2', fontSize: '9px', fontWeight: 700, color: '#fff', padding: '2px 4px', borderRadius: '3px', textTransform: 'uppercase' }}>BOT</span>
+                            <span style={{ fontSize: '12px', color: '#72767d' }}>Today at {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          <EmbedPreview 
+                            embed={editorSubTab === 'leave' ? { ...leaveEmbed, content: leaveEmbed.content } as any : welcomeEmbed} 
+                            message={editorSubTab === 'leave' ? leaveEmbed.content : welcomeEmbed.content} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                  <div style={{ display: 'flex', gap: '10px', background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
-                    <Info size={16} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
-                      The mockup reflects changes instantly. Click the <strong>Save Setter</strong> button at the top to commit configurations to the Discord bot.
+                  <div style={{ display: 'flex', gap: '10px', background: 'rgba(124, 92, 252, 0.05)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(124, 92, 252, 0.15)' }}>
+                    <Info size={16} color="#A78BFA" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                      This sandbox emulates the rendering logic utilized inside client screens. Make sure to target the appropriate channel and save settings to propagate live updates.
                     </p>
                   </div>
                 </div>
@@ -722,29 +903,53 @@ export function Community({
           {/* TAB 2: FEATURES */}
           {activeTab === 'features' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              <div className="section-panel" style={{ border: 'none', padding: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="panel-title" style={{ fontSize: '14px', fontWeight: 600 }}>Active Reaction Roles</span>
+              
+              {/* Reaction Roles Card */}
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#FFF', margin: 0 }}>Self-Assign Reaction Roles</h3>
                   <button 
                     className={`btn btn-sm ${rrModule?.status === 'enabled' ? 'btn-danger' : 'btn-primary'}`}
+                    style={{
+                      background: rrModule?.status === 'enabled' ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #7C5CFC 0%, #5B21B6 100%)',
+                      border: 'none',
+                      color: '#FFF',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
                     onClick={handleRRToggle}
                   >
                     {rrModule?.status === 'enabled' ? 'Disable' : 'Enable'}
                   </button>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Map emoji reactions to Discord roles. Spawn panels using <code>/reactionrole</code>.</p>
+                <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Map customizable emoji reactions to automatic role provisioning. Users can self-assign roles via interactive button lists.
+                </p>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
                   {['🎮', '🔔', '🎨'].map(emoji => (
-                    <div key={emoji} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '13px' }}>
-                      <span>{emoji} Emoji</span>
+                    <div key={emoji} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(15, 23, 42, 0.3)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '8px', fontSize: '13px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, color: '#E2E8F0' }}>
+                        <span style={{ fontSize: '18px' }}>{emoji}</span> Role Reaction
+                      </span>
                       <select 
                         className="form-select" 
-                        style={{ width: '150px' }}
+                        style={{ width: '160px', height: '36px', background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}
                         value={rrModule?.config?.roleMap?.[emoji] || ''}
                         onChange={(e) => handleRRUpdate(emoji, e.target.value)}
                       >
-                        <option value="">-- No Role --</option>
+                        <option value="">-- Bind Role --</option>
                         {registry.roles.filter((r: any) => r.name !== '@everyone').map((r: any) => (
                           <option key={r.id} value={r.id}>{r.name}</option>
                         ))}
@@ -754,20 +959,41 @@ export function Community({
                 </div>
               </div>
 
-              <div className="section-panel" style={{ border: 'none', padding: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span className="panel-title" style={{ fontSize: '14px', fontWeight: 600 }}>Chat XP Leveling</span>
+              {/* Chat XP Leveling Card */}
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '16px',
+                padding: '24px',
+                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#FFF', margin: 0 }}>Gamified XP Leveling</h3>
                   <button 
                     className={`btn btn-sm ${lvlModule?.status === 'enabled' ? 'btn-danger' : 'btn-primary'}`}
+                    style={{
+                      background: lvlModule?.status === 'enabled' ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)' : 'linear-gradient(135deg, #7C5CFC 0%, #5B21B6 100%)',
+                      border: 'none',
+                      color: '#FFF',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
                     onClick={handleLvlToggle}
                   >
                     {lvlModule?.status === 'enabled' ? 'Disable' : 'Enable'}
                   </button>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Tracks user XP automatically. Users can check <code>/rank</code> or view the <code>/leaderboard</code>.</p>
+                <p style={{ fontSize: '13px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+                  Reward active chatters with leveling metrics. Users can query their tier status using <code>/rank</code> or review rank distribution on the server leaderboard.
+                </p>
                 
-                <div className="form-group">
-                  <label className="form-label">XP Rate Multiplier</label>
+                <div className="form-group" style={{ marginTop: '12px' }}>
+                  <label className="form-label" style={{ fontWeight: 600, color: '#E2E8F0' }}>XP Progression Rate</label>
                   <select 
                     className="form-select" 
                     disabled={lvlModule?.status !== 'enabled'}
@@ -776,13 +1002,16 @@ export function Community({
                       onUpdateConfig('leveling', { multiplier: e.target.value });
                       onSaveConfig('Leveling multiplier updated.');
                     }}
+                    style={{ width: '100%', height: '42px', background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(255,255,255,0.06)' }}
                   >
-                    <option value="1.0">1.0x (Standard Rate)</option>
-                    <option value="1.5">1.5x (Double Weekend rate)</option>
-                    <option value="2.0">2.0x (Event Mode)</option>
+                    <option value="1.0">1.0x (Standard Progression Rate)</option>
+                    <option value="1.5">1.5x (Double Weekend Multiplier)</option>
+                    <option value="2.0">2.0x (Super Event Multiplier)</option>
                   </select>
+                  <span className="form-help">Adjust the baseline XP rate awarded to active chat participants.</span>
                 </div>
               </div>
+
             </div>
           )}
 

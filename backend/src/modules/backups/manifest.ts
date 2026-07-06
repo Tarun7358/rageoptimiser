@@ -70,7 +70,7 @@ export const BackupsManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const backupModule = modules.find((m: any) => m.id === 'backups');
         if (!backupModule || backupModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Backup Recovery module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Backup Recovery module is not enabled.', flags: 64 });
         }
 
         const guild = interaction.guild;
@@ -133,7 +133,7 @@ export const BackupsManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const backupModule = modules.find((m: any) => m.id === 'backups');
         if (!backupModule || backupModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Backup Recovery module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Backup Recovery module is not enabled.', flags: 64 });
         }
 
         const backupId = interaction.options.getString('backup-id');
@@ -141,7 +141,7 @@ export const BackupsManifest: ModuleManifest = {
         const snapshot = backups.find(b => b.id === backupId);
 
         if (!snapshot) {
-          return interaction.reply({ content: `❌ Backup with ID \`${backupId}\` was not found.`, ephemeral: true });
+          return interaction.reply({ content: `❌ Backup with ID \`${backupId}\` was not found.`, flags: 64 });
         }
 
         const guild = interaction.guild;

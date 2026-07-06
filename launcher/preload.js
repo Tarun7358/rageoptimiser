@@ -16,4 +16,7 @@ contextBridge.exposeInMainWorld('launcher', {
   // Health status updates
   onHealthStatus: (callback) => ipcRenderer.on('health:status', (_, data) => callback(data)),
   onProcessEvent: (callback) => ipcRenderer.on('process:event', (_, data) => callback(data)),
+
+  // Desktop Media Keys handshake
+  onMediaKey: (callback) => ipcRenderer.on('media-key', (_, key) => callback(key)),
 });

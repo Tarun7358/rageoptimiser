@@ -110,7 +110,6 @@ export class ModuleRegistry {
     const id = guildId || process.env.GUILD_ID || 'default_guild';
     const state = this.getGuildState(id);
     state.registry = reg;
-    this.saveGuildState(id, state);
   }
 
   public getSyncLogs(guildId?: string): LogEntry[] {
@@ -137,7 +136,6 @@ export class ModuleRegistry {
     const log: LogEntry = { time, msg: finalMsg, type: finalType };
     state.syncLogs.unshift(log);
     if (state.syncLogs.length > 100) state.syncLogs.pop();
-    this.saveGuildState(id, state);
     this.broadcast({ type: 'SYNC_LOG', log, guildId: id });
   }
 
@@ -155,7 +153,6 @@ export class ModuleRegistry {
     if (!state.whitelistAudit) state.whitelistAudit = [];
     state.whitelistAudit.unshift(audit);
     if (state.whitelistAudit.length > 200) state.whitelistAudit.pop();
-    this.saveGuildState(id, state);
   }
 
   public logWhitelistActivity(guildId: string | undefined, activity: any) {
@@ -164,7 +161,6 @@ export class ModuleRegistry {
     if (!state.whitelistActivity) state.whitelistActivity = [];
     state.whitelistActivity.unshift(activity);
     if (state.whitelistActivity.length > 200) state.whitelistActivity.pop();
-    this.saveGuildState(id, state);
   }
 
   public getGlobalSettings(guildId?: string) {
@@ -206,7 +202,6 @@ export class ModuleRegistry {
         }
       }
     });
-    this.saveGuildState(id, state);
   }
 
   public updateModuleConfig(guildId: string | undefined, id: string, config: Record<string, any>): ModuleState | null {
@@ -217,6 +212,7 @@ export class ModuleRegistry {
 
     mod.config = { ...mod.config, ...config };
     this.reevaluateAllModules(gId);
+    this.saveGuildState(gId, state);
     this.broadcast({ type: 'STATE_UPDATE', modules: state.modules, registry: state.registry, guildId: gId });
     return mod;
   }
@@ -289,7 +285,17 @@ export class ModuleRegistry {
     this.saveGuildStateLocally(guildId, state);
     const db = Database.getDb();
     if (db) {
-      db.collection('guild_configs').doc(guildId).set(state).catch(e => console.error(`Firestore save failed for guild ${guildId}:`, e));
+      // Save only persistent configurations and states to Firestore to prevent quota exhaustion
+      const persistentState = {
+        modules: state.modules.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          status: m.status,
+          config: m.config || {}
+        })),
+        globalSettings: state.globalSettings || {}
+      };
+      db.collection('guild_configs').doc(guildId).set(persistentState).catch(e => console.error(`Firestore save failed for guild ${guildId}:`, e));
     }
   }
 

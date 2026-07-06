@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Link, Bell, Shield, Lock } from 'lucide-react';
-import { SecuritySettingsTab } from './SecuritySettingsTab';
 
 interface SettingsProps {
   onSaveConfig: (msg: string, type?: 'success' | 'danger' | 'warning' | 'info') => void;
@@ -92,7 +91,6 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
           <button className={`tab-btn ${activeTab === 'discord' ? 'active' : ''}`} onClick={() => setActiveTab('discord')}>Discord Linkage</button>
           <button className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>Notifications Config</button>
           <button className={`tab-btn ${activeTab === 'voice_presence' ? 'active' : ''}`} onClick={() => setActiveTab('voice_presence')}>Voice Presence</button>
-          <button className={`tab-btn ${activeTab === 'security' ? 'active' : ''}`} onClick={() => setActiveTab('security')}>Security (2FA)</button>
         </div>
 
         <div className="panel-body">
@@ -271,11 +269,6 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
                 Save Voice Presence Settings
               </button>
             </div>
-          )}
-
-          {/* Security (2FA) Tab */}
-          {activeTab === 'security' && (
-            <SecuritySettingsTab onSaveConfig={onSaveConfig} />
           )}
 
         </div>

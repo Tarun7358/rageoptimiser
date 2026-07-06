@@ -26,7 +26,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     bg: 'rgba(250,204,21,0.08)',
     border: 'rgba(250,204,21,0.25)',
     icon: <Clock size={14} />,
-    canAccess: false
+    canAccess: true
   },
   'Under Review': {
     label: 'Under Review',
@@ -34,7 +34,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     bg: 'rgba(96,165,250,0.08)',
     border: 'rgba(96,165,250,0.25)',
     icon: <Shield size={14} />,
-    canAccess: false
+    canAccess: true
   },
   'Rejected': {
     label: 'Rejected',
@@ -452,16 +452,15 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
           transition={{ delay: 0.3 }}
           style={{
             marginTop: 32, padding: '16px 20px', borderRadius: 12,
-            background: 'rgba(124,92,252,0.06)',
-            border: '1px solid rgba(124,92,252,0.2)',
+            background: 'rgba(34,197,94,0.06)',
+            border: '1px solid rgba(34,197,94,0.2)',
             display: 'flex', alignItems: 'flex-start', gap: 12
           }}
         >
-          <AlertTriangle size={16} color="#7C5CFC" style={{ marginTop: 2, flexShrink: 0 }} />
+          <ShieldCheck size={16} color="#22C55E" style={{ marginTop: 2, flexShrink: 0 }} />
           <div style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.6 }}>
-            <strong style={{ color: '#7C5CFC' }}>How approval works:</strong> Once you invite the bot to your server, our team reviews it for quality and safety. 
-            After approval, you'll receive a <strong style={{ color: '#F3F4F6' }}>DM from the bot</strong> with your personalized dashboard link. 
-            Most reviews are completed within 24 hours.
+            <strong style={{ color: '#22C55E' }}>Open Discord Bot:</strong> Rage Optimiser is now a fully open public bot. 
+            Once invited, you can manage your server settings instantly. No manual approval required!
           </div>
         </motion.div>
       </div>

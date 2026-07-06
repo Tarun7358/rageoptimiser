@@ -60,7 +60,7 @@ export const SecurityManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const member = interaction.options.getMember('user');
         if (!member) {
-          return interaction.reply({ content: '❌ Member not found.', ephemeral: true });
+          return interaction.reply({ content: '❌ Member not found.', flags: 64 });
         }
 
         const modules = context.getModulesState ? context.getModulesState() : [];
@@ -69,7 +69,7 @@ export const SecurityManifest: ModuleManifest = {
         const quarantineRoleId = config.quarantineRoleId;
 
         if (!quarantineRoleId) {
-          return interaction.reply({ content: '❌ Quarantine role is not configured in the dashboard.', ephemeral: true });
+          return interaction.reply({ content: '❌ Quarantine role is not configured in the dashboard.', flags: 64 });
         }
 
         // Apply quarantine
@@ -111,7 +111,7 @@ export const SecurityManifest: ModuleManifest = {
           console.error(err);
           await interaction.reply({
             content: '❌ Failed to apply quarantine. Verify bot roles hierarchy.',
-            ephemeral: true
+            flags: 64
           });
         }
       }

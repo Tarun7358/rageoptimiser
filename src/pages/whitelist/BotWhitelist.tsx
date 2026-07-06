@@ -6,9 +6,10 @@ import { RoleSelect } from '../../components/ResourceSelectors';
 interface BotWhitelistProps {
   modules?: ModuleState[];
   registry: { roles: DiscordRole[]; channels: DiscordChannel[] };
+  onUpdateConfig?: (moduleId: string, newConfig: Record<string, any>, enabledOverride?: boolean) => void;
 }
 
-export function BotWhitelist({ modules, registry }: BotWhitelistProps) {
+export function BotWhitelist({ modules, registry, onUpdateConfig }: BotWhitelistProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingBot, setEditingBot] = useState<any>(null);
   const [newBotId, setNewBotId] = useState('');
@@ -16,6 +17,12 @@ export function BotWhitelist({ modules, registry }: BotWhitelistProps) {
   
   const mod = (modules || []).find(m => m.id === 'bot_whitelist');
   const bots = mod?.config?.bots || [];
+
+  const handleToggleModule = async () => {
+    if (!mod || !onUpdateConfig) return;
+    const nextEnabled = mod.status !== 'enabled';
+    await onUpdateConfig(mod.id, {}, nextEnabled);
+  };
 
   const handleEdit = async (updatedBot: any) => {
     try {
@@ -97,9 +104,18 @@ export function BotWhitelist({ modules, registry }: BotWhitelistProps) {
           </h2>
           <p style={{ color: 'var(--text-secondary)' }}>Manage trusted third-party bots and enforce strict single-role permissions.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={18} /> Add Bot
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            className={`btn ${mod?.status === 'enabled' ? 'btn-secondary' : 'btn-primary'}`} 
+            onClick={handleToggleModule}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {mod?.status === 'enabled' ? 'Disable Whitelist' : 'Enable Whitelist'}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} /> Add Bot
+          </button>
+        </div>
       </div>
 
       {showAddForm && (

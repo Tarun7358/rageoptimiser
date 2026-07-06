@@ -1,4 +1,8 @@
-// User Interface for Discord Users
+// ============================================================
+// RAGE OPTIMISER — Complete Data Models
+// ============================================================
+
+// ---- Discord User ----
 export interface IUser {
   discordId: string;
   tag: string;
@@ -11,9 +15,9 @@ export interface IUser {
   updatedAt?: Date;
 }
 
-// Enterprise Dashboard Admin User
+// ---- Dashboard Admin User ----
 export interface IAdminUser {
-  id: string; // Document ID
+  id: string;
   username: string;
   passwordHash: string;
   role: 'owner' | 'admin' | 'moderator' | 'viewer';
@@ -27,29 +31,38 @@ export interface IAdminUser {
   recoveryCodes?: string[];
 }
 
-// Guild Settings Interface
+// ---- Guild Settings ----
 export interface IGuild {
   guildId: string;
   name: string;
   prefix: string;
   logChannelId: string | null;
   welcomeChannelId: string | null;
+  timezone?: string;
+  language?: string;
+  premium?: boolean;
+  premiumExpiresAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-// Audit Logs Interface
+// ---- Audit Log ----
 export interface IAuditLog {
   guildId: string;
   action: string;
   actorId: string;
+  actorTag?: string;
   targetId?: string;
+  targetTag?: string;
   reason?: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
+  module?: string;
+  caseId?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
   createdAt?: Date;
 }
 
-// Guild Approval Interface (Owner System)
+// ---- Guild Approval ----
 export interface IGuildApproval {
   guildId: string;
   guildName: string;
@@ -62,7 +75,7 @@ export interface IGuildApproval {
   verificationLevel: number;
   premiumTier: number;
   premiumSubscriptionCount: number;
-  joinedAt: number; // Stored as timestamp
+  joinedAt: number;
   riskScore: number;
   riskLevel: 'Safe' | 'Medium' | 'High' | 'Critical';
   status: 'Pending' | 'Approved' | 'Rejected' | 'Suspended' | 'Blacklisted';
@@ -75,4 +88,187 @@ export interface IGuildApproval {
   blacklistedAt?: number;
   notes?: string;
   lastUpdated: number;
+}
+
+// ---- Ticket ----
+export interface ITicket {
+  id: string;
+  guildId: string;
+  channelId: string;
+  userId: string;
+  userTag: string;
+  claimedBy?: string;
+  claimedByTag?: string;
+  status: 'open' | 'claimed' | 'closed';
+  category?: string;
+  subject?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  transcript?: string[];
+  createdAt: Date;
+  closedAt?: Date;
+}
+
+// ---- Backup Schedule ----
+export interface IBackupSchedule {
+  id: string;
+  guildId: string;
+  intervalHours: number;
+  keepLast: number;
+  notifyChannelId?: string;
+  enabled: boolean;
+  lastRunAt?: Date;
+  nextRunAt?: Date;
+  createdAt: Date;
+}
+
+// ---- Giveaway ----
+export interface IGiveaway {
+  id: string;
+  guildId: string;
+  channelId: string;
+  messageId?: string;
+  hostId: string;
+  hostTag: string;
+  prize: string;
+  description?: string;
+  winnerCount: number;
+  endsAt: Date;
+  ended: boolean;
+  winnerIds?: string[];
+  entries?: string[];
+  requiredRoleId?: string;
+  requiredLevel?: number;
+  createdAt: Date;
+}
+
+// ---- Reminder ----
+export interface IReminder {
+  id: string;
+  userId: string;
+  userTag: string;
+  guildId?: string;
+  channelId?: string;
+  message: string;
+  remindAt: Date;
+  delivered: boolean;
+  repeat?: 'daily' | 'weekly' | 'monthly' | null;
+  createdAt: Date;
+}
+
+// ---- Announcement ----
+export interface IAnnouncement {
+  id: string;
+  guildId: string;
+  channelId: string;
+  title?: string;
+  content: string;
+  embed?: boolean;
+  embedColor?: string;
+  scheduledAt?: Date;
+  sentAt?: Date;
+  status: 'draft' | 'scheduled' | 'sent' | 'failed';
+  authorId: string;
+  authorTag: string;
+  pingRoleId?: string;
+  pingEveryone?: boolean;
+  createdAt: Date;
+}
+
+// ---- Blacklist Entry ----
+export type BlacklistType = 'user' | 'role' | 'channel' | 'bot' | 'domain' | 'invite' | 'word' | 'regex' | 'emoji' | 'sticker' | 'webhook';
+export interface IBlacklistEntry {
+  id: string;
+  guildId: string;
+  type: BlacklistType;
+  value: string;         // userId, roleId, channelId, domain string, word, regex, etc.
+  label?: string;        // human-readable label
+  reason?: string;
+  action: 'delete' | 'warn' | 'timeout' | 'kick' | 'ban';
+  addedBy: string;
+  addedByTag?: string;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+// ---- Join To Create Voice ----
+export interface IJoinToCreate {
+  id: string;
+  guildId: string;
+  triggerChannelId: string;      // The channel users join to create a new one
+  categoryId?: string;           // Category to create new channels in
+  defaultName: string;           // e.g. "{username}'s Channel"
+  defaultLimit?: number;         // Default user limit
+  defaultBitrate?: number;
+  privacy: 'public' | 'private' | 'locked';
+  allowOwnerRename: boolean;
+  allowOwnerLimit: boolean;
+  allowOwnerLock: boolean;
+  activeChannels: Array<{
+    channelId: string;
+    ownerId: string;
+    ownerTag: string;
+    name: string;
+    locked: boolean;
+    createdAt: Date;
+  }>;
+  createdAt: Date;
+}
+
+// ---- Schedule (timed actions) ----
+export interface ISchedule {
+  id: string;
+  guildId: string;
+  name: string;
+  action: 'message' | 'lock' | 'unlock' | 'role-add' | 'role-remove' | 'announcement';
+  channelId?: string;
+  roleId?: string;
+  content?: string;
+  cron?: string;               // cron expression
+  runAt?: Date;                // one-time run
+  repeat: boolean;
+  enabled: boolean;
+  lastRunAt?: Date;
+  runCount: number;
+  createdBy: string;
+  createdAt: Date;
+}
+
+// ---- Premium Entitlement ----
+export interface IPremiumEntitlement {
+  id: string;
+  guildId: string;
+  tier: 'basic' | 'pro' | 'enterprise';
+  activatedBy: string;
+  activatedAt: Date;
+  expiresAt?: Date;
+  features: string[];
+  trial: boolean;
+  trialDays?: number;
+}
+
+// ---- Infraction / Case ----
+export interface IInfraction {
+  caseId: string;
+  guildId: string;
+  userId: string;
+  userTag: string;
+  moderatorId: string;
+  moderatorTag: string;
+  type: 'warn' | 'mute' | 'timeout' | 'kick' | 'ban' | 'unban' | 'softban' | 'note';
+  reason: string;
+  duration?: number;   // ms
+  active: boolean;
+  createdAt: Date;
+  expiresAt?: Date;
+}
+
+// ---- Moderation Note ----
+export interface IModerationNote {
+  id: string;
+  guildId: string;
+  userId: string;
+  content: string;
+  createdBy: string;
+  createdByTag: string;
+  createdAt: Date;
 }

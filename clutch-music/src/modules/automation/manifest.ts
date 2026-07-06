@@ -37,7 +37,7 @@ export const AutomationManifest: ModuleManifest = {
         const action = interaction.options.getString('action');
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
-        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', ephemeral: true });
+        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         const modules = context.getModulesState();
         const autoMod = modules.find((m: any) => m.id === 'automation');
         if (action === 'status' || action === 'list') {
@@ -48,7 +48,7 @@ export const AutomationManifest: ModuleManifest = {
             `- **Auto-Role on Join**: ${roleId ? `<@&${roleId}>` : 'Not configured'}`,
             `- **Progress**: ${autoMod?.progress || 0}%`
           ];
-          await interaction.reply({ content: lines.join('\n'), ephemeral: true });
+          await interaction.reply({ content: lines.join('\n'), flags: 64 });
         }
       }
     },

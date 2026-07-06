@@ -76,7 +76,7 @@ export const VerificationManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const verModule = modules.find((m: any) => m.id === 'verification');
         if (!verModule || verModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Verification module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Verification module is not enabled.', flags: 64 });
         }
 
         try {
@@ -99,7 +99,7 @@ export const VerificationManifest: ModuleManifest = {
           context.logSyncEvent('Verification Service: Posted verification card to entry channel.', 'info');
         } catch (err) {
           console.error(err);
-          await interaction.reply({ content: '❌ Failed to post verification card.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to post verification card.', flags: 64 });
         }
       }
     },
@@ -109,7 +109,7 @@ export const VerificationManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const verModule = modules.find((m: any) => m.id === 'verification');
         if (!verModule || verModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Verification module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Verification module is not enabled.', flags: 64 });
         }
 
         const config = verModule.config;
@@ -123,7 +123,7 @@ export const VerificationManifest: ModuleManifest = {
         const showAlreadyVerifiedMessage = config.showAlreadyVerifiedMessage ?? true;
 
         if (!unverifiedRoleId || !verifiedRoleId) {
-          return interaction.reply({ content: '❌ Verification role settings are not configured properly.', ephemeral: true });
+          return interaction.reply({ content: '❌ Verification role settings are not configured properly.', flags: 64 });
         }
 
         try {
@@ -145,7 +145,7 @@ export const VerificationManifest: ModuleManifest = {
               if (showAlreadyVerifiedMessage) {
                 return interaction.reply({ 
                   content: '✅ **Verification Confirmed**\n\nYou have already completed verification.\nYour verification role was missing and has now been restored.', 
-                  ephemeral: true 
+                  flags: 64 
                 });
               } else {
                 return interaction.deferUpdate();
@@ -160,7 +160,7 @@ export const VerificationManifest: ModuleManifest = {
             if (showAlreadyVerifiedMessage) {
               return interaction.reply({ 
                 content: '✅ **You\'re Already Verified**\n\nYou have already completed the verification process and successfully claimed your verification role.\nNo further action is required.', 
-                ephemeral: true 
+                flags: 64 
               });
             } else {
               return interaction.deferUpdate();
@@ -176,11 +176,11 @@ export const VerificationManifest: ModuleManifest = {
           verifications[member.user.id] = new Date().toISOString();
           saveVerifications(verifications);
 
-          await interaction.reply({ content: '✅ **Verification Succeeded!** Welcome to the server.', ephemeral: true });
+          await interaction.reply({ content: '✅ **Verification Succeeded!** Welcome to the server.', flags: 64 });
           context.logSyncEvent(`Verification Service: Verified member "${member.user.tag}" successfully.`, 'success');
         } catch (err) {
           console.error(err);
-          await interaction.reply({ content: '❌ Failed to update your roles. Verify bot roles hierarchy.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to update your roles. Verify bot roles hierarchy.', flags: 64 });
         }
       }
     }

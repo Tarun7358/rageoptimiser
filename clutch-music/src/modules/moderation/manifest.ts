@@ -74,14 +74,14 @@ export const ModerationManifest: ModuleManifest = {
 
         await interaction.reply({
           content: `### 🛡️ RAGE OPTIMISER Module Health Matrix\n${lines}`,
-          ephemeral: true
+          flags: 64
         });
       }
     },
     {
       name: 'command_ban',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
@@ -89,33 +89,33 @@ export const ModerationManifest: ModuleManifest = {
           await interaction.reply({ content: `✅ **Banned** ${user.tag} for: ${reason}` });
           logModAction(interaction.guild, user, interaction.user, 'Ban', reason, context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to ban user. Check hierarchy.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to ban user. Check hierarchy.', flags: 64 });
         }
       }
     },
     {
       name: 'command_kick',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const member = interaction.options.getMember('user');
         const reason = interaction.options.getString('reason') || 'No reason provided';
-        if (!member) return interaction.reply({ content: '❌ User not in server.', ephemeral: true });
+        if (!member) return interaction.reply({ content: '❌ User not in server.', flags: 64 });
         try {
           await member.kick(reason);
           await interaction.reply({ content: `✅ **Kicked** ${member.user.tag} for: ${reason}` });
           logModAction(interaction.guild, member.user, interaction.user, 'Kick', reason, context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to kick user. Check hierarchy.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to kick user. Check hierarchy.', flags: 64 });
         }
       }
     },
     {
       name: 'command_timeout',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const member = interaction.options.getMember('user');
         const durationStr = interaction.options.getString('duration');
-        if (!member) return interaction.reply({ content: '❌ User not in server.', ephemeral: true });
+        if (!member) return interaction.reply({ content: '❌ User not in server.', flags: 64 });
         
         let ms = 60000;
         if (durationStr.endsWith('m')) ms = parseInt(durationStr) * 60000;
@@ -128,22 +128,22 @@ export const ModerationManifest: ModuleManifest = {
           await interaction.reply({ content: `✅ **Timed out** ${member.user.tag} for ${durationStr}.` });
           logModAction(interaction.guild, member.user, interaction.user, 'Timeout', durationStr, context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to timeout user.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to timeout user.', flags: 64 });
         }
       }
     },
     {
       name: 'command_untimeout',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const member = interaction.options.getMember('user');
-        if (!member) return interaction.reply({ content: '❌ User not in server.', ephemeral: true });
+        if (!member) return interaction.reply({ content: '❌ User not in server.', flags: 64 });
         try {
           await member.timeout(null, 'Timeout removed by Moderator');
           await interaction.reply({ content: `✅ **Removed timeout** for ${member.user.tag}.` });
           logModAction(interaction.guild, member.user, interaction.user, 'Untimeout', 'N/A', context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to remove timeout.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to remove timeout.', flags: 64 });
         }
       }
     },
@@ -151,37 +151,37 @@ export const ModerationManifest: ModuleManifest = {
       name: 'command_mute',
       handler: async (client: any, interaction: any, context: any) => {
         // Simple alias for timeout for modern discord servers
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const member = interaction.options.getMember('user');
-        if (!member) return interaction.reply({ content: '❌ User not in server.', ephemeral: true });
+        if (!member) return interaction.reply({ content: '❌ User not in server.', flags: 64 });
         try {
           await member.timeout(60 * 60 * 1000, 'Moderator Mute'); // 1 hr default
           await interaction.reply({ content: `✅ **Muted** ${member.user.tag} for 1 hour.` });
           logModAction(interaction.guild, member.user, interaction.user, 'Mute', '1h', context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to mute user.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to mute user.', flags: 64 });
         }
       }
     },
     {
       name: 'command_unmute',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const member = interaction.options.getMember('user');
-        if (!member) return interaction.reply({ content: '❌ User not in server.', ephemeral: true });
+        if (!member) return interaction.reply({ content: '❌ User not in server.', flags: 64 });
         try {
           await member.timeout(null, 'Unmuted by Moderator');
           await interaction.reply({ content: `✅ **Unmuted** ${member.user.tag}.` });
           logModAction(interaction.guild, member.user, interaction.user, 'Unmute', 'N/A', context);
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to unmute user.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to unmute user.', flags: 64 });
         }
       }
     },
     {
       name: 'command_warn',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason');
         
@@ -202,17 +202,17 @@ export const ModerationManifest: ModuleManifest = {
         const userWarns = warnsData[user.id] || [];
         
         if (userWarns.length === 0) {
-          return interaction.reply({ content: `${user.tag} has no warnings.`, ephemeral: true });
+          return interaction.reply({ content: `${user.tag} has no warnings.`, flags: 64 });
         }
         
         const lines = userWarns.map((w, i) => `**${i+1}.** ${w.reason} (by <@${w.by}>) - <t:${Math.floor(new Date(w.date).getTime()/1000)}:d>`);
-        await interaction.reply({ content: `⚠️ **Warnings for ${user.tag}**:\n${lines.join('\n')}`, ephemeral: true });
+        await interaction.reply({ content: `⚠️ **Warnings for ${user.tag}**:\n${lines.join('\n')}`, flags: 64 });
       }
     },
     {
       name: 'command_clearwarnings',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const user = interaction.options.getUser('user');
         const warnsData = loadWarnings();
         delete warnsData[user.id];
@@ -224,54 +224,54 @@ export const ModerationManifest: ModuleManifest = {
     {
       name: 'command_purge',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const amount = interaction.options.getInteger('amount');
-        if (amount < 1 || amount > 100) return interaction.reply({ content: '❌ Amount must be between 1 and 100.', ephemeral: true });
+        if (amount < 1 || amount > 100) return interaction.reply({ content: '❌ Amount must be between 1 and 100.', flags: 64 });
         try {
           await interaction.channel.bulkDelete(amount, true);
-          await interaction.reply({ content: `🗑️ Deleted ${amount} messages.`, ephemeral: true });
+          await interaction.reply({ content: `🗑️ Deleted ${amount} messages.`, flags: 64 });
           context.logSyncEvent(`Moderation: ${interaction.user.tag} purged ${amount} messages in #${interaction.channel.name}.`, 'info');
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to delete messages.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to delete messages.', flags: 64 });
         }
       }
     },
     {
       name: 'command_lock',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         try {
           await interaction.channel.permissionOverwrites.edit(interaction.guild.id, { SendMessages: false });
           await interaction.reply({ content: '🔒 Channel locked.' });
           context.logSyncEvent(`Moderation: ${interaction.user.tag} locked #${interaction.channel.name}.`, 'warn');
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to lock channel.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to lock channel.', flags: 64 });
         }
       }
     },
     {
       name: 'command_unlock',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         try {
           await interaction.channel.permissionOverwrites.edit(interaction.guild.id, { SendMessages: null });
           await interaction.reply({ content: '🔓 Channel unlocked.' });
           context.logSyncEvent(`Moderation: ${interaction.user.tag} unlocked #${interaction.channel.name}.`, 'success');
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to unlock channel.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to unlock channel.', flags: 64 });
         }
       }
     },
     {
       name: 'command_slowmode',
       handler: async (client: any, interaction: any, context: any) => {
-        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', ephemeral: true });
+        if (!hasModAccess(interaction, context)) return interaction.reply({ content: '🔒 Access Denied.', flags: 64 });
         const seconds = interaction.options.getInteger('seconds');
         try {
           await interaction.channel.setRateLimitPerUser(seconds);
           await interaction.reply({ content: `⏱️ Slowmode set to ${seconds} seconds.` });
         } catch (e) {
-          await interaction.reply({ content: '❌ Failed to set slowmode.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to set slowmode.', flags: 64 });
         }
       }
     }

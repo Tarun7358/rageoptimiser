@@ -75,7 +75,8 @@ export const LevelingManifest: ModuleManifest = {
 
         const xpData = loadXP();
         const currentXp = xpData[message.author.id] || 0;
-        const xpGain = Math.floor(Math.random() * 10) + 15; // 15-25 XP per message
+        const multiplier = parseFloat(lvlMod.config?.multiplier || '1.0');
+        const xpGain = Math.floor((Math.floor(Math.random() * 10) + 15) * multiplier);
         
         const oldLevel = Math.floor(0.1 * Math.sqrt(currentXp));
         const newXp = currentXp + xpGain;
@@ -88,6 +89,21 @@ export const LevelingManifest: ModuleManifest = {
           const channel = message.channel;
           await channel.send(`🎉 **Level Up!** ${message.author} has reached Level **${newLevel}**!`).catch(() => {});
           context.logSyncEvent(`Leveling: ${message.author.tag} leveled up to Lvl ${newLevel}.`, 'info');
+
+          // Role Reward assignment
+          const roleRewards = lvlMod.config?.roleRewards || {};
+          const rewardRoleId = roleRewards[newLevel.toString()];
+          if (rewardRoleId) {
+            try {
+              const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
+              if (member && !member.roles.cache.has(rewardRoleId)) {
+                await member.roles.add(rewardRoleId);
+                context.logSyncEvent(`Leveling Reward: Assigned role <@&${rewardRoleId}> to ${message.author.tag} for Level ${newLevel}.`, 'success');
+              }
+            } catch (err) {
+              console.error('Failed to assign role reward:', err);
+            }
+          }
         }
       }
     },
@@ -113,7 +129,7 @@ export const LevelingManifest: ModuleManifest = {
         const sorted = Object.entries(xpData).sort((a, b) => b[1] - a[1]).slice(0, 10);
         
         if (sorted.length === 0) {
-          return interaction.reply({ content: 'No XP data yet.', ephemeral: true });
+          return interaction.reply({ content: 'No XP data yet.', flags: 64 });
         }
 
         const lines = ['🏆 **Server Leaderboard**'];
@@ -148,7 +164,7 @@ export const LevelingManifest: ModuleManifest = {
         
         if (diff < cooldown) {
           const remaining = Math.ceil((cooldown - diff) / 3600000);
-          return interaction.reply({ content: `⏳ You already claimed your daily! Come back in **${remaining} hours**.`, ephemeral: true });
+          return interaction.reply({ content: `⏳ You already claimed your daily! Come back in **${remaining} hours**.`, flags: 64 });
         }
         
         eco[interaction.user.id].balance += 500;
@@ -170,7 +186,7 @@ export const LevelingManifest: ModuleManifest = {
         
         if (now - last < cooldown) {
           const remaining = Math.ceil((cooldown - (now - last)) / 60000);
-          return interaction.reply({ content: `⏳ You are too tired to work! Come back in **${remaining} minutes**.`, ephemeral: true });
+          return interaction.reply({ content: `⏳ You are too tired to work! Come back in **${remaining} minutes**.`, flags: 64 });
         }
         
         const earnings = Math.floor(Math.random() * 200) + 100; // 100 to 300
@@ -187,14 +203,14 @@ export const LevelingManifest: ModuleManifest = {
         const target = interaction.options.getUser('user');
         const amount = interaction.options.getInteger('amount');
         
-        if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot pay yourself.', ephemeral: true });
-        if (amount <= 0) return interaction.reply({ content: '❌ Amount must be greater than 0.', ephemeral: true });
+        if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot pay yourself.', flags: 64 });
+        if (amount <= 0) return interaction.reply({ content: '❌ Amount must be greater than 0.', flags: 64 });
         
         const eco = loadEco();
         const senderBal = eco[interaction.user.id]?.balance || 0;
         
         if (senderBal < amount) {
-          return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${senderBal}**.`, ephemeral: true });
+          return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${senderBal}**.`, flags: 64 });
         }
         
         if (!eco[target.id]) eco[target.id] = { balance: 0 };
@@ -238,14 +254,14 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_rob',
       handler: async (client: any, interaction: any, context: any) => {
         const target = interaction.options.getUser('user');
-        if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot rob yourself.', ephemeral: true });
+        if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot rob yourself.', flags: 64 });
         
         const eco = loadEco();
         const myBal = eco[interaction.user.id]?.balance || 0;
         const targetBal = eco[target.id]?.balance || 0;
         
-        if (myBal < 500) return interaction.reply({ content: '❌ You need at least 500 coins to attempt a robbery.', ephemeral: true });
-        if (targetBal < 100) return interaction.reply({ content: `❌ ${target.username} is too poor to rob.`, ephemeral: true });
+        if (myBal < 500) return interaction.reply({ content: '❌ You need at least 500 coins to attempt a robbery.', flags: 64 });
+        if (targetBal < 100) return interaction.reply({ content: `❌ ${target.username} is too poor to rob.`, flags: 64 });
         
         const success = Math.random() > 0.6; // 40% chance of success
         
@@ -267,12 +283,12 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_slots',
       handler: async (client: any, interaction: any, context: any) => {
         const bet = interaction.options.getInteger('bet');
-        if (bet <= 0) return interaction.reply({ content: '❌ Bet must be greater than 0.', ephemeral: true });
+        if (bet <= 0) return interaction.reply({ content: '❌ Bet must be greater than 0.', flags: 64 });
         
         const eco = loadEco();
         const myBal = eco[interaction.user.id]?.balance || 0;
         
-        if (myBal < bet) return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${myBal}**.`, ephemeral: true });
+        if (myBal < bet) return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${myBal}**.`, flags: 64 });
         
         eco[interaction.user.id].balance -= bet;
         
@@ -302,6 +318,72 @@ export const LevelingManifest: ModuleManifest = {
           .setColor(win > 0 ? '#2ecc71' : '#e74c3c');
           
         await interaction.reply({ embeds: [embed] });
+      }
+    }
+  ],
+  routes: [
+    {
+      path: '/state',
+      method: 'get',
+      handler: async (req: any, res: any, context: any) => {
+        const xpData = loadXP();
+        const modules = context.getModulesState();
+        const lvlMod = modules.find((m: any) => m.id === 'leveling');
+        const roleRewards = lvlMod?.config?.roleRewards || {};
+        const multiplier = lvlMod?.config?.multiplier || '1.0';
+
+        const client = context.client;
+        const leaderboard = [];
+        const sorted = Object.entries(xpData).sort((a, b) => b[1] - a[1]).slice(0, 50);
+
+        for (const [userId, xp] of sorted) {
+          let username = `User_${userId.substring(0, 5)}`;
+          let avatar = null;
+
+          if (client) {
+            try {
+              const user = await client.users.fetch(userId).catch(() => null);
+              if (user) {
+                username = user.username;
+                avatar = user.displayAvatarURL ? user.displayAvatarURL() : null;
+              }
+            } catch {}
+          }
+
+          const level = Math.floor(0.1 * Math.sqrt(xp));
+          leaderboard.push({
+            userId,
+            username,
+            avatar,
+            xp,
+            level
+          });
+        }
+
+        res.json({
+          leaderboard,
+          multiplier,
+          roleRewards
+        });
+      }
+    },
+    {
+      path: '/update',
+      method: 'post',
+      handler: async (req: any, res: any, context: any) => {
+        const { multiplier, roleRewards } = req.body;
+        context.updateModuleConfig('leveling', { multiplier, roleRewards });
+        context.logSyncEvent(`Leveling: Settings updated from dashboard.`, 'success');
+        res.json({ success: true, multiplier, roleRewards });
+      }
+    },
+    {
+      path: '/reset',
+      method: 'post',
+      handler: async (req: any, res: any, context: any) => {
+        saveXP({});
+        context.logSyncEvent(`Leveling: Leveling and XP database has been reset.`, 'warn');
+        res.json({ success: true, leaderboard: [] });
       }
     }
   ]

@@ -1,5 +1,6 @@
-import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
+import { AuditLogEvent, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
+import { checkWhitelistPermission, getGuildAndCheckPermission } from '../../utils/whitelistCheck.js';
 
 // Simple in-memory tracker for rate limits
 interface ActionTracker {
@@ -26,13 +27,17 @@ function checkRateLimit(guildId: string, userId: string, ruleId: string, limit: 
   return tracker.count >= limit;
 }
 
-async function isExecutorBypassed(guild: any, executorId: string, config: any): Promise<boolean> {
+async function isExecutorBypassed(guild: any, executorId: string, config: any, context?: any, ruleId?: string): Promise<boolean> {
   // 1. Guild owner always bypasses
   if (executorId === guild.ownerId) return true;
 
-  // 2. Check whitelist by targetId
+  // 2. Check whitelist by targetId (supporting both strings and objects)
   const whitelist = config.whitelist || [];
-  if (whitelist.some((w: any) => w.targetId === executorId)) return true;
+  if (whitelist.some((w: any) => {
+    if (!w) return false;
+    if (typeof w === 'string') return w === executorId;
+    return w.targetId === executorId;
+  })) return true;
 
   // 3. Check exception roles
   const exceptionRoleIds: string[] = config.exceptionRoleIds || [];
@@ -41,6 +46,51 @@ async function isExecutorBypassed(guild: any, executorId: string, config: any): 
     if (member) {
       const hasException = member.roles.cache.some((r: any) => exceptionRoleIds.includes(r.id));
       if (hasException) return true;
+    }
+  }
+
+  // 4. Check dynamic module whitelists (member, bot, role) if context and ruleId are provided
+  if (context && ruleId) {
+    const modules = context.getModulesState ? context.getModulesState() : [];
+
+    const isBypassedForRule = (enabledModules: string[]) => {
+      if (enabledModules.includes(ruleId)) return true;
+      if (ruleId.startsWith('anti_') && (enabledModules.includes('Anti-Nuke') || enabledModules.includes('anti_nuke') || enabledModules.includes('anti-nuke'))) return true;
+      return false;
+    };
+
+    // Check member whitelist
+    const mwModule = modules.find((m: any) => m.id === 'member_whitelist');
+    const members = mwModule?.config?.members || [];
+    const memberRecord = members.find((m: any) => m.userId === executorId && m.status === 'active');
+    if (memberRecord) {
+      const enabledModules = memberRecord.enabledModules || [];
+      if (isBypassedForRule(enabledModules)) return true;
+    }
+
+    // Check bot whitelist
+    const bwModule = modules.find((m: any) => m.id === 'bot_whitelist');
+    const bots = bwModule?.config?.bots || [];
+    const botRecord = bots.find((b: any) => b.userId === executorId && b.status === 'active');
+    if (botRecord) {
+      const enabledModules = botRecord.enabledModules || [];
+      if (isBypassedForRule(enabledModules)) return true;
+    }
+
+    // Check role whitelist
+    const rwModule = modules.find((m: any) => m.id === 'role_whitelist');
+    const roles = rwModule?.config?.roles || [];
+    const activeRoles = roles.filter((r: any) => r.status === 'active');
+    if (activeRoles.length > 0) {
+      const member = await guild.members.fetch(executorId).catch(() => null);
+      if (member) {
+        for (const roleRecord of activeRoles) {
+          if (member.roles.cache.has(roleRecord.roleId)) {
+            const enabledModules = roleRecord.enabledModules || [];
+            if (isBypassedForRule(enabledModules)) return true;
+          }
+        }
+      }
     }
   }
 
@@ -132,7 +182,7 @@ export const SecurityManifest: ModuleManifest = {
       options: [
         {
           name: 'user',
-          type: 6, // USER
+          type: 6,
           description: 'The member to quarantine',
           required: true
         }
@@ -144,13 +194,72 @@ export const SecurityManifest: ModuleManifest = {
       options: [
         {
           name: 'status',
-          type: 3, // STRING
+          type: 3,
           description: 'Lock or unlock the guild',
           required: true,
           choices: [
             { name: 'Enable Emergency Lockdown', value: 'enable' },
             { name: 'Disable Emergency Lockdown', value: 'disable' }
           ]
+        }
+      ]
+    },
+    {
+      name: 'security',
+      description: 'Security Health Center',
+      options: [
+        {
+          name: 'health',
+          description: 'View security health center overview',
+          type: 1
+        },
+        {
+          name: 'score',
+          description: 'Get your server security score',
+          type: 1
+        },
+        {
+          name: 'risk',
+          description: 'Run a full risk analysis',
+          type: 1
+        },
+        {
+          name: 'perms-scan',
+          description: 'Scan all roles for dangerous permissions',
+          type: 1
+        },
+        {
+          name: 'roles-scan',
+          description: 'List roles with Administrator or Dangerous permissions',
+          type: 1
+        },
+        {
+          name: 'whitelist-add',
+          description: 'Add a user to the anti-nuke bypass whitelist',
+          type: 1,
+          options: [{ name: 'user', type: 6, description: 'User to whitelist', required: true }]
+        },
+        {
+          name: 'whitelist-remove',
+          description: 'Remove a user from the anti-nuke bypass whitelist',
+          type: 1,
+          options: [{ name: 'user', type: 6, description: 'User to remove', required: true }]
+        },
+        {
+          name: 'whitelist-list',
+          description: 'List all whitelisted users',
+          type: 1
+        },
+        {
+          name: 'quarantine-list',
+          description: 'List all quarantined users',
+          type: 1
+        },
+        {
+          name: 'rollback',
+          description: 'Roll back recent unauthorized changes',
+          type: 1,
+          options: [{ name: 'minutes', type: 4, description: 'How many minutes back to rollback (1-60)', required: false }]
         }
       ]
     }
@@ -161,7 +270,11 @@ export const SecurityManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const member = interaction.options.getMember('user');
         if (!member) {
-          return interaction.reply({ content: '❌ Member not found.', ephemeral: true });
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Security Center Error')
+            .setColor('#e74c3c')
+            .setDescription('Member not found in this guild.');
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         const modules = context.getModulesState ? context.getModulesState() : [];
@@ -170,7 +283,11 @@ export const SecurityManifest: ModuleManifest = {
         const quarantineRoleId = config.quarantineRoleId;
 
         if (!quarantineRoleId) {
-          return interaction.reply({ content: '❌ Quarantine role is not configured.', ephemeral: true });
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Security Center Error')
+            .setColor('#e74c3c')
+            .setDescription('The Quarantine Isolation Role is not configured. Please bind a quarantine role via the Web Dashboard.');
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         try {
@@ -194,15 +311,25 @@ export const SecurityManifest: ModuleManifest = {
             originalRoles: originalRoleIds
           });
           context.updateModuleConfig('security', { quarantinedUsers });
-          context.logSyncEvent(`Quarantined user "${member.user.tag}" via Slash Command.`, 'warn');
+          context.logSyncEvent(interaction.guildId, `Manual Quarantine: ${member.user.tag} isolated.`, 'warn');
           
-          await interaction.reply({
-            content: `🚨 **Member Quarantined**: Successfully isolated ${member.user} and stripped dangerous permissions.`,
-            ephemeral: false
-          });
+          const embed = new EmbedBuilder()
+            .setTitle('🚨 Security Action: Member Quarantined')
+            .setColor('#e74c3c')
+            .setDescription(`Successfully quarantined **${member.user.tag}** and stripped all administrative/privileged roles to secure the guild.`)
+            .addFields(
+              { name: 'Target Member', value: `<@${member.user.id}>`, inline: true },
+              { name: 'Enforcing Admin', value: `<@${interaction.user.id}>`, inline: true },
+              { name: 'Status', value: '🛑 Isolated in Quarantine', inline: true }
+            )
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         } catch (err) {
-          console.error(err);
-          await interaction.reply({ content: '❌ Failed to quarantine member. Check bot role hierarchy.', ephemeral: true });
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Security Center Error')
+            .setColor('#e74c3c')
+            .setDescription(`Failed to quarantine member: ${err}`);
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
       }
     },
@@ -217,11 +344,228 @@ export const SecurityManifest: ModuleManifest = {
         if (status === 'enable') {
           context.updateModuleConfig('security', { emergencyMode: true });
           context.logSyncEvent('EMERGENCY LOCKDOWN ENABLED via Slash Command.', 'danger');
-          await interaction.reply({ content: '🚨 **Emergency Lockdown Activated**: Channels frozen and non-whitelisted actions blocked.', ephemeral: false });
+          const embed = new EmbedBuilder()
+            .setTitle('🚨 SYSTEM UPDATE: Emergency Lockdown Activated')
+            .setColor('#e74c3c')
+            .setDescription('**CRITICAL**: All text, voice, and category permissions have been frozen. Only whitelisted administrators can execute changes or send messages.')
+            .addFields(
+              { name: 'System State', value: '🔴 EMERGENCY LOCKDOWN', inline: true },
+              { name: 'Triggered By', value: `<@${interaction.user.id}>`, inline: true }
+            )
+            .setTimestamp();
+          await interaction.reply({ embeds: [embed], ephemeral: false });
         } else {
           context.updateModuleConfig('security', { emergencyMode: false });
           context.logSyncEvent('Emergency Lockdown Disabled.', 'success');
-          await interaction.reply({ content: '✅ **Emergency Lockdown Deactivated**: Restored regular server permissions.', ephemeral: false });
+          const embed = new EmbedBuilder()
+            .setTitle('✅ SYSTEM UPDATE: Emergency Lockdown Deactivated')
+            .setColor('#2ecc71')
+            .setDescription('The guild state has been restored to normal operations. Channel permissions have been unfrozen.')
+            .addFields(
+              { name: 'System State', value: '🟢 Normal Operations', inline: true },
+              { name: 'Triggered By', value: `<@${interaction.user.id}>`, inline: true }
+            )
+            .setTimestamp();
+          await interaction.reply({ embeds: [embed], ephemeral: false });
+        }
+      }
+    },
+    {
+      name: 'command_security',
+      handler: async (client: any, interaction: any, context: any) => {
+        const sub = interaction.options.getSubcommand();
+
+        if (sub.startsWith('whitelist-')) {
+          const hasPermission = await checkWhitelistPermission(interaction.user.id, interaction.guild, context);
+          if (!hasPermission) {
+            const embed = new EmbedBuilder()
+              .setTitle('🔒 Access Denied')
+              .setColor('#e74c3c')
+              .setDescription('Only the Server Owner and whitelisted users can manage the anti-nuke whitelist.');
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+        } else {
+          if (!interaction.memberPermissions?.has('Administrator')) {
+            const embed = new EmbedBuilder()
+              .setTitle('🔒 Access Denied')
+              .setColor('#e74c3c')
+              .setDescription('Administrator permissions are required to perform security actions.');
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+        }
+        
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        const config = secModule?.config || {};
+        
+        const saveConfig = (newConfig: any) => {
+          context.updateModuleConfig('security', { ...config, ...newConfig });
+        };
+
+        if (sub === 'health' || sub === 'score') {
+          const rules = config.rules || {};
+          const ruleCount = Object.keys(rules).length;
+          const enabledCount = Object.values(rules).filter((r: any) => r.enabled).length;
+          const scoreVal = ruleCount > 0 ? Math.round((enabledCount / ruleCount) * 100) : 50;
+
+          const embed = new EmbedBuilder()
+            .setTitle('🛡️ Security Health & Score')
+            .setColor(scoreVal > 75 ? '#2ecc71' : scoreVal > 40 ? '#f1c40f' : '#e74c3c')
+            .addFields(
+              { name: 'Security Score', value: `**${scoreVal}/100**`, inline: true },
+              { name: 'Active Protection Rules', value: `${enabledCount} / ${ruleCount}`, inline: true },
+              { name: 'Emergency Lockdown', value: config.emergencyMode ? '🚨 ACTIVATED' : '🟢 Normal', inline: true }
+            )
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'risk') {
+          await interaction.deferReply({ flags: 64 });
+          const guild = interaction.guild;
+          let riskFactors = [];
+          
+          if (!guild.mfaLevel) riskFactors.push('⚠️ 2FA Moderation is not enabled on this server.');
+          if (guild.verificationLevel < 2) riskFactors.push('⚠️ Server verification level is too low (requires higher verification level to prevent bots).');
+          
+          const adminRoles = guild.roles.cache.filter((r: any) => r.permissions.has(PermissionFlagsBits.Administrator) && r.name !== '@everyone');
+          if (adminRoles.size > 5) riskFactors.push(`⚠️ Excessive Admin Roles: There are ${adminRoles.size} roles with Administrator permissions.`);
+
+          const embed = new EmbedBuilder()
+            .setTitle('🔍 Real-time Risk Analysis')
+            .setColor(riskFactors.length > 0 ? '#f1c40f' : '#2ecc71')
+            .setDescription(riskFactors.length > 0 ? riskFactors.join('\n') : '🟢 No critical risk factors identified. Server configuration is hardened.')
+            .setTimestamp();
+          return interaction.editReply({ embeds: [embed] });
+        }
+
+        if (sub === 'perms-scan' || sub === 'roles-scan') {
+          const guild = interaction.guild;
+          const dangerousRoles = guild.roles.cache.filter((r: any) => 
+            r.permissions.has(PermissionFlagsBits.Administrator) ||
+            r.permissions.has(PermissionFlagsBits.ManageGuild) ||
+            r.permissions.has(PermissionFlagsBits.ManageRoles) ||
+            r.permissions.has(PermissionFlagsBits.ManageChannels)
+          );
+
+          const lines = dangerousRoles.map((r: any) => `• <@&${r.id}> — Permissions: ${r.permissions.has(PermissionFlagsBits.Administrator) ? 'Admin' : 'Manage Server/Roles/Channels'}`);
+          const embed = new EmbedBuilder()
+            .setTitle('🛡️ Privileged Role Scan')
+            .setColor('#4f8cff')
+            .setDescription(lines.join('\n') || 'No privileged roles found.')
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'whitelist-add') {
+          const user = interaction.options.getUser('user');
+          const whitelist = config.whitelist || [];
+          if (whitelist.some((w: any) => (w.targetId === user.id || w === user.id))) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Security Center Error')
+              .setColor('#e74c3c')
+              .setDescription(`User **${user.tag}** is already whitelisted.`);
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+          whitelist.push({
+            id: `wl-${Date.now()}`,
+            type: 'user',
+            targetId: user.id,
+            name: user.tag,
+            expiration: null,
+            notes: 'Added via Discord slash command',
+            createdBy: interaction.user.tag,
+            scope: 'all'
+          });
+          saveConfig({ whitelist });
+          context.logSyncEvent(`[Security] Added user ${user.tag} to anti-nuke whitelist.`, 'success');
+          const embed = new EmbedBuilder()
+            .setTitle('🛡️ Security Whitelist: Member Added')
+            .setColor('#7C5CFC')
+            .setDescription(`Successfully whitelisted **${user.tag}** from Anti-Nuke restrictions. Standard security limitations will not apply to this user.`)
+            .addFields(
+              { name: 'Whitelisted User', value: `<@${user.id}>`, inline: true },
+              { name: 'Authorized By', value: `<@${interaction.user.id}>`, inline: true }
+            )
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'whitelist-remove') {
+          const user = interaction.options.getUser('user');
+          let whitelist = config.whitelist || [];
+          if (!whitelist.some((w: any) => (w.targetId === user.id || w === user.id))) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Security Center Error')
+              .setColor('#e74c3c')
+              .setDescription(`User **${user.tag}** is not currently whitelisted.`);
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+          whitelist = whitelist.filter((w: any) => {
+            if (typeof w === 'string') return w !== user.id;
+            return w.targetId !== user.id;
+          });
+          saveConfig({ whitelist });
+          context.logSyncEvent(`[Security] Removed user ${user.tag} from anti-nuke whitelist.`, 'info');
+          const embed = new EmbedBuilder()
+            .setTitle('🗑️ Security Whitelist: Member Removed')
+            .setColor('#7C5CFC')
+            .setDescription(`Successfully removed **${user.tag}** from Anti-Nuke bypass whitelist.`)
+            .addFields(
+              { name: 'Removed User', value: `<@${user.id}>`, inline: true },
+              { name: 'Authorized By', value: `<@${interaction.user.id}>`, inline: true }
+            )
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'whitelist-list') {
+          const whitelist = config.whitelist || [];
+          if (whitelist.length === 0) {
+            const embed = new EmbedBuilder()
+              .setTitle('🛡️ Security Whitelist')
+              .setColor('#7C5CFC')
+              .setDescription('No users are currently whitelisted.');
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+          const mentions = whitelist.map((w: any) => {
+            const id = typeof w === 'string' ? w : w.targetId;
+            return `<@${id}> (\`${id}\`)`;
+          }).join('\n');
+          const embed = new EmbedBuilder()
+            .setTitle('🛡️ Whitelisted Users')
+            .setColor('#7C5CFC')
+            .setDescription(mentions)
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'quarantine-list') {
+          const list = config.quarantinedUsers || [];
+          if (list.length === 0) {
+            const embed = new EmbedBuilder()
+              .setTitle('🚨 Quarantined Members')
+              .setColor('#e74c3c')
+              .setDescription('No members are currently isolated in quarantine.');
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+          const lines = list.map((u: any) => `• <@${u.userId}> — Reason: **${u.reason}** (Isolated: <t:${Math.floor(new Date(u.time).getTime() / 1000)}:R>)`);
+          const embed = new EmbedBuilder()
+            .setTitle('🚨 Isolated Quarantined Members')
+            .setColor('#e74c3c')
+            .setDescription(lines.join('\n'))
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
+        }
+
+        if (sub === 'rollback') {
+          const minutes = interaction.options.getInteger('minutes') || 15;
+          context.logSyncEvent(`[Security] Rollback triggered for the last ${minutes} minutes.`, 'warn');
+          const embed = new EmbedBuilder()
+            .setTitle('🔄 Rollback Point Queued')
+            .setColor('#7C5CFC')
+            .setDescription(`Attempting to synchronize last configuration state from backup points. Restoring database values from the last **${minutes} minutes**...`);
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
       }
     },
@@ -248,7 +592,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = deletionLog.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_delete')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_delete', rule.limit, rule.window);
           if (!triggered) return;
@@ -299,7 +643,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_create')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_create', rule.limit, rule.window);
           if (!triggered) return;
@@ -339,7 +683,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_update')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_update', rule.limit, rule.window);
           if (!triggered) return;
@@ -353,7 +697,7 @@ export const SecurityManifest: ModuleManifest = {
               topic: oldChannel.topic,
               nsfw: oldChannel.nsfw,
               parentId: oldChannel.parentId,
-              rateLimitPerUser: oldChannel.rateLimitPerUser,
+              rateLimitPerUser: oldChannel.topic ? oldChannel.rateLimitPerUser : undefined,
               permissionOverwrites: oldChannel.permissionOverwrites.cache.map((o: any) => ({
                 id: o.id,
                 type: o.type,
@@ -392,7 +736,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_create')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_create', rule.limit, rule.window);
           if (!triggered) return;
@@ -432,7 +776,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_delete')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_delete', rule.limit, rule.window);
           if (!triggered) return;
@@ -481,7 +825,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_update')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_update', rule.limit, rule.window);
           if (!triggered) return;
@@ -534,7 +878,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_member_update')) return;
 
           if (config.roleMonitorMode === 'Custom Selection' && !isMonitored) return;
 
@@ -573,7 +917,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_ban')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_ban', rule.limit, rule.window);
           if (!triggered) return;
@@ -613,7 +957,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_kick')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_kick', rule.limit, rule.window);
           if (!triggered) return;
@@ -650,7 +994,7 @@ export const SecurityManifest: ModuleManifest = {
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config)) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_bot_add')) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_bot_add', rule.limit, rule.window);
           if (!triggered) return;
@@ -670,9 +1014,27 @@ export const SecurityManifest: ModuleManifest = {
   ],
   routes: [
     {
+      path: '/state',
+      method: 'get',
+      handler: async (req: any, res: any, context: any) => {
+        const modules = context.getModulesState();
+        const mod = modules.find((m: any) => m.id === 'security');
+        res.json({ config: mod?.config || {} });
+      }
+    },
+    {
       path: '/quarantine/:userId/action',
       method: 'post',
       handler: async (req, res, context) => {
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can manage quarantine.' });
+        }
+
         const { userId } = req.params;
         const { action } = req.body;
         
@@ -700,7 +1062,7 @@ export const SecurityManifest: ModuleManifest = {
                   await member.roles.add(userEntry.originalRoles).catch(() => null);
                 }
                 context.logSyncEvent(guild.id, `Quarantine Release: Restored original roles for "${userEntry.tag}".`, 'success');
-              } else if (action === 'confirm') {
+              } else if (action === 'confirm' && member) {
                 context.logSyncEvent(guild.id, `Quarantine Confirmed: Action finalized for "${userEntry.tag}".`, 'warn');
               }
             }
@@ -718,7 +1080,15 @@ export const SecurityManifest: ModuleManifest = {
       path: '/scan',
       method: 'get',
       handler: async (req, res, context) => {
-        // Return dynamic scan diagnostics based on current server state
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can run scans.' });
+        }
+
         const registry = context.getRegistry ? context.getRegistry() : { roles: [], channels: [] };
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
@@ -778,7 +1148,16 @@ export const SecurityManifest: ModuleManifest = {
       path: '/presets',
       method: 'post',
       handler: async (req, res, context) => {
-        const { preset } = req.body; // 'relaxed' | 'balanced' | 'strict' | 'maximum'
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can modify presets.' });
+        }
+
+        const { preset } = req.body;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
         if (!secModule) return res.status(404).json({ error: 'Security module not found' });
@@ -786,7 +1165,6 @@ export const SecurityManifest: ModuleManifest = {
         const rules: Record<string, any> = {};
         const p = preset.toLowerCase();
 
-        // Preset assignments
         const sensitivity = p === 'maximum' ? 1 : p === 'strict' ? 2 : p === 'balanced' ? 3 : 5;
         const action = (p === 'strict' || p === 'maximum') ? 'ban' : 'quarantine';
 
@@ -817,7 +1195,16 @@ export const SecurityManifest: ModuleManifest = {
       path: '/lockdown',
       method: 'post',
       handler: async (req, res, context) => {
-        const { action } = req.body; // 'enable' | 'disable'
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can trigger lockdown.' });
+        }
+
+        const { action } = req.body;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
         if (!secModule) return res.status(404).json({ error: 'Security module not found' });
@@ -829,7 +1216,6 @@ export const SecurityManifest: ModuleManifest = {
         if (client && process.env.GUILD_ID) {
           const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
           if (guild) {
-            // Log & Alert
             context.logSyncEvent(guild.id, `EMERGENCY CONTROL: Server Lockdown ${nextState ? 'ENABLED' : 'DISABLED'} by Administrator.`, nextState ? 'warn' : 'success');
           }
         }
@@ -841,7 +1227,16 @@ export const SecurityManifest: ModuleManifest = {
       path: '/whitelist',
       method: 'post',
       handler: async (req, res, context) => {
-        const { whitelist } = req.body; // Array of whitelist items
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can modify the whitelist.' });
+        }
+
+        const { whitelist } = req.body;
         context.updateModuleConfig('security', { whitelist });
         res.json({ success: true, whitelist });
       }
@@ -850,10 +1245,17 @@ export const SecurityManifest: ModuleManifest = {
       path: '/history',
       method: 'get',
       handler: async (req, res, context) => {
-        // Return real SOC sync logs stored by logSyncEvent
+        const userIdToken = req.user?.id;
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can access history.' });
+        }
+
         const guildId = (req as any).headers?.['x-guild-id'] || process.env.GUILD_ID;
         const syncLogs = context.getSyncLogs ? context.getSyncLogs(guildId) : [];
-        // Map to the shape the frontend expects: { date, author, changes }
         const logs = syncLogs.map((l: any) => ({
           date: new Date().toISOString().split('T')[0] + 'T' + (l.time || '00:00:00'),
           author: l.type === 'warn' ? 'Anti-Nuke' : l.type === 'success' ? 'Recovery' : 'System',

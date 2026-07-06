@@ -28,7 +28,7 @@ export const VoiceManifest: ModuleManifest = {
   },
   commands: [
     {
-      name: 'voice',
+      name: 'voicepresence',
       description: 'Manage the 24/7 Voice Presence module.',
       options: [
         { name: 'action', type: 3, description: 'Action: status, join, leave', required: true }
@@ -37,13 +37,13 @@ export const VoiceManifest: ModuleManifest = {
   ],
   events: [
     {
-      name: 'command_voice',
+      name: 'command_voicepresence',
       handler: async (client: any, interaction: any, context: any) => {
         const action = interaction.options.getString('action');
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
         if (!isOwner) {
-          return interaction.reply({ content: '🔒 Voice Presence commands require Administrator permissions.', ephemeral: true });
+          return interaction.reply({ content: '🔒 Voice Presence commands require Administrator permissions.', flags: 64 });
         }
         const modules = context.getModulesState();
         const voiceMod = modules.find((m: any) => m.id === 'voice');
@@ -53,17 +53,17 @@ export const VoiceManifest: ModuleManifest = {
           const channel = channelId ? `<#${channelId}>` : 'Not configured';
           await interaction.reply({
             content: `🎙️ **Voice Presence Status**\n- **Status**: \`${status}\`\n- **Channel**: ${channel}\n- **Module**: \`${voiceMod?.status || 'unknown'}\``,
-            ephemeral: true
+            flags: 64
           });
         } else if (action === 'join') {
-          if (!channelId) return interaction.reply({ content: '❌ No voice channel configured. Set it in the Dashboard → Voice Presence.', ephemeral: true });
+          if (!channelId) return interaction.reply({ content: '❌ No voice channel configured. Set it in the Dashboard → Voice Presence.', flags: 64 });
           context.logSyncEvent(`Voice command: Owner requested join to channel ${channelId}.`, 'info');
-          await interaction.reply({ content: `✅ Bot will attempt to join <#${channelId}> on the next check cycle (within 10 seconds).`, ephemeral: true });
+          await interaction.reply({ content: `✅ Bot will attempt to join <#${channelId}> on the next check cycle (within 10 seconds).`, flags: 64 });
         } else if (action === 'leave') {
           context.logSyncEvent('Voice command: Owner requested voice disconnect.', 'info');
-          await interaction.reply({ content: '✅ Voice disconnection queued. Bot will leave its current voice channel.', ephemeral: true });
+          await interaction.reply({ content: '✅ Voice disconnection queued. Bot will leave its current voice channel.', flags: 64 });
         } else {
-          await interaction.reply({ content: '❌ Unknown action. Use: `status`, `join`, or `leave`.', ephemeral: true });
+          await interaction.reply({ content: '❌ Unknown action. Use: `status`, `join`, or `leave`.', flags: 64 });
         }
       }
     }

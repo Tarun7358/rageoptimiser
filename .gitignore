@@ -53,3 +53,5 @@ dist-ssr/
 backend/dist/
 clutch-music/dist/
 
+clutch-music/*.json
+clutch-music/ragebot-8263b-firebase-adminsdk-fbsvc-d602dd54c2.json

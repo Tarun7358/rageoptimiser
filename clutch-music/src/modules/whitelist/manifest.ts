@@ -279,7 +279,7 @@ export const WhitelistManifest: ModuleManifest = {
         if (!isOwner) {
           await interaction.reply({
             content: '🔒 **Access Denied** — Whitelist commands require Server Owner or Administrator permissions.',
-            ephemeral: true
+            flags: 64
           });
           return;
         }
@@ -303,13 +303,13 @@ export const WhitelistManifest: ModuleManifest = {
                 `**Open Incidents:** ${wtps.incidents.filter((i: WTPSIncident) => i.status === 'open').length}`,
                 `\n> Manage full configuration from the Dashboard → Whitelist & Trust`
               ].join('\n'),
-              ephemeral: true
+              flags: 64
             });
             break;
 
           case 'info':
             if (!target) {
-              await interaction.reply({ content: '❌ Please provide a target ID.', ephemeral: true });
+              await interaction.reply({ content: '❌ Please provide a target ID.', flags: 64 });
               return;
             }
             const protectedUser = wtps.users.find((u: WhitelistUser) => u.userId === target);
@@ -317,13 +317,13 @@ export const WhitelistManifest: ModuleManifest = {
             const trackedBot = wtps.bots.find((b: WhitelistBot) => b.userId === target);
 
             if (protectedUser) {
-              await interaction.reply({ content: `👤 **User:** ${protectedUser.tag}\n📋 **Reason:** ${protectedUser.reason}\n🛡️ **Policy:** \`${protectedUser.enforcementPolicy}\`\n📅 **Added:** ${protectedUser.addedAt}`, ephemeral: true });
+              await interaction.reply({ content: `👤 **User:** ${protectedUser.tag}\n📋 **Reason:** ${protectedUser.reason}\n🛡️ **Policy:** \`${protectedUser.enforcementPolicy}\`\n📅 **Added:** ${protectedUser.addedAt}`, flags: 64 });
             } else if (protectedRole) {
-              await interaction.reply({ content: `🎭 **Role:** ${protectedRole.name}\n🔐 **Protected ops:** ${protectedRole.protectedOps.join(', ')}\n🛡️ **Policy:** \`${protectedRole.enforcementPolicy}\``, ephemeral: true });
+              await interaction.reply({ content: `🎭 **Role:** ${protectedRole.name}\n🔐 **Protected ops:** ${protectedRole.protectedOps.join(', ')}\n🛡️ **Policy:** \`${protectedRole.enforcementPolicy}\``, flags: 64 });
             } else if (trackedBot) {
-              await interaction.reply({ content: `🤖 **Bot:** ${trackedBot.tag}\n📊 **Status:** ${trackedBot.status}\n🔒 **Security Score:** ${trackedBot.securityScore}/100\n📦 **Approved Modules:** ${trackedBot.approvedModules.join(', ') || 'None'}`, ephemeral: true });
+              await interaction.reply({ content: `🤖 **Bot:** ${trackedBot.tag}\n📊 **Status:** ${trackedBot.status}\n🔒 **Security Score:** ${trackedBot.securityScore}/100\n📦 **Approved Modules:** ${trackedBot.approvedModules.join(', ') || 'None'}`, flags: 64 });
             } else {
-              await interaction.reply({ content: `❌ No WTPS entry found for ID \`${target}\`.`, ephemeral: true });
+              await interaction.reply({ content: `❌ No WTPS entry found for ID \`${target}\`.`, flags: 64 });
             }
             break;
 
@@ -342,7 +342,7 @@ export const WhitelistManifest: ModuleManifest = {
                 '`/whitelist bot-suspend <id>` — Suspend a bot',
                 '`/whitelist bot-remove <id>` — Remove bot from tracking'
               ].join('\n'),
-              ephemeral: true
+              flags: 64
             });
         }
       }

@@ -1,0 +1,393 @@
+import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
+import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+
+export const BulkOpsManifest: ModuleManifest = {
+  id: 'bulk_ops',
+  name: 'Bulk Operations',
+  version: '1.0.0',
+  description: 'Bulk edit, role assignment, channel management, permissions, rename, delete, create, clone, sync, lock, hide, archive.',
+  configSchema: {
+    requiredFields: [],
+    validate: (config: Record<string, any>, registry: DiscordResourceRegistry) => {
+      return { progress: 100, errors: [] };
+    }
+  },
+  commands: [
+    {
+      name: 'bulk',
+      description: 'Bulk server operations',
+      options: [
+        {
+          name: 'role-add',
+          description: 'Add a role to all members (or members with a specific role)',
+          type: 1,
+          options: [
+            { name: 'role', type: 8, description: 'Role to add', required: true },
+            { name: 'filter_role', type: 8, description: 'Only apply to members with this role', required: false }
+          ]
+        },
+        {
+          name: 'role-remove',
+          description: 'Remove a role from all members',
+          type: 1,
+          options: [
+            { name: 'role', type: 8, description: 'Role to remove', required: true },
+            { name: 'filter_role', type: 8, description: 'Only remove from members with this role', required: false }
+          ]
+        },
+        {
+          name: 'channel-lock',
+          description: 'Lock all channels in a category',
+          type: 1,
+          options: [{ name: 'category', type: 7, description: 'Category to lock (omit for all text channels)', required: false }]
+        },
+        {
+          name: 'channel-unlock',
+          description: 'Unlock all channels in a category',
+          type: 1,
+          options: [{ name: 'category', type: 7, description: 'Category to unlock', required: false }]
+        },
+        {
+          name: 'channel-hide',
+          description: 'Hide all channels in a category',
+          type: 1,
+          options: [{ name: 'category', type: 7, description: 'Category to hide', required: false }]
+        },
+        {
+          name: 'channel-unhide',
+          description: 'Unhide all channels in a category',
+          type: 1,
+          options: [{ name: 'category', type: 7, description: 'Category to unhide', required: false }]
+        },
+        {
+          name: 'channel-slowmode',
+          description: 'Set slowmode for all channels in a category',
+          type: 1,
+          options: [
+            { name: 'seconds', type: 4, description: 'Slowmode duration (0 to disable)', required: true },
+            { name: 'category', type: 7, description: 'Category (omit for all text channels)', required: false }
+          ]
+        },
+        {
+          name: 'rename-channels',
+          description: 'Add a prefix/suffix to all channels in a category',
+          type: 1,
+          options: [
+            { name: 'category', type: 7, description: 'Category', required: true },
+            { name: 'prefix', type: 3, description: 'Prefix to add', required: false },
+            { name: 'suffix', type: 3, description: 'Suffix to add', required: false }
+          ]
+        },
+        {
+          name: 'purge',
+          description: 'Bulk delete messages in a channel',
+          type: 1,
+          options: [
+            { name: 'amount', type: 4, description: 'Number of messages (1-100)', required: true },
+            { name: 'channel', type: 7, description: 'Channel (defaults to current)', required: false },
+            { name: 'user', type: 6, description: 'Only delete messages from this user', required: false }
+          ]
+        },
+        {
+          name: 'ban-list',
+          description: 'View all banned users',
+          type: 1
+        },
+        {
+          name: 'mass-ban',
+          description: 'Ban multiple users by ID (space separated)',
+          type: 1,
+          options: [
+            { name: 'user_ids', type: 3, description: 'User IDs separated by spaces', required: true },
+            { name: 'reason', type: 3, description: 'Reason', required: false }
+          ]
+        },
+        {
+          name: 'mass-unban',
+          description: 'Unban multiple users by ID (space separated)',
+          type: 1,
+          options: [{ name: 'user_ids', type: 3, description: 'User IDs separated by spaces', required: true }]
+        },
+        {
+          name: 'clone-channel',
+          description: 'Clone a channel with all permissions',
+          type: 1,
+          options: [{ name: 'channel', type: 7, description: 'Channel to clone', required: true }]
+        },
+        {
+          name: 'sync-permissions',
+          description: 'Sync channel permissions with its category',
+          type: 1,
+          options: [
+            { name: 'category', type: 7, description: 'Category (omit for all categories)', required: false }
+          ]
+        },
+        {
+          name: 'create-channels',
+          description: 'Create multiple channels at once',
+          type: 1,
+          options: [
+            { name: 'names', type: 3, description: 'Channel names separated by commas', required: true },
+            { name: 'type', type: 3, description: 'Channel type', required: false, choices: [{ name: 'Text', value: 'text' }, { name: 'Voice', value: 'voice' }] },
+            { name: 'category', type: 7, description: 'Category to create in', required: false }
+          ]
+        }
+      ]
+    }
+  ],
+  events: [
+    {
+      name: 'command_bulk',
+      handler: async (client: any, interaction: any, context: any) => {
+        if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+          return interaction.reply({ content: '🔒 Administrator permission required for bulk operations.', flags: 64 });
+        }
+
+        const sub = interaction.options.getSubcommand(false);
+        const guild = interaction.guild;
+        await interaction.deferReply({ flags: 64 });
+
+        const logBulk = (action: string, count: number) => {
+          context.logSyncEvent(`[Bulk Ops] ${interaction.user.tag} — ${action} (${count} items).`, 'warn');
+        };
+
+        // ROLE ADD
+        if (sub === 'role-add') {
+          const role = interaction.options.getRole('role');
+          const filterRole = interaction.options.getRole('filter_role');
+          const members = await guild.members.fetch();
+          let targets = members.filter((m: any) => !m.user.bot);
+          if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
+
+          let count = 0;
+          for (const [, member] of targets) {
+            if (!member.roles.cache.has(role.id)) {
+              await member.roles.add(role).catch(() => {});
+              count++;
+              await new Promise(r => setTimeout(r, 200));
+            }
+          }
+          logBulk('Role Add', count);
+          return interaction.editReply({ content: `✅ Added **${role.name}** to **${count}** members.` });
+        }
+
+        // ROLE REMOVE
+        if (sub === 'role-remove') {
+          const role = interaction.options.getRole('role');
+          const filterRole = interaction.options.getRole('filter_role');
+          const members = await guild.members.fetch();
+          let targets = members.filter((m: any) => !m.user.bot && m.roles.cache.has(role.id));
+          if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
+
+          let count = 0;
+          for (const [, member] of targets) {
+            await member.roles.remove(role).catch(() => {});
+            count++;
+            await new Promise(r => setTimeout(r, 200));
+          }
+          logBulk('Role Remove', count);
+          return interaction.editReply({ content: `✅ Removed **${role.name}** from **${count}** members.` });
+        }
+
+        // CHANNEL LOCK
+        if (sub === 'channel-lock') {
+          const cat = interaction.options.getChannel('category');
+          const channels = cat
+            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+          let count = 0;
+          for (const [, ch] of channels) {
+            await ch.permissionOverwrites.edit(guild.id, { SendMessages: false }).catch(() => {});
+            count++;
+          }
+          logBulk('Channel Lock', count);
+          return interaction.editReply({ content: `🔒 Locked **${count}** channels.` });
+        }
+
+        // CHANNEL UNLOCK
+        if (sub === 'channel-unlock') {
+          const cat = interaction.options.getChannel('category');
+          const channels = cat
+            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+          let count = 0;
+          for (const [, ch] of channels) {
+            await ch.permissionOverwrites.edit(guild.id, { SendMessages: null }).catch(() => {});
+            count++;
+          }
+          logBulk('Channel Unlock', count);
+          return interaction.editReply({ content: `🔓 Unlocked **${count}** channels.` });
+        }
+
+        // CHANNEL HIDE
+        if (sub === 'channel-hide') {
+          const cat = interaction.options.getChannel('category');
+          const channels = cat
+            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
+            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+          let count = 0;
+          for (const [, ch] of channels) {
+            await ch.permissionOverwrites.edit(guild.id, { ViewChannel: false }).catch(() => {});
+            count++;
+          }
+          logBulk('Channel Hide', count);
+          return interaction.editReply({ content: `🔕 Hidden **${count}** channels.` });
+        }
+
+        // CHANNEL UNHIDE
+        if (sub === 'channel-unhide') {
+          const cat = interaction.options.getChannel('category');
+          const channels = cat
+            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
+            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+          let count = 0;
+          for (const [, ch] of channels) {
+            await ch.permissionOverwrites.edit(guild.id, { ViewChannel: null }).catch(() => {});
+            count++;
+          }
+          logBulk('Channel Unhide', count);
+          return interaction.editReply({ content: `👁️ Unhidden **${count}** channels.` });
+        }
+
+        // CHANNEL SLOWMODE
+        if (sub === 'channel-slowmode') {
+          const seconds = interaction.options.getInteger('seconds');
+          const cat = interaction.options.getChannel('category');
+          const channels = cat
+            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+          let count = 0;
+          for (const [, ch] of channels) {
+            await ch.setRateLimitPerUser(seconds).catch(() => {});
+            count++;
+          }
+          logBulk('Channel Slowmode', count);
+          return interaction.editReply({ content: `⏱️ Set **${seconds}s** slowmode on **${count}** channels.` });
+        }
+
+        // RENAME CHANNELS
+        if (sub === 'rename-channels') {
+          const cat = interaction.options.getChannel('category');
+          const prefix = interaction.options.getString('prefix') || '';
+          const suffix = interaction.options.getString('suffix') || '';
+          if (!prefix && !suffix) return interaction.editReply({ content: '❌ Provide at least a prefix or suffix.' });
+          const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
+          let count = 0;
+          for (const [, ch] of channels) {
+            const newName = `${prefix}${ch.name}${suffix}`;
+            await ch.setName(newName).catch(() => {});
+            count++;
+            await new Promise(r => setTimeout(r, 300));
+          }
+          logBulk('Rename Channels', count);
+          return interaction.editReply({ content: `✏️ Renamed **${count}** channels.` });
+        }
+
+        // PURGE
+        if (sub === 'purge') {
+          const amount = Math.min(Math.max(interaction.options.getInteger('amount'), 1), 100);
+          const target = interaction.options.getChannel('channel') || interaction.channel;
+          const user = interaction.options.getUser('user');
+          let messages = await target.messages.fetch({ limit: user ? 100 : amount });
+          if (user) messages = messages.filter((m: any) => m.author.id === user.id).first(amount);
+          const deleted = await target.bulkDelete(messages, true).catch(() => new Map());
+          logBulk('Purge', deleted.size);
+          return interaction.editReply({ content: `🗑️ Deleted **${deleted.size}** messages in ${target}.` });
+        }
+
+        // BAN LIST
+        if (sub === 'ban-list') {
+          const bans = await guild.bans.fetch();
+          if (bans.size === 0) return interaction.editReply({ content: '📋 No banned users.' });
+          const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.tag} (${b.user.id}) — ${b.reason || 'No reason'}`);
+          return interaction.editReply({ content: `🚫 **Banned Users (${bans.size}):**\n${lines.join('\n')}` });
+        }
+
+        // MASS BAN
+        if (sub === 'mass-ban') {
+          const idsStr = interaction.options.getString('user_ids');
+          const reason = interaction.options.getString('reason') || 'Mass ban by moderator';
+          const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
+          if (ids.length === 0) return interaction.editReply({ content: '❌ No valid user IDs provided.' });
+          let count = 0;
+          for (const id of ids) {
+            await guild.members.ban(id, { reason }).catch(() => {});
+            count++;
+            await new Promise(r => setTimeout(r, 200));
+          }
+          logBulk('Mass Ban', count);
+          return interaction.editReply({ content: `🔨 Banned **${count}** users.` });
+        }
+
+        // MASS UNBAN
+        if (sub === 'mass-unban') {
+          const idsStr = interaction.options.getString('user_ids');
+          const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
+          if (ids.length === 0) return interaction.editReply({ content: '❌ No valid user IDs provided.' });
+          let count = 0;
+          for (const id of ids) {
+            await guild.members.unban(id, 'Mass unban').catch(() => {});
+            count++;
+            await new Promise(r => setTimeout(r, 200));
+          }
+          logBulk('Mass Unban', count);
+          return interaction.editReply({ content: `✅ Unbanned **${count}** users.` });
+        }
+
+        // CLONE CHANNEL
+        if (sub === 'clone-channel') {
+          const source = interaction.options.getChannel('channel');
+          const cloned = await source.clone({ reason: `Cloned by ${interaction.user.tag}` });
+          logBulk('Clone Channel', 1);
+          return interaction.editReply({ content: `✅ Cloned ${source} → ${cloned}.` });
+        }
+
+        // SYNC PERMISSIONS
+        if (sub === 'sync-permissions') {
+          const cat = interaction.options.getChannel('category');
+          let count = 0;
+          if (cat) {
+            const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
+            for (const [, ch] of channels) {
+              await ch.lockPermissions().catch(() => {});
+              count++;
+            }
+          } else {
+            const categories = guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildCategory);
+            for (const [catId] of categories) {
+              const children = guild.channels.cache.filter((c: any) => c.parentId === catId);
+              for (const [, ch] of children) {
+                await ch.lockPermissions().catch(() => {});
+                count++;
+              }
+            }
+          }
+          logBulk('Sync Permissions', count);
+          return interaction.editReply({ content: `✅ Synced permissions on **${count}** channels.` });
+        }
+
+        // CREATE CHANNELS
+        if (sub === 'create-channels') {
+          const namesStr = interaction.options.getString('names');
+          const type = interaction.options.getString('type') || 'text';
+          const cat = interaction.options.getChannel('category');
+          const names = namesStr.split(',').map((n: string) => n.trim()).filter(Boolean);
+          let count = 0;
+          for (const name of names) {
+            await guild.channels.create({
+              name,
+              type: type === 'voice' ? ChannelType.GuildVoice : ChannelType.GuildText,
+              parent: cat?.id || null
+            }).catch(() => {});
+            count++;
+            await new Promise(r => setTimeout(r, 300));
+          }
+          logBulk('Create Channels', count);
+          return interaction.editReply({ content: `✅ Created **${count}** channels.` });
+        }
+
+        return interaction.editReply({ content: '❌ Unknown bulk operation.' });
+      }
+    }
+  ]
+};

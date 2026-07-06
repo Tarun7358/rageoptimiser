@@ -45,15 +45,15 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_approve-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', ephemeral: true });
+        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         
         const db = Database.getDb();
-        if (!db) return interaction.reply({ content: 'Database not connected.', ephemeral: true });
+        if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
         const docRef = db.collection('approvals').doc(guildId);
         const docSnap = await docRef.get();
-        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', ephemeral: true });
+        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
         
         const approval = docSnap.data() as IGuildApproval;
         await docRef.update({
@@ -73,16 +73,16 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_reject-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', ephemeral: true });
+        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         const reason = interaction.options.getString('reason') || 'No reason provided';
         
         const db = Database.getDb();
-        if (!db) return interaction.reply({ content: 'Database not connected.', ephemeral: true });
+        if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
         const docRef = db.collection('approvals').doc(guildId);
         const docSnap = await docRef.get();
-        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', ephemeral: true });
+        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
         
         const approval = docSnap.data() as IGuildApproval;
         await docRef.update({
@@ -103,12 +103,12 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_blacklist-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', ephemeral: true });
+        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         const reason = interaction.options.getString('reason') || 'No reason provided';
         
         const db = Database.getDb();
-        if (!db) return interaction.reply({ content: 'Database not connected.', ephemeral: true });
+        if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
         const docRef = db.collection('approvals').doc(guildId);
         const docSnap = await docRef.get();
@@ -154,13 +154,13 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_pending-servers',
       handler: async (client, interaction) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', ephemeral: true });
+        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         
         const db = Database.getDb();
-        if (!db) return interaction.reply({ content: 'Database not connected.', ephemeral: true });
+        if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
         const snapshot = await db.collection('approvals').where('status', '==', 'Pending').get();
-        if (snapshot.empty) return interaction.reply({ content: '✅ No pending servers!', ephemeral: true });
+        if (snapshot.empty) return interaction.reply({ content: '✅ No pending servers!', flags: 64 });
 
         const pending = snapshot.docs.map(doc => doc.data() as IGuildApproval);
 
@@ -169,7 +169,7 @@ export const ApprovalManifest: ModuleManifest = {
           .setColor('#FACC15')
           .setDescription(pending.map(p => `**${p.guildName}** (\`${p.guildId}\`) - Score: ${p.riskScore} (${p.riskLevel})`).join('\n'));
           
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
       }
     }
   ]

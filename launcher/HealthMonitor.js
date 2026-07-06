@@ -49,6 +49,11 @@ class HealthMonitor {
         responding: backendOk,
         pid: procStatus.backendPid
       },
+      musicBot: {
+        running: procStatus.musicBot,
+        responding: procStatus.musicBot, // musicBot runs headless without an HTTP server
+        pid: procStatus.musicBotPid
+      },
       dashboard: {
         running: procStatus.dashboard,
         responding: dashOk,
@@ -69,6 +74,9 @@ class HealthMonitor {
     }
     if (procStatus.dashboard && !dashOk) {
       this.logger.warn('Dashboard process running but not responding — may still be starting up.');
+    }
+    if (!procStatus.musicBot) {
+      this.logger.warn('Music Bot process is not running.');
     }
   }
 

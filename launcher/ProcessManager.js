@@ -359,8 +359,10 @@ class ProcessManager {
   getStatus() {
     return {
       backend: !!this.processes.backend,
+      musicBot: !!this.processes.musicBot,
       dashboard: !!this.processes.dashboard,
       backendPid: this.processes.backend?.pid || null,
+      musicBotPid: this.processes.musicBot?.pid || null,
       dashboardPid: this.processes.dashboard?.pid || null
     };
   }

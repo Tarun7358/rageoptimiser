@@ -51,17 +51,50 @@ export const CommunityManifest: ModuleManifest = {
     { name: 'ping', description: 'Check bot latency' },
     { name: 'help', description: 'List all bot commands' },
     { name: 'invite', description: 'Get the bot invite link' },
-    { name: 'stats', description: 'View bot statistics' },
     { name: 'poll', description: 'Create a poll', options: [{ name: 'question', type: 3, description: 'Poll question', required: true }] },
-    { name: 'giveaway', description: 'Start a giveaway', options: [{ name: 'duration', type: 3, description: 'Duration', required: true }, { name: 'prize', type: 3, description: 'Prize', required: true }] },
     { name: 'weather', description: 'Check the weather', options: [{ name: 'location', type: 3, description: 'City name', required: true }] },
     { name: 'afk', description: 'Set your AFK status', options: [{ name: 'reason', type: 3, description: 'Reason for being AFK', required: false }] },
     { name: 'remindme', description: 'Set a reminder', options: [{ name: 'time', type: 3, description: 'Time (e.g. 1h, 1d)', required: true }, { name: 'message', type: 3, description: 'Reminder message', required: true }] },
     { name: '8ball', description: 'Ask the magic 8-ball a question', options: [{ name: 'question', type: 3, description: 'Question to ask', required: true }] },
     { name: 'meme', description: 'Get a random meme' },
-    { name: 'joke', description: 'Get a random joke' },
     { name: 'flip', description: 'Flip a coin' },
-    { name: 'roll', description: 'Roll a dice' }
+    { name: 'roll', description: 'Roll a dice' },
+    {
+      name: 'rps',
+      description: 'Play Rock Paper Scissors',
+      options: [{ name: 'choice', type: 3, description: 'Your choice', required: true, choices: [{ name: 'Rock', value: 'rock' }, { name: 'Paper', value: 'paper' }, { name: 'Scissors', value: 'scissors' }] }]
+    },
+    {
+      name: 'ship',
+      description: 'Check love compatibility with another user',
+      options: [{ name: 'user1', type: 6, description: 'First user', required: true }, { name: 'user2', type: 6, description: 'Second user', required: false }]
+    },
+    {
+      name: 'timestamp',
+      description: 'Generate discord relative timestamps',
+      options: [{ name: 'time_or_date', type: 3, description: 'Date or time string (e.g. tomorrow, 2026-12-31 15:00)', required: true }]
+    },
+    {
+      name: 'hash',
+      description: 'Encrypt a string with MD5 or SHA-256',
+      options: [{ name: 'algorithm', type: 3, description: 'Algorithm', required: true, choices: [{ name: 'MD5', value: 'md5' }, { name: 'SHA-256', value: 'sha256' }] }, { name: 'text', type: 3, description: 'Text to encrypt', required: true }]
+    },
+    {
+      name: 'color',
+      description: 'Display a hex color preview',
+      options: [{ name: 'hex', type: 3, description: 'Hex code (e.g. #ff0000)', required: true }]
+    },
+    {
+      name: 'embed-builder',
+      description: 'Build a custom embed',
+      options: [
+        { name: 'title', type: 3, description: 'Title', required: true },
+        { name: 'description', type: 3, description: 'Description', required: true },
+        { name: 'color', type: 3, description: 'Hex Color code', required: false },
+        { name: 'footer', type: 3, description: 'Footer text', required: false },
+        { name: 'image', type: 3, description: 'Image URL', required: false }
+      ]
+    }
   ],
   events: [
     {
@@ -70,12 +103,12 @@ export const CommunityManifest: ModuleManifest = {
         const action = interaction.options.getString('action');
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
-        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', ephemeral: true });
+        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         const modules = context.getModulesState();
         const commMod = modules.find((m: any) => m.id === 'community');
         if (action === 'status') {
           const ch = commMod?.config?.welcomeChannelId;
-          await interaction.reply({ content: `👥 **Community Welcomer**\n- **Status**: \`${commMod?.status || 'unknown'}\`\n- **Welcome Channel**: ${ch ? `<#${ch}>` : 'Not configured'}`, ephemeral: true });
+          await interaction.reply({ content: `👥 **Community Welcomer**\n- **Status**: \`${commMod?.status || 'unknown'}\`\n- **Welcome Channel**: ${ch ? `<#${ch}>` : 'Not configured'}`, flags: 64 });
         } else if (action === 'test' || action === 'leave-test') {
           const isWelcome = action === 'test';
           const defaultEmbed = isWelcome 
@@ -85,7 +118,7 @@ export const CommunityManifest: ModuleManifest = {
           const embedConfig = (isWelcome ? commMod?.config?.welcomeEmbed : commMod?.config?.leaveEmbed) || defaultEmbed;
           const channelId = isWelcome ? commMod?.config?.welcomeChannelId : (embedConfig.channelId || commMod?.config?.welcomeChannelId);
           
-          if (!channelId) return interaction.reply({ content: `❌ No channel configured for ${action}.`, ephemeral: true });
+          if (!channelId) return interaction.reply({ content: `❌ No channel configured for ${action}.`, flags: 64 });
           
           const { EmbedBuilder } = await import('discord.js');
           const channel = interaction.guild?.channels.cache.get(channelId);
@@ -111,9 +144,9 @@ export const CommunityManifest: ModuleManifest = {
             }
 
             await channel.send({ content: isWelcome ? `Hey ${interaction.user}, welcome! (TEST)` : `Goodbye (TEST)`, embeds: [embed] });
-            await interaction.reply({ content: `✅ Test ${action} sent to ${channel}.`, ephemeral: true });
+            await interaction.reply({ content: `✅ Test ${action} sent to ${channel}.`, flags: 64 });
           } else {
-            await interaction.reply({ content: '❌ Target channel not found or not a text channel.', ephemeral: true });
+            await interaction.reply({ content: '❌ Target channel not found or not a text channel.', flags: 64 });
           }
         }
       }
@@ -203,28 +236,6 @@ export const CommunityManifest: ModuleManifest = {
       }
     },
     {
-      name: 'command_stats',
-      handler: async (client: any, interaction: any, context: any) => {
-        const memory = process.memoryUsage();
-        const memStr = `${(memory.heapUsed / 1024 / 1024).toFixed(2)} MB`;
-        const uptime = process.uptime();
-        const days = Math.floor(uptime / 86400);
-        const hours = Math.floor(uptime / 3600) % 24;
-        const minutes = Math.floor(uptime / 60) % 60;
-        
-        const embed = new EmbedBuilder()
-          .setTitle('Bot Statistics')
-          .setColor('#4f8cff')
-          .addFields(
-            { name: 'Servers', value: `${client.guilds.cache.size}`, inline: true },
-            { name: 'Memory', value: memStr, inline: true },
-            { name: 'Uptime', value: `${days}d ${hours}h ${minutes}m`, inline: true },
-            { name: 'Ping', value: `${client.ws.ping}ms`, inline: true }
-          );
-        await interaction.reply({ embeds: [embed] });
-      }
-    },
-    {
       name: 'command_poll',
       handler: async (client: any, interaction: any, context: any) => {
         const question = interaction.options.getString('question');
@@ -237,20 +248,6 @@ export const CommunityManifest: ModuleManifest = {
         const msg = await interaction.reply({ embeds: [embed], fetchReply: true });
         await msg.react('👍');
         await msg.react('👎');
-      }
-    },
-    {
-      name: 'command_giveaway',
-      handler: async (client: any, interaction: any, context: any) => {
-        const durationStr = interaction.options.getString('duration');
-        const prize = interaction.options.getString('prize');
-        // Very simple mock implementation
-        const embed = new EmbedBuilder()
-          .setTitle('🎉 GIVEAWAY 🎉')
-          .setDescription(`**Prize**: ${prize}\n**Duration**: ${durationStr}\nReact with 🎉 to enter!`)
-          .setColor('#f1c40f');
-        const msg = await interaction.reply({ embeds: [embed], fetchReply: true });
-        await msg.react('🎉');
       }
     },
     {
@@ -323,15 +320,122 @@ export const CommunityManifest: ModuleManifest = {
       }
     },
     {
-      name: 'command_joke',
+      name: 'command_rps',
       handler: async (client: any, interaction: any, context: any) => {
-        const jokes = [
-          'Why do programmers prefer dark mode? Because light attracts bugs!',
-          'How many programmers does it take to change a light bulb? None, that\'s a hardware problem.',
-          'There are 10 types of people in the world: those who understand binary, and those who don\'t.'
-        ];
-        const joke = jokes[Math.floor(Math.random() * jokes.length)];
-        await interaction.reply(`😂 ${joke}`);
+        const choice = interaction.options.getString('choice');
+        const options = ['rock', 'paper', 'scissors'];
+        const botChoice = options[Math.floor(Math.random() * 3)];
+        
+        let result = '';
+        if (choice === botChoice) result = 'Draw!';
+        else if (
+          (choice === 'rock' && botChoice === 'scissors') ||
+          (choice === 'paper' && botChoice === 'rock') ||
+          (choice === 'scissors' && botChoice === 'paper')
+        ) {
+          result = 'You win!';
+        } else {
+          result = 'I win!';
+        }
+
+        const choiceIcons: Record<string, string> = { rock: '🪨 Rock', paper: '📄 Paper', scissors: '✂️ Scissors' };
+        await interaction.reply({
+          content: `🎮 **Rock Paper Scissors**\n- **Your Choice:** ${choiceIcons[choice]}\n- **My Choice:** ${choiceIcons[botChoice]}\n- **Result:** **${result}**`
+        });
+      }
+    },
+    {
+      name: 'command_ship',
+      handler: async (client: any, interaction: any, context: any) => {
+        const u1 = interaction.options.getUser('user1');
+        const u2 = interaction.options.getUser('user2') || interaction.user;
+        const percent = Math.floor(Math.random() * 101);
+
+        let heart = '💔';
+        if (percent > 85) heart = '💖✨';
+        else if (percent > 60) heart = '❤️';
+        else if (percent > 40) heart = '💛';
+        else if (percent > 20) heart = '💙';
+
+        await interaction.reply({
+          content: `❤️ **Matchmaker**\n- **Match:** ${u1} x ${u2}\n- **Compatibility:** **${percent}%** ${heart}`
+        });
+      }
+    },
+    {
+      name: 'command_timestamp',
+      handler: async (client: any, interaction: any, context: any) => {
+        const input = interaction.options.getString('time_or_date');
+        let date = new Date(input);
+        if (isNaN(date.getTime())) {
+          // simple parsed checks
+          if (input.toLowerCase() === 'tomorrow') {
+            date = new Date();
+            date.setDate(date.getDate() + 1);
+          } else {
+            return interaction.reply({ content: '❌ Invalid date/time format. E.g. `2026-12-31 15:00` or `tomorrow`', flags: 64 });
+          }
+        }
+        const unix = Math.floor(date.getTime() / 1000);
+        await interaction.reply({
+          content: `⏱️ **Timestamps:**\n` +
+            `- Relative: \`<t:${unix}:R>\` → <t:${unix}:R>\n` +
+            `- Full Date/Time: \`<t:${unix}:F>\` → <t:${unix}:F>\n` +
+            `- Long Date: \`<t:${unix}:D>\` → <t:${unix}:D>`
+        });
+      }
+    },
+    {
+      name: 'command_hash',
+      handler: async (client: any, interaction: any, context: any) => {
+        const algo = interaction.options.getString('algorithm');
+        const text = interaction.options.getString('text');
+        
+        try {
+          const crypto = await import('crypto');
+          const hashed = crypto.createHash(algo === 'md5' ? 'md5' : 'sha256').update(text).digest('hex');
+          await interaction.reply({
+            content: `🔒 **Hash Result (${algo.toUpperCase()}):**\n\`\`\`\n${hashed}\n\`\`\``,
+            flags: 64
+          });
+        } catch {
+          await interaction.reply({ content: '❌ Hash computation failed.', flags: 64 });
+        }
+      }
+    },
+    {
+      name: 'command_color',
+      handler: async (client: any, interaction: any, context: any) => {
+        let hex = interaction.options.getString('hex');
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        
+        const embed = new EmbedBuilder()
+          .setTitle(`🎨 Color Preview: ${hex}`)
+          .setColor(hex as any)
+          .setThumbnail(`https://singlecolorimage.com/get/${hex.substring(1)}/100x100`)
+          .setTimestamp();
+        await interaction.reply({ embeds: [embed] });
+      }
+    },
+    {
+      name: 'command_embed-builder',
+      handler: async (client: any, interaction: any, context: any) => {
+        const title = interaction.options.getString('title');
+        const desc = interaction.options.getString('description');
+        const color = interaction.options.getString('color') || '#4f8cff';
+        const footer = interaction.options.getString('footer');
+        const image = interaction.options.getString('image');
+
+        const embed = new EmbedBuilder()
+          .setTitle(title)
+          .setDescription(desc)
+          .setColor(color as any)
+          .setTimestamp();
+        
+        if (footer) embed.setFooter({ text: footer });
+        if (image) embed.setImage(image);
+
+        await interaction.reply({ embeds: [embed] });
       }
     },
     {

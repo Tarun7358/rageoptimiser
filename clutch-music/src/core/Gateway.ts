@@ -357,10 +357,6 @@ export class Gateway {
       this.dispatchEvent('messageReactionRemove', reaction, user);
     });
 
-    this.client.on('messageCreate', (message) => {
-      this.dispatchEvent('messageCreate', message);
-    });
-
     // Slash Command & Component Button routing
     this.client.on('interactionCreate', async (interaction) => {
       // PRE-FLIGHT CHECK: OWNER APPROVAL SYSTEM
@@ -382,7 +378,7 @@ export class Gateway {
             if (interaction.isRepliable()) {
               await interaction.reply({ 
                 content: '🚫 **Server Pending Approval**\nThis server has not yet been approved by the Rage Optimiser owner.\nPlease wait until approval is granted. All features are currently locked.',
-                ephemeral: true 
+                flags: 64 
               }).catch(() => {});
             }
             return;
@@ -409,7 +405,7 @@ export class Gateway {
              if (interaction.isRepliable()) {
                await interaction.reply({
                  content: '🚧 **System Maintenance Mode Active**\nThe server is currently in lockdown mode. All public bot commands are temporarily disabled. Please check back later.',
-                 ephemeral: true
+                 flags: 64
                }).catch(() => {});
              }
              return;
@@ -437,7 +433,7 @@ export class Gateway {
                   console.error(`Error executing command ${commandName} handler:`, err);
                   await interaction.reply({
                     content: '❌ An internal error occurred while executing this command.',
-                    ephemeral: true
+                    flags: 64
                   });
                   return;
                 }
@@ -448,10 +444,14 @@ export class Gateway {
 
         await interaction.reply({
           content: `❌ Command /${commandName} is registered but no module handler is currently active.`,
-          ephemeral: true
+          flags: 64
         });
       } else if (interaction.isButton()) {
         this.dispatchEvent(`button_${interaction.customId}`, interaction);
+      } else if (interaction.isStringSelectMenu()) {
+        this.dispatchEvent(`select_${interaction.customId}`, interaction);
+      } else if (interaction.isModalSubmit()) {
+        this.dispatchEvent(`modal_${interaction.customId}`, interaction);
       }
     });
   }

@@ -42,7 +42,7 @@ export const TicketsManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', flags: 64 });
         }
 
         try {
@@ -64,7 +64,7 @@ export const TicketsManifest: ModuleManifest = {
           context.logSyncEvent('Ticket Support: Posted interactive ticket board.', 'info');
         } catch (err) {
           console.error(err);
-          await interaction.reply({ content: '❌ Failed to post ticket board.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to post ticket board.', flags: 64 });
         }
       }
     },
@@ -74,7 +74,7 @@ export const TicketsManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', flags: 64 });
         }
 
         const config = tickModule.config;
@@ -82,7 +82,7 @@ export const TicketsManifest: ModuleManifest = {
         const staffRoleIds = config.staffRoleIds || [];
 
         if (!categoryId) {
-          return interaction.reply({ content: '❌ Ticket category is not configured.', ephemeral: true });
+          return interaction.reply({ content: '❌ Ticket category is not configured.', flags: 64 });
         }
 
         const guild = interaction.guild;
@@ -90,7 +90,7 @@ export const TicketsManifest: ModuleManifest = {
 
         try {
           // Defer response to handle channel creation overhead
-          await interaction.deferReply({ ephemeral: true });
+          await interaction.deferReply({ flags: 64 });
 
           const username = interaction.user.username.toLowerCase();
           const channelName = `ticket-${username}`;
@@ -159,7 +159,7 @@ export const TicketsManifest: ModuleManifest = {
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Ticket Support module is not enabled.', flags: 64 });
         }
 
         const channel = interaction.channel;
@@ -179,7 +179,7 @@ export const TicketsManifest: ModuleManifest = {
           }, 5000);
         } catch (err) {
           console.error(err);
-          await interaction.reply({ content: '❌ Failed to close ticket.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to close ticket.', flags: 64 });
         }
       }
     }

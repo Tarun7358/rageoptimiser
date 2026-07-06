@@ -5,15 +5,22 @@ import { Users, Plus, Trash2, Settings2 } from 'lucide-react';
 interface MemberWhitelistProps {
   modules?: ModuleState[];
   registry: { roles: DiscordRole[]; channels: DiscordChannel[] };
+  onUpdateConfig?: (moduleId: string, newConfig: Record<string, any>, enabledOverride?: boolean) => void;
 }
 
-export function MemberWhitelist({ modules, registry }: MemberWhitelistProps) {
+export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhitelistProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
   const [newMemberId, setNewMemberId] = useState('');
   
   const mod = (modules || []).find(m => m.id === 'member_whitelist');
   const members = mod?.config?.members || [];
+
+  const handleToggleModule = async () => {
+    if (!mod || !onUpdateConfig) return;
+    const nextEnabled = mod.status !== 'enabled';
+    await onUpdateConfig(mod.id, {}, nextEnabled);
+  };
 
   const handleEdit = async (updatedMember: any) => {
     try {
@@ -94,9 +101,18 @@ export function MemberWhitelist({ modules, registry }: MemberWhitelistProps) {
           </h2>
           <p style={{ color: 'var(--text-secondary)' }}>Manage trusted members who can bypass specific protection modules.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={18} /> Add Member
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            className={`btn ${mod?.status === 'enabled' ? 'btn-secondary' : 'btn-primary'}`} 
+            onClick={handleToggleModule}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {mod?.status === 'enabled' ? 'Disable Whitelist' : 'Enable Whitelist'}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} /> Add Member
+          </button>
+        </div>
       </div>
 
       {showAddForm && (

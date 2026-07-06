@@ -32,6 +32,26 @@ export interface OAuthSession {
 }
 
 export class OAuthService {
+  /**
+   * Helper to run a promise with a timeout. Resolves to the fallback value if the timeout expires.
+   */
+  private static async withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((resolve) => {
+      timeoutId = setTimeout(() => {
+        console.warn(`[OAuthService] Operation timed out after ${ms}ms. Proceeding with fallback.`);
+        resolve(fallback);
+      }, ms);
+    });
+
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      return result;
+    } finally {
+      if (timeoutId!) clearTimeout(timeoutId);
+    }
+  }
+
   private static getClientId(): string {
     return (process.env.CLIENT_ID || '').trim();
   }
@@ -145,10 +165,19 @@ export class OAuthService {
     if (db && manageableGuilds.length > 0) {
       for (const guild of manageableGuilds) {
         try {
-          const docSnap = await db.collection('approvals').doc(guild.id).get();
+          const docSnap = await this.withTimeout(
+            db.collection('approvals').doc(guild.id).get(),
+            3000,
+            { exists: false } as any
+          );
           if (docSnap.exists) {
             const data = docSnap.data() as any;
-            approvals[guild.id] = { status: data.status, guildName: data.guildName };
+            let status = data.status;
+            if (status !== 'Blacklisted' && status !== 'Approved') {
+              status = 'Approved';
+              await docSnap.ref.update({ status: 'Approved', lastUpdated: Date.now() }).catch(() => {});
+            }
+            approvals[guild.id] = { status, guildName: data.guildName };
           } else {
             approvals[guild.id] = { status: 'Not Registered', guildName: guild.name };
           }
@@ -168,7 +197,14 @@ export class OAuthService {
         managedGuildIds: manageableGuilds.map(g => g.id),
         loginAt: Date.now()
       };
-      await db.collection('discord_sessions').doc(discordUser.id).set(sessionData, { merge: true });
+      
+      console.log(`[OAuthService] Writing session data for user ${discordUser.username} to Firestore...`);
+      await this.withTimeout(
+        db.collection('discord_sessions').doc(discordUser.id).set(sessionData, { merge: true }),
+        4000,
+        null
+      );
+      console.log(`[OAuthService] Session write sequence completed.`);
     }
 
     // 6. Issue a JWT for the dashboard session (role: 'guild_manager')

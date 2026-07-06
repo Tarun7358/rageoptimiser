@@ -8,6 +8,26 @@ export class AuthService {
   private static readonly DEFAULT_ADMIN_USER = 'admin';
 
   /**
+   * Helper to run a promise with a timeout. Resolves to the fallback value if the timeout expires.
+   */
+  private static async withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((resolve) => {
+      timeoutId = setTimeout(() => {
+        console.warn(`[AuthService] Operation timed out after ${ms}ms. Proceeding with fallback.`);
+        resolve(fallback);
+      }, ms);
+    });
+
+    try {
+      const result = await Promise.race([promise, timeoutPromise]);
+      return result;
+    } finally {
+      if (timeoutId!) clearTimeout(timeoutId);
+    }
+  }
+
+  /**
    * Ensure that the default owner account exists.
    */
   public static async provisionDefaultOwner(): Promise<void> {
@@ -19,7 +39,13 @@ export class AuthService {
 
     try {
       const usersRef = db.collection('admin_users');
-      const snapshot = await usersRef.where('username', '==', this.DEFAULT_ADMIN_USER).get();
+      
+      // Wrap the read query with a timeout just in case
+      const snapshot = await this.withTimeout(
+        usersRef.where('username', '==', this.DEFAULT_ADMIN_USER).get(),
+        5000,
+        { empty: true, docs: [] } as any
+      );
 
       if (snapshot.empty) {
         console.log('[AuthService] No admin user found. Provisioning default owner account.');
@@ -36,8 +62,14 @@ export class AuthService {
           updatedAt: new Date()
         };
 
-        await usersRef.add(newUser);
-        console.log('[AuthService] Default owner provisioned successfully.');
+        // Wrap the write operation with a 4-second timeout
+        console.log('[AuthService] Saving new default owner to database...');
+        await this.withTimeout(
+          usersRef.add(newUser),
+          4000,
+          null
+        );
+        console.log('[AuthService] Default owner provisioning sequence completed.');
       }
     } catch (err) {
       console.error('[AuthService] Error provisioning default owner:', err);
@@ -48,11 +80,21 @@ export class AuthService {
    * Validate credentials and handle lockouts.
    */
   public static async authenticate(username: string, password: string): Promise<IAdminUser | null> {
+    console.log(`[AuthService] Authenticating user: ${username}`);
     const db = Database.getDb();
-    if (!db) throw new Error('Database disconnected');
+    if (!db) {
+      console.error('[AuthService] Authentication failed: database disconnected');
+      throw new Error('Database disconnected');
+    }
 
+    console.log('[AuthService] Fetching user doc from Firestore...');
     const usersRef = db.collection('admin_users');
-    const snapshot = await usersRef.where('username', '==', username).limit(1).get();
+    const snapshot = await this.withTimeout(
+      usersRef.where('username', '==', username).limit(1).get(),
+      5000,
+      { empty: true, docs: [] } as any
+    );
+    console.log(`[AuthService] User doc query completed. Empty: ${snapshot.empty}`);
 
     if (snapshot.empty) {
       return null; // User not found
@@ -60,14 +102,24 @@ export class AuthService {
 
     const doc = snapshot.docs[0];
     const user = { id: doc.id, ...doc.data() } as IAdminUser;
+    console.log('[AuthService] User data loaded successfully');
 
     // 1. Check if account is locked
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new Error('ACCOUNT_LOCKED');
+    if (user.lockedUntil) {
+      const lockedUntilDate = user.lockedUntil instanceof Date 
+        ? user.lockedUntil 
+        : (user.lockedUntil as any).toDate ? (user.lockedUntil as any).toDate() : new Date(user.lockedUntil);
+      console.log(`[AuthService] User lockedUntil: ${lockedUntilDate}`);
+      if (lockedUntilDate > new Date()) {
+        console.error('[AuthService] Account locked');
+        throw new Error('ACCOUNT_LOCKED');
+      }
     }
 
     // 2. Verify password
+    console.log('[AuthService] Verifying password...');
     const isMatch = await bcrypt.compare(password, user.passwordHash);
+    console.log(`[AuthService] Password verification result: ${isMatch}`);
 
     if (!isMatch) {
       // Increment failed attempts
@@ -80,17 +132,29 @@ export class AuthService {
         updateData.lockedUntil = lockUntil;
       }
 
-      await doc.ref.update(updateData);
+      console.log('[AuthService] Updating failed attempts with timeout...');
+      await this.withTimeout(
+        doc.ref.update(updateData),
+        3000,
+        null
+      );
+      console.log('[AuthService] Failed attempts update completed.');
       return null;
     }
 
     // 3. Successful login - reset counters
-    await doc.ref.update({
-      failedAttempts: 0,
-      lockedUntil: null,
-      lastLogin: new Date(),
-      updatedAt: new Date()
-    });
+    console.log('[AuthService] Login successful. Resetting failed attempts with timeout...');
+    await this.withTimeout(
+      doc.ref.update({
+        failedAttempts: 0,
+        lockedUntil: null,
+        lastLogin: new Date(),
+        updatedAt: new Date()
+      }),
+      3000,
+      null
+    );
+    console.log('[AuthService] User login records updated.');
 
     return user;
   }

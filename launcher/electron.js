@@ -1,5 +1,5 @@
 const {
-  app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, dialog, screen
+  app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, dialog, screen, globalShortcut
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -169,15 +169,15 @@ function createTray() {
     },
     { type: 'separator' },
     {
-      label: '🔄  Restart Bot',
+      label: '🔄  Restart Music Bot',
       click: async () => {
-        logger.info('Tray: Restart Bot requested');
+        logger.info('Tray: Restart Music Bot requested');
         try {
-          await pm.restartProcess('backend', BASE_PATH);
-          logger.success('Backend restarted from tray.');
+          await pm.restartProcess('musicBot', BASE_PATH);
+          logger.success('Music Bot restarted from tray.');
         } catch (e) {
-          logger.error(`Failed to restart backend: ${e.message}`);
-          dialog.showErrorBox('Restart Failed', `Could not restart backend:\n${e.message}`);
+          logger.error(`Failed to restart music bot: ${e.message}`);
+          dialog.showErrorBox('Restart Failed', `Could not restart music bot:\n${e.message}`);
         }
       }
     },
@@ -408,8 +408,41 @@ async function runStartupSequence() {
   hm.start(BASE_PATH);
 }
 
+function registerMediaKeys() {
+  logger.info('Registering desktop media keys...');
+  
+  globalShortcut.register('MediaPlayPause', () => {
+    logger.info('MediaPlayPause key pressed');
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('media-key', 'play-pause');
+    }
+  });
+
+  globalShortcut.register('MediaNextTrack', () => {
+    logger.info('MediaNextTrack key pressed');
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('media-key', 'next');
+    }
+  });
+
+  globalShortcut.register('MediaPreviousTrack', () => {
+    logger.info('MediaPreviousTrack key pressed');
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('media-key', 'prev');
+    }
+  });
+
+  globalShortcut.register('MediaStop', () => {
+    logger.info('MediaStop key pressed');
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('media-key', 'stop');
+    }
+  });
+}
+
 // ─── GRACEFUL SHUTDOWN ─────────────────────────────────────────────────────────
 async function gracefulShutdown() {
+  globalShortcut.unregisterAll();
   if (isQuitting) return;
   isQuitting = true;
 
@@ -464,6 +497,7 @@ app.whenReady().then(async () => {
 
   createSplashWindow();
   createTray();
+  registerMediaKeys();
 
   // Wait for splash to fully load then begin
   splashWin.webContents.once('did-finish-load', () => {

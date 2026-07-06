@@ -94,7 +94,7 @@ export const LoggingManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
-        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', ephemeral: true });
+        if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         
         const subcommand = interaction.options.getSubcommand();
         const modules = context.getModulesState();
@@ -114,35 +114,35 @@ export const LoggingManifest: ModuleManifest = {
           });
           if (!desc) desc = 'No categories configured.';
           
-          await interaction.reply({ content: `📋 **Logging Center Status**\n\n${desc}`, ephemeral: true });
+          await interaction.reply({ content: `📋 **Logging Center Status**\n\n${desc}`, flags: 64 });
         } else {
           const category = interaction.options.getString('category')?.toLowerCase();
           
           let actualCategory = validCategories.find(c => c.toLowerCase() === category);
           if (!actualCategory) {
-             return interaction.reply({ content: `❌ Invalid category. Valid options: ${validCategories.join(', ')}`, ephemeral: true });
+             return interaction.reply({ content: `❌ Invalid category. Valid options: ${validCategories.join(', ')}`, flags: 64 });
           }
 
           if (subcommand === 'channel') {
             const ch = interaction.options.getChannel('channel');
-            if (!ch) return interaction.reply({ content: '❌ Please specify a channel.', ephemeral: true });
+            if (!ch) return interaction.reply({ content: '❌ Please specify a channel.', flags: 64 });
             
             const newConfig = { ...config };
             if (!newConfig[actualCategory]) newConfig[actualCategory] = { enabled: true, events: {}, ignoreRoles: [], ignoreUsers: [], ignoreChannels: [] };
             newConfig[actualCategory].channelId = ch.id;
             
             context.logSyncEvent(`Logging Center: ${actualCategory} log channel updated to #${ch.name} via slash command.`, 'success');
-            await interaction.reply({ content: `✅ **${actualCategory}** log channel set to ${ch}. Save this in the Dashboard to persist permanently across restarts.`, ephemeral: true });
+            await interaction.reply({ content: `✅ **${actualCategory}** log channel set to ${ch}. Save this in the Dashboard to persist permanently across restarts.`, flags: 64 });
           } else if (subcommand === 'enable' || subcommand === 'disable') {
             const enabled = subcommand === 'enable';
             context.logSyncEvent(`Logging Center: ${actualCategory} logs were ${enabled ? 'enabled' : 'disabled'} via slash command.`, enabled ? 'success' : 'warn');
-            await interaction.reply({ content: `✅ **${actualCategory}** logs have been **${enabled ? 'ENABLED' : 'DISABLED'}**. Update Dashboard to persist.`, ephemeral: true });
+            await interaction.reply({ content: `✅ **${actualCategory}** logs have been **${enabled ? 'ENABLED' : 'DISABLED'}**. Update Dashboard to persist.`, flags: 64 });
           } else if (subcommand === 'reset') {
-            await interaction.reply({ content: `✅ **${actualCategory}** configuration reset to defaults. Update Dashboard to persist.`, ephemeral: true });
+            await interaction.reply({ content: `✅ **${actualCategory}** configuration reset to defaults. Update Dashboard to persist.`, flags: 64 });
           } else if (subcommand === 'test') {
             const catConfig = config[actualCategory];
             if (!catConfig || !catConfig.channelId) {
-              return interaction.reply({ content: `❌ **${actualCategory}** does not have a configured channel.`, ephemeral: true });
+              return interaction.reply({ content: `❌ **${actualCategory}** does not have a configured channel.`, flags: 64 });
             }
             try {
               const channel = await interaction.guild?.channels.fetch(catConfig.channelId).catch(() => null);
@@ -153,12 +153,12 @@ export const LoggingManifest: ModuleManifest = {
                   .setColor('#3498db')
                   .setTimestamp();
                 await channel.send({ embeds: [embed] });
-                await interaction.reply({ content: `✅ Test log dispatched to ${channel}.`, ephemeral: true });
+                await interaction.reply({ content: `✅ Test log dispatched to ${channel}.`, flags: 64 });
               } else {
-                await interaction.reply({ content: `❌ Could not find or access channel ID ${catConfig.channelId}.`, ephemeral: true });
+                await interaction.reply({ content: `❌ Could not find or access channel ID ${catConfig.channelId}.`, flags: 64 });
               }
             } catch(e) {
-              await interaction.reply({ content: `❌ Error sending test log. Check permissions.`, ephemeral: true });
+              await interaction.reply({ content: `❌ Error sending test log. Check permissions.`, flags: 64 });
             }
           }
         }

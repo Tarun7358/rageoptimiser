@@ -6,15 +6,22 @@ import { RoleSelect } from '../../components/ResourceSelectors';
 interface RoleWhitelistProps {
   modules?: ModuleState[];
   registry: { roles: DiscordRole[]; channels: DiscordChannel[] };
+  onUpdateConfig?: (moduleId: string, newConfig: Record<string, any>, enabledOverride?: boolean) => void;
 }
 
-export function RoleWhitelist({ modules, registry }: RoleWhitelistProps) {
+export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhitelistProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
   const [newRoleId, setNewRoleId] = useState('');
   
   const mod = (modules || []).find(m => m.id === 'role_whitelist');
   const roles = mod?.config?.roles || [];
+
+  const handleToggleModule = async () => {
+    if (!mod || !onUpdateConfig) return;
+    const nextEnabled = mod.status !== 'enabled';
+    await onUpdateConfig(mod.id, {}, nextEnabled);
+  };
 
   const handleEdit = async (updatedRole: any) => {
     try {
@@ -94,9 +101,18 @@ export function RoleWhitelist({ modules, registry }: RoleWhitelistProps) {
           </h2>
           <p style={{ color: 'var(--text-secondary)' }}>Manage trusted roles whose members automatically inherit bypass permissions.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={18} /> Add Role
-        </button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            className={`btn ${mod?.status === 'enabled' ? 'btn-secondary' : 'btn-primary'}`} 
+            onClick={handleToggleModule}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {mod?.status === 'enabled' ? 'Disable Whitelist' : 'Enable Whitelist'}
+          </button>
+          <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} /> Add Role
+          </button>
+        </div>
       </div>
 
       {showAddForm && (

@@ -58,6 +58,7 @@ export const INITIAL_MODULES: ModuleState[] = [
   { id: 'role_whitelist', name: 'Role Whitelist', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'reaction_roles', name: 'Reaction Roles', status: 'not_configured', progress: 100, errors: [], config: {} },
   { id: 'leveling', name: 'Leveling & XP', status: 'not_configured', progress: 100, errors: [], config: {} },
+  { id: 'reminders', name: 'Reminder System', status: 'not_configured', progress: 100, errors: [], config: {} },
   { id: 'automod', name: 'AI Automod', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'music', name: 'Music System', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'discord-dashboard', name: 'Discord Dashboard', status: 'config_required', progress: 0, errors: ['No target channel configured'], config: {} }
@@ -79,6 +80,7 @@ export function useDiscordSync() {
   const [modules, setModules] = useState<ModuleState[]>(INITIAL_MODULES);
   const [syncLogs, setSyncLogs] = useState<{ time: string; msg: string; type: 'info' | 'warn' | 'success' }[]>([]);
   const [globalSettings, setGlobalSettings] = useState<Record<string, any>>({});
+  const [musicPlayerState, setMusicPlayerState] = useState<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   // Poll for token and guild changes (login/logout, server select) since localStorage doesn't fire events in-tab
@@ -107,6 +109,7 @@ export function useDiscordSync() {
       setRegistry({ roles: [], channels: [], emojis: [], stickers: [], lastSyncTime: 'Just now' });
       setSyncLogs([]);
       setGlobalSettings({});
+      setMusicPlayerState(null);
       return;
     }
 
@@ -126,6 +129,10 @@ export function useDiscordSync() {
           setRegistry(data.registry);
           setSyncLogs(data.syncLogs);
           setGlobalSettings(data.globalSettings || {});
+          fetch('http://localhost:5000/api/modules/music/player', { headers })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d) setMusicPlayerState(d); })
+            .catch(() => {});
         }
       } catch (err) {
         console.error('Failed to load initial state from API server:', err);
@@ -164,6 +171,8 @@ export function useDiscordSync() {
             setSyncLogs(prev => [data.log, ...prev].slice(0, 100));
           } else if (data.type === 'GLOBAL_SETTINGS_UPDATE') {
             setGlobalSettings(data.settings);
+          } else if (data.type === 'MUSIC_STATE_UPDATE') {
+            setMusicPlayerState(data.state);
           }
         } catch (e) {
           console.error('WebSocket parsing error:', e);
@@ -270,6 +279,41 @@ export function useDiscordSync() {
     }
   };
 
+  // Listen for desktop media keys from Electron launcher
+  useEffect(() => {
+    const launcher = (window as any).launcher;
+    if (launcher && typeof launcher.onMediaKey === 'function') {
+      launcher.onMediaKey((key: string) => {
+        const token = localStorage.getItem('cn_token');
+        const currentGuild = localStorage.getItem('cn_active_guild');
+        if (!token) return;
+
+        let action = '';
+        if (key === 'play-pause') {
+          action = 'pause-toggle';
+        } else if (key === 'next') {
+          action = 'skip';
+        } else if (key === 'prev') {
+          action = 'prev';
+        } else if (key === 'stop') {
+          action = 'stop';
+        }
+
+        if (action) {
+          fetch('http://localhost:5000/api/modules/music/action', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+              'X-Guild-Id': currentGuild || ''
+            },
+            body: JSON.stringify({ action })
+          }).catch(err => console.error('Launcher media key action failed:', err));
+        }
+      });
+    }
+  }, []);
+
   return {
     registry,
     modules,
@@ -278,6 +322,7 @@ export function useDiscordSync() {
     refreshSync,
     updateModuleConfig,
     simulateDiscordAction,
-    addSyncLog
+    addSyncLog,
+    musicPlayerState
   };
 }

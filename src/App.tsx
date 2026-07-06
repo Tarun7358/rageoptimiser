@@ -40,6 +40,13 @@ import { ApprovalCenter } from './pages/ApprovalCenter';
 import { PublicDashboard } from './pages/PublicDashboard';
 import { Automod } from './pages/Automod';
 import { Download } from './pages/Download';
+import { Blacklist } from './pages/Blacklist';
+import { Giveaway } from './pages/Giveaway';
+import { Announcements } from './pages/Announcements';
+import { JoinToCreate } from './pages/JoinToCreate';
+import { ReactionRoles } from './pages/ReactionRoles';
+import { Leveling } from './pages/Leveling';
+import { Reminders } from './pages/Reminders';
 import { useAuth } from './hooks/useAuth';
 
 interface ToastItem {
@@ -81,7 +88,8 @@ function App() {
     globalSettings,
     refreshSync,
     updateModuleConfig,
-    simulateDiscordAction
+    simulateDiscordAction,
+    musicPlayerState
   } = useDiscordSync();
 
   // Watch for module error additions to trigger live warnings toast
@@ -246,6 +254,7 @@ function App() {
             modules={modules}
             registry={registry}
             onUpdateConfig={updateModuleConfig}
+            musicPlayerState={musicPlayerState}
           />
         );
       case 'owner':
@@ -261,11 +270,11 @@ function App() {
       case 'whitelist-overview':
         return <WhitelistOverview modules={modules} registry={registry} onNavigate={handleNavigate} />;
       case 'whitelist-bots':
-        return <BotWhitelist modules={modules} registry={registry} />;
+        return <BotWhitelist modules={modules} registry={registry} onUpdateConfig={updateModuleConfig} />;
       case 'whitelist-members':
-        return <MemberWhitelist modules={modules} registry={registry} />;
+        return <MemberWhitelist modules={modules} registry={registry} onUpdateConfig={updateModuleConfig} />;
       case 'whitelist-roles':
-        return <RoleWhitelist modules={modules} registry={registry} />;
+        return <RoleWhitelist modules={modules} registry={registry} onUpdateConfig={updateModuleConfig} />;
       case 'whitelist-activity':
         return <WhitelistActivity />;
       case 'whitelist-audit':
@@ -319,6 +328,82 @@ function App() {
             modules={modules}
           />
         );
+      case 'blacklist':
+        return (
+          <Blacklist 
+            onSaveConfig={triggerToast} 
+            modules={modules} 
+            onUpdateConfig={updateModuleConfig} 
+          />
+        );
+      case 'giveaway':
+        return (
+          <Giveaway 
+            onSaveConfig={triggerToast} 
+            modules={modules} 
+            onUpdateConfig={updateModuleConfig} 
+          />
+        );
+      case 'announcements':
+        return (
+          <Announcements 
+            onSaveConfig={triggerToast} 
+            modules={modules} 
+            onUpdateConfig={updateModuleConfig} 
+          />
+        );
+      case 'join_to_create':
+        return (
+          <JoinToCreate 
+            onSaveConfig={triggerToast} 
+            modules={modules} 
+            onUpdateConfig={updateModuleConfig} 
+            registry={registry}
+          />
+        );
+      case 'reaction_roles':
+        return (
+          <ReactionRoles 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'leveling':
+        return (
+          <Leveling 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'reminders':
+        return (
+          <Reminders 
+            onSaveConfig={triggerToast} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'logging':
+        return (
+          <Logging 
+            onSaveConfig={triggerToast} 
+            onManualTrigger={pushManualEvent} 
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
+      case 'bot_whitelist':
+        return <BotWhitelist modules={modules} registry={registry} />;
+      case 'member_whitelist':
+        return <MemberWhitelist modules={modules} registry={registry} />;
+      case 'role_whitelist':
+        return <RoleWhitelist modules={modules} registry={registry} />;
       default:
         return (
           <DashboardHome 

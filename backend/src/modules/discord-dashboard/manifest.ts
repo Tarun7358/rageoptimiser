@@ -180,7 +180,7 @@ export const DiscordDashboardManifest: ModuleManifest = {
         const dashModule = modules.find((m: any) => m.id === 'discord-dashboard');
         
         if (!dashModule || dashModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Discord Dashboard module is not enabled.', ephemeral: true });
+          return interaction.reply({ content: '❌ Discord Dashboard module is not enabled.', flags: 64 });
         }
 
         try {
@@ -201,7 +201,7 @@ export const DiscordDashboardManifest: ModuleManifest = {
           context.logSyncEvent('Discord Dashboard initialized and pinned.', 'success');
         } catch (err) {
           console.error(err);
-          await interaction.reply({ content: '❌ Failed to setup dashboard.', ephemeral: true });
+          await interaction.reply({ content: '❌ Failed to setup dashboard.', flags: 64 });
         }
       }
     },
@@ -233,11 +233,11 @@ export const DiscordDashboardManifest: ModuleManifest = {
       name: 'button_dbn_config',
       handler: async (client: any, interaction: any, context: any) => {
         if (!interaction.memberPermissions?.has('Administrator')) {
-          return interaction.reply({ content: '❌ Only Administrators can access this config.', ephemeral: true });
+          return interaction.reply({ content: '❌ Only Administrators can access this config.', flags: 64 });
         }
         await interaction.reply({ 
           content: '🛠️ **Dashboard Configuration**\nManage appearance, intervals, and pages directly from the Web Dashboard at: `http://localhost:3000/dashboard`', 
-          ephemeral: true 
+          flags: 64 
         });
       }
     }
