@@ -25,6 +25,17 @@ export class Database {
         }
       }
 
+      // Automatically generate key file from env variable if available and file is missing
+      const envKeyContent = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+      if (envKeyContent && !fs.existsSync(keyPath)) {
+        try {
+          fs.writeFileSync(keyPath, envKeyContent, 'utf8');
+          console.log('[Database] Written Firebase credentials dynamically from environment variable.');
+        } catch (e: any) {
+          console.error('[Database] Failed to write dynamic Firebase key:', e.message);
+        }
+      }
+
       if (getApps().length === 0) {
         if (fs.existsSync(keyPath)) {
           console.log(`[Database] Initializing Firebase with key from: ${keyPath}`);
