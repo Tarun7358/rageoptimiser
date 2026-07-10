@@ -1,5 +1,1619 @@
 [
   {
+    "id": "jrr4rm8",
+    "category": "Voice",
+    "text": "**wt.void** left 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783661266724
+  },
+  {
+    "id": "jtyzgcd",
+    "category": "Voice",
+    "text": "**wt.void** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783661201594
+  },
+  {
+    "id": "7r5l79n",
+    "category": "Voice",
+    "text": "**wt.void** left 蝠┃ 𝖠ꜰᴋ",
+    "timestamp": 1783659395509
+  },
+  {
+    "id": "t01f7dk",
+    "category": "Voice",
+    "text": "**wt.void** joined 蝠┃ 𝖠ꜰᴋ",
+    "timestamp": 1783659336143
+  },
+  {
+    "id": "tlsmdax",
+    "category": "Voice",
+    "text": "**wt.void** left 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783658839653
+  },
+  {
+    "id": "2fq3ksa",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783658772589
+  },
+  {
+    "id": "ib2o3fm",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783658312100
+  },
+  {
+    "id": "zrad8e5",
+    "category": "Voice",
+    "text": "**wt.void** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783658299423
+  },
+  {
+    "id": "tg3vl99",
+    "category": "Members",
+    "text": "**Koya** joined the server",
+    "timestamp": 1783632576996
+  },
+  {
+    "id": "vovvnc9",
+    "category": "Members",
+    "text": "**Ticket King** joined the server",
+    "timestamp": 1783632543139
+  },
+  {
+    "id": "u98d1er",
+    "category": "Server",
+    "text": "Channel **#𝗦𝗲𝗿𝘃𝗲𝗿-𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻-𝗟𝗼𝗴𝘇** was deleted",
+    "timestamp": 1783632516470
+  },
+  {
+    "id": "prsiowz",
+    "category": "Server",
+    "text": "Channel **#𝗕𝗼𝘁-𝗖𝗺𝗱𝘇** was created",
+    "timestamp": 1783632473312
+  },
+  {
+    "id": "38a51i0",
+    "category": "Server",
+    "text": "Channel **#𝘾𝙢𝙙𝙯 𝘼𝙘𝙘𝙚𝙨𝙨** was created",
+    "timestamp": 1783632455524
+  },
+  {
+    "id": "bb5s59y",
+    "category": "Members",
+    "text": "**rbzclasher** joined the server",
+    "timestamp": 1783632369405
+  },
+  {
+    "id": "js2t826",
+    "category": "Server",
+    "text": "Channel **#𝗠𝘂𝘀𝗶𝗰-𝗧𝗲𝘀𝘁𝗶𝗻𝗴** was created",
+    "timestamp": 1783632198231
+  },
+  {
+    "id": "gy8fe89",
+    "category": "Server",
+    "text": "Channel **#𝗦𝗲𝗿𝘃𝗲𝗿-𝗩𝗲𝗿𝗶𝗳𝗶𝗰𝗮𝘁𝗶𝗼𝗻-𝗟𝗼𝗴𝘇** was created",
+    "timestamp": 1783631728122
+  },
+  {
+    "id": "f6w0b7y",
+    "category": "Server",
+    "text": "Channel **#𝗕𝗼𝘁-𝗠𝗮𝗶𝗻𝘁𝗮𝗻𝗲𝗻𝗰𝗲-𝗟𝗼𝗴𝘀** was created",
+    "timestamp": 1783631692581
+  },
+  {
+    "id": "x1cbu5k",
+    "category": "Server",
+    "text": "Channel **#𝗦𝗲𝗿𝘃𝗲𝗿-𝗔𝗻𝘁𝗶𝗡𝘂𝗸𝗲-𝗟𝗼𝗴𝘀** was created",
+    "timestamp": 1783631662371
+  },
+  {
+    "id": "1q1u9kl",
+    "category": "Server",
+    "text": "Channel **#𝗦𝗲𝗿𝘃𝗲𝗿-𝗟𝗼𝗴𝘀** was created",
+    "timestamp": 1783631633712
+  },
+  {
+    "id": "bokfecr",
+    "category": "Server",
+    "text": "Channel **#𝗦𝗲𝗿𝘃𝗲𝗿-𝗗𝗲𝘁𝗮𝗶𝗹𝘀** was created",
+    "timestamp": 1783631619482
+  },
+  {
+    "id": "k2g0v93",
+    "category": "Server",
+    "text": "Channel **#𝘿𝙚𝙫𝙚𝙡𝙤𝙥𝙚𝙧 𝙃𝙪𝙗** was created",
+    "timestamp": 1783631592481
+  },
+  {
+    "id": "wxan2cs",
+    "category": "Server",
+    "text": "Channel **#𝗥𝘂𝗹𝗲𝘇** was created",
+    "timestamp": 1783631530129
+  },
+  {
+    "id": "cxb7ucb",
+    "category": "Server",
+    "text": "Channel **#𝗧𝗲𝘀𝘁𝗶𝗻𝗴** was created",
+    "timestamp": 1783631451708
+  },
+  {
+    "id": "v1w7gc1",
+    "category": "Server",
+    "text": "Channel **#𝗗𝗮𝘀𝗵𝗯𝗼𝗮𝗿𝗱** was created",
+    "timestamp": 1783631327418
+  },
+  {
+    "id": "x7nmq6t",
+    "category": "Server",
+    "text": "Channel **#𝘉𝘰𝘵𝘻-𝘊𝘮𝘥𝘴** was created",
+    "timestamp": 1783631244815
+  },
+  {
+    "id": "sj7l7jx",
+    "category": "Server",
+    "text": "Channel **#𝗕𝘂𝗴𝘀** was created",
+    "timestamp": 1783631164416
+  },
+  {
+    "id": "anp6qr3",
+    "category": "Members",
+    "text": "**NQN** joined the server",
+    "timestamp": 1783629513195
+  },
+  {
+    "id": "333qdd1",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783629250527
+  },
+  {
+    "id": "qjw6ja0",
+    "category": "Members",
+    "text": "**Xenon** left the server",
+    "timestamp": 1783619346863
+  },
+  {
+    "id": "qg8br7a",
+    "category": "Members",
+    "text": "**YAGPDB.xyz** left the server",
+    "timestamp": 1783619334812
+  },
+  {
+    "id": "wwufdtt",
+    "category": "Members",
+    "text": "**dmizm** left the server",
+    "timestamp": 1783615497175
+  },
+  {
+    "id": "hhvvz97",
+    "category": "Voice",
+    "text": "**wt.void** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783615336967
+  },
+  {
+    "id": "02mtlgm",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783615336871
+  },
+  {
+    "id": "7jczqxn",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783615256064
+  },
+  {
+    "id": "5x46l3b",
+    "category": "Voice",
+    "text": "**_pookie__007** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614996874
+  },
+  {
+    "id": "6g9pe9u",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614989810
+  },
+  {
+    "id": "befqt74",
+    "category": "Voice",
+    "text": "**_pookie__007** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614923396
+  },
+  {
+    "id": "2x9mh86",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614891286
+  },
+  {
+    "id": "qs70bp0",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614672984
+  },
+  {
+    "id": "cuf4tb9",
+    "category": "Voice",
+    "text": "**aadhiirfan** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783614653647
+  },
+  {
+    "id": "9tty2yz",
+    "category": "Voice",
+    "text": "**jackgaming0826** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783614649103
+  },
+  {
+    "id": "ip5mlwx",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614640500
+  },
+  {
+    "id": "wprm6cn",
+    "category": "Voice",
+    "text": "**wt.void** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783614609386
+  },
+  {
+    "id": "2bkho9e",
+    "category": "Voice",
+    "text": "**porul_irfan_** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783614319410
+  },
+  {
+    "id": "28mce4d",
+    "category": "Voice",
+    "text": "**porul_irfan_** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783614290132
+  },
+  {
+    "id": "er7rq6z",
+    "category": "Voice",
+    "text": "**mdluffy2105** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783614011581
+  },
+  {
+    "id": "it8noa3",
+    "category": "Voice",
+    "text": "**mdluffy2105** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783613498073
+  },
+  {
+    "id": "v7wycrg",
+    "category": "Voice",
+    "text": "**rbzclasher** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783613366654
+  },
+  {
+    "id": "fdv1b9f",
+    "category": "Voice",
+    "text": "**_pookie__007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783613255088
+  },
+  {
+    "id": "g7pew60",
+    "category": "Voice",
+    "text": "**_pookie__007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783612977716
+  },
+  {
+    "id": "u13h2f3",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783611053050
+  },
+  {
+    "id": "qdqfkm2",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610900766
+  },
+  {
+    "id": "alwac0v",
+    "category": "Voice",
+    "text": "**userdeleted091** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610425863
+  },
+  {
+    "id": "uot6uvl",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610425339
+  },
+  {
+    "id": "jgm3ey5",
+    "category": "Voice",
+    "text": "**stonnerz** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610416054
+  },
+  {
+    "id": "stdj8jy",
+    "category": "Voice",
+    "text": "**userdeleted091** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610398659
+  },
+  {
+    "id": "c7yjmnj",
+    "category": "Voice",
+    "text": "**ryuga_ry** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610268225
+  },
+  {
+    "id": "a0dh159",
+    "category": "Voice",
+    "text": "**userdeleted091** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610267249
+  },
+  {
+    "id": "ho46da1",
+    "category": "Voice",
+    "text": "**ryuga_ry** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610114709
+  },
+  {
+    "id": "i7g7iqn",
+    "category": "Voice",
+    "text": "**stonnerz** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783610039571
+  },
+  {
+    "id": "jw1aahq",
+    "category": "Voice",
+    "text": "**2578840977** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609820034
+  },
+  {
+    "id": "0i2x2nj",
+    "category": "Voice",
+    "text": "**2578840977** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609818127
+  },
+  {
+    "id": "x2njc3n",
+    "category": "Voice",
+    "text": "**quantumpc.** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609567273
+  },
+  {
+    "id": "07wfpgk",
+    "category": "Voice",
+    "text": "**fifthiru.op** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609405405
+  },
+  {
+    "id": "d8gw0lp",
+    "category": "Voice",
+    "text": "**aadhiirfan** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609356407
+  },
+  {
+    "id": "l2ck0wp",
+    "category": "Voice",
+    "text": "**fifthiru.op** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609342378
+  },
+  {
+    "id": "f0t0zx1",
+    "category": "Voice",
+    "text": "**userdeleted091** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609297417
+  },
+  {
+    "id": "fb6rxk9",
+    "category": "Voice",
+    "text": "**ryux.neevi_26404** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609291240
+  },
+  {
+    "id": "f6go71e",
+    "category": "Voice",
+    "text": "**ryux.neevi_26404** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609278342
+  },
+  {
+    "id": "wlbm4fl",
+    "category": "Voice",
+    "text": "**aadhiirfan** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783609009097
+  },
+  {
+    "id": "7uwmjjd",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783608945861
+  },
+  {
+    "id": "j6o7186",
+    "category": "Voice",
+    "text": "**quantumpc.** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783608866855
+  },
+  {
+    "id": "6h0vtns",
+    "category": "Voice",
+    "text": "**itzz_pookiee** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783608859050
+  },
+  {
+    "id": "a5cfd1k",
+    "category": "Members",
+    "text": "**quantumpc.** joined the server",
+    "timestamp": 1783608815283
+  },
+  {
+    "id": "91ql71z",
+    "category": "Voice",
+    "text": "**jackgaming0826** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783608608216
+  },
+  {
+    "id": "tr9y1qj",
+    "category": "Voice",
+    "text": "**aadhiirfan** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783608594541
+  },
+  {
+    "id": "tl59beh",
+    "category": "Voice",
+    "text": "**rbzclasher** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783608520891
+  },
+  {
+    "id": "bpm8441",
+    "category": "Voice",
+    "text": "**_pookie__007** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783608414512
+  },
+  {
+    "id": "jjt3v4g",
+    "category": "Voice",
+    "text": "**luv_is_always_prime** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783608402156
+  },
+  {
+    "id": "evobsfs",
+    "category": "Voice",
+    "text": "**mrramana007** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783608325380
+  },
+  {
+    "id": "gbherm5",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783608113160
+  },
+  {
+    "id": "yj7nob1",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607982952
+  },
+  {
+    "id": "mopc7kn",
+    "category": "Voice",
+    "text": "**itzz_pookiee** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607980902
+  },
+  {
+    "id": "93b1qkd",
+    "category": "Voice",
+    "text": "**wt.void** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607844459
+  },
+  {
+    "id": "cw8o7ce",
+    "category": "Voice",
+    "text": "**itzz_pookiee** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607733515
+  },
+  {
+    "id": "w0lfp53",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607730444
+  },
+  {
+    "id": "rrcaiid",
+    "category": "Voice",
+    "text": "**jackgaming0826** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783607356940
+  },
+  {
+    "id": "kcipbdy",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607240143
+  },
+  {
+    "id": "rp4r62j",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783607229048
+  },
+  {
+    "id": "p8sr9zu",
+    "category": "Voice",
+    "text": "**gojoxpc** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607167895
+  },
+  {
+    "id": "35o9cwz",
+    "category": "Voice",
+    "text": "**jackgaming0826** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783607161661
+  },
+  {
+    "id": "woi35k6",
+    "category": "Voice",
+    "text": "**mrramana007** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607073491
+  },
+  {
+    "id": "ng2ctep",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607034330
+  },
+  {
+    "id": "5u5ro1k",
+    "category": "Voice",
+    "text": "**aadaraontop** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783607023744
+  },
+  {
+    "id": "03fn9nf",
+    "category": "Voice",
+    "text": "**itzzz_pookie** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606937798
+  },
+  {
+    "id": "7did1pm",
+    "category": "Voice",
+    "text": "**itzzz_pookie** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606915734
+  },
+  {
+    "id": "q918t0s",
+    "category": "Members",
+    "text": "**GOD FATHER !!!** left the server",
+    "timestamp": 1783606874103
+  },
+  {
+    "id": "yoczgbu",
+    "category": "Voice",
+    "text": "**itzzz_pookie** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606700114
+  },
+  {
+    "id": "8sv2gys",
+    "category": "Voice",
+    "text": "**akira_efxx** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606692254
+  },
+  {
+    "id": "q7b1n90",
+    "category": "Voice",
+    "text": "**itzzz_pookie** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606653497
+  },
+  {
+    "id": "01z1zkd",
+    "category": "Voice",
+    "text": "**akira_efxx** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606617508
+  },
+  {
+    "id": "c2f6d61",
+    "category": "Voice",
+    "text": "**aadaraontop** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606557672
+  },
+  {
+    "id": "itqusmm",
+    "category": "Members",
+    "text": "**aadaraontop** joined the server",
+    "timestamp": 1783606503014
+  },
+  {
+    "id": "s4q0voz",
+    "category": "Voice",
+    "text": "**gojoxpc** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606482524
+  },
+  {
+    "id": "7vnuekv",
+    "category": "Members",
+    "text": "**gojoxpc** joined the server",
+    "timestamp": 1783606430009
+  },
+  {
+    "id": "hnzp26c",
+    "category": "Voice",
+    "text": "**itzzz_pookie** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606353929
+  },
+  {
+    "id": "l5qs3x5",
+    "category": "Voice",
+    "text": "**itzzz_pookie** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606350397
+  },
+  {
+    "id": "as0myr6",
+    "category": "Voice",
+    "text": "**itzzz_pookie** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606313171
+  },
+  {
+    "id": "cdz2h8r",
+    "category": "Voice",
+    "text": "**rbzclasher** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606303264
+  },
+  {
+    "id": "r7xrxlx",
+    "category": "Voice",
+    "text": "**rbzclasher** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606301177
+  },
+  {
+    "id": "gdrvljb",
+    "category": "Voice",
+    "text": "**itzzz_pookie** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606296195
+  },
+  {
+    "id": "h02wkuh",
+    "category": "Voice",
+    "text": "**wt.void** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606266146
+  },
+  {
+    "id": "pqhf5kc",
+    "category": "Voice",
+    "text": "**rbzclasher** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783606262402
+  },
+  {
+    "id": "n910fac",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606256601
+  },
+  {
+    "id": "ri2f0hc",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783606231648
+  },
+  {
+    "id": "99b1pn1",
+    "category": "Voice",
+    "text": "**itzzz_pookie** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606126467
+  },
+  {
+    "id": "fo8wujp",
+    "category": "Voice",
+    "text": "**akira_efxx** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606123415
+  },
+  {
+    "id": "5q30cla",
+    "category": "Voice",
+    "text": "**itzzz_pookie** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606072747
+  },
+  {
+    "id": "l3ykxl9",
+    "category": "Voice",
+    "text": "**akira_efxx** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606068725
+  },
+  {
+    "id": "uhr6yde",
+    "category": "Voice",
+    "text": "**keerthi0191** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606064147
+  },
+  {
+    "id": "68qv9xx",
+    "category": "Voice",
+    "text": "**itzz_pookiee** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783606061890
+  },
+  {
+    "id": "cih4zr2",
+    "category": "Voice",
+    "text": "**ishowaimzz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783606019511
+  },
+  {
+    "id": "gc78g40",
+    "category": "Voice",
+    "text": "**tk.hima** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605944340
+  },
+  {
+    "id": "jofr0w2",
+    "category": "Voice",
+    "text": "**itzz_pookiee** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605885694
+  },
+  {
+    "id": "t66mdim",
+    "category": "Voice",
+    "text": "**tk.hima** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605646958
+  },
+  {
+    "id": "grrm14w",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605503501
+  },
+  {
+    "id": "ohq2qgl",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605500885
+  },
+  {
+    "id": "70wbyc8",
+    "category": "Voice",
+    "text": "**ishowaimzz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605366048
+  },
+  {
+    "id": "c7kcbxz",
+    "category": "Voice",
+    "text": "**tk.hima** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605348094
+  },
+  {
+    "id": "azejwfz",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605087494
+  },
+  {
+    "id": "d4y39i5",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605033869
+  },
+  {
+    "id": "vusg7jv",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783605000609
+  },
+  {
+    "id": "1380huv",
+    "category": "Voice",
+    "text": "**ishowaimzz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604860937
+  },
+  {
+    "id": "zspe81a",
+    "category": "Voice",
+    "text": "**cc_obito** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604665657
+  },
+  {
+    "id": "0wxgeqo",
+    "category": "Voice",
+    "text": "**tk.hima** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604511630
+  },
+  {
+    "id": "pydl2g8",
+    "category": "Voice",
+    "text": "**tk.hima** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604480544
+  },
+  {
+    "id": "5yqgnr6",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604383194
+  },
+  {
+    "id": "ldzlyox",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783604378336
+  },
+  {
+    "id": "bn9yf0a",
+    "category": "Voice",
+    "text": "**ishowaimzz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604362241
+  },
+  {
+    "id": "ydt5gfs",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604297956
+  },
+  {
+    "id": "3w4vlnr",
+    "category": "Voice",
+    "text": "**keerthi0191** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604194598
+  },
+  {
+    "id": "hfyanwy",
+    "category": "Voice",
+    "text": "**tk.hima** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604180964
+  },
+  {
+    "id": "nsv6xli",
+    "category": "Voice",
+    "text": "**tk.hima** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604152000
+  },
+  {
+    "id": "ytg1nnd",
+    "category": "Voice",
+    "text": "**2578840977** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604127060
+  },
+  {
+    "id": "5ny3nr7",
+    "category": "Voice",
+    "text": "**2578840977** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783604078481
+  },
+  {
+    "id": "w8olf63",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603942438
+  },
+  {
+    "id": "icn866m",
+    "category": "Voice",
+    "text": "**cc_obito** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603928095
+  },
+  {
+    "id": "axvzgli",
+    "category": "Members",
+    "text": "**cc_obito** joined the server",
+    "timestamp": 1783603909385
+  },
+  {
+    "id": "t3wkt5h",
+    "category": "Voice",
+    "text": "**_pookie__007** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603874160
+  },
+  {
+    "id": "eq03hbx",
+    "category": "Voice",
+    "text": "**_pookie__007** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603870317
+  },
+  {
+    "id": "xmn9laf",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603833406
+  },
+  {
+    "id": "x44jyf4",
+    "category": "Voice",
+    "text": "**pookie_awm** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603511709
+  },
+  {
+    "id": "1ox5rbj",
+    "category": "Voice",
+    "text": "**ryzupc** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783603492592
+  },
+  {
+    "id": "u083vbi",
+    "category": "Voice",
+    "text": "**ryzupc** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783603479081
+  },
+  {
+    "id": "cdu3x8w",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783603122049
+  },
+  {
+    "id": "ytg8aer",
+    "category": "Voice",
+    "text": "**keerthi0191** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602989286
+  },
+  {
+    "id": "coho69m",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602885893
+  },
+  {
+    "id": "0a7jm28",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602853642
+  },
+  {
+    "id": "ggh1emj",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602827475
+  },
+  {
+    "id": "36cd7rj",
+    "category": "Voice",
+    "text": "**pookie_awm** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602437981
+  },
+  {
+    "id": "4jfx9nr",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602179270
+  },
+  {
+    "id": "yd7w9k2",
+    "category": "Voice",
+    "text": "**keerthi0191** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783602179238
+  },
+  {
+    "id": "3iaxl5j",
+    "category": "Voice",
+    "text": "**tk.hima** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602151784
+  },
+  {
+    "id": "i1rvib0",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783602129038
+  },
+  {
+    "id": "b2r0z3t",
+    "category": "Voice",
+    "text": "**keerthi0191** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602129031
+  },
+  {
+    "id": "d6i1ows",
+    "category": "Voice",
+    "text": "**tk.hima** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783602110828
+  },
+  {
+    "id": "4lg6try",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601907643
+  },
+  {
+    "id": "jigumwr",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601904412
+  },
+  {
+    "id": "d4vvjaw",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601904129
+  },
+  {
+    "id": "t7j1bx7",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601898712
+  },
+  {
+    "id": "2yicr5l",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601875328
+  },
+  {
+    "id": "p287p2y",
+    "category": "Voice",
+    "text": "**2578840977** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601843351
+  },
+  {
+    "id": "y8iek3n",
+    "category": "Voice",
+    "text": "**keerthi0191** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601826129
+  },
+  {
+    "id": "5zbcpu7",
+    "category": "Voice",
+    "text": "**ishowaimzz** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601815280
+  },
+  {
+    "id": "38ious3",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601813391
+  },
+  {
+    "id": "tbpd3t0",
+    "category": "Voice",
+    "text": "**izumieeeeee** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601810573
+  },
+  {
+    "id": "mpvolub",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601774778
+  },
+  {
+    "id": "9r2bxdt",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601768796
+  },
+  {
+    "id": "kt9qixt",
+    "category": "Voice",
+    "text": "**lokixz_** left 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601745841
+  },
+  {
+    "id": "cywmuqs",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601669039
+  },
+  {
+    "id": "3apva9l",
+    "category": "Voice",
+    "text": "**stonnerz** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601587948
+  },
+  {
+    "id": "snwc6xm",
+    "category": "Voice",
+    "text": "**stonnerz** left 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601585709
+  },
+  {
+    "id": "8mcsu1r",
+    "category": "Voice",
+    "text": "**lokixz_** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601496120
+  },
+  {
+    "id": "8km9r6t",
+    "category": "Voice",
+    "text": "**lokixz_** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601495085
+  },
+  {
+    "id": "0iwupq3",
+    "category": "Voice",
+    "text": "**ishowaimzz** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601490618
+  },
+  {
+    "id": "7i1gs2g",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601483173
+  },
+  {
+    "id": "fhbzwb7",
+    "category": "Voice",
+    "text": "**lokixz_** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783601478512
+  },
+  {
+    "id": "mdy07rs",
+    "category": "Voice",
+    "text": "**lokixz_** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601418570
+  },
+  {
+    "id": "baai86v",
+    "category": "Voice",
+    "text": "**2578840977** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601410546
+  },
+  {
+    "id": "gso75ab",
+    "category": "Voice",
+    "text": "**lokixz_** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783601398497
+  },
+  {
+    "id": "s8bcxuh",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601365164
+  },
+  {
+    "id": "j0cop1o",
+    "category": "Members",
+    "text": "**Rage Music** left the server",
+    "timestamp": 1783601354636
+  },
+  {
+    "id": "k1x5gbp",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783601353142
+  },
+  {
+    "id": "rhokxpi",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601323721
+  },
+  {
+    "id": "e3fu7rv",
+    "category": "Voice",
+    "text": "**keerthi0191** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601300966
+  },
+  {
+    "id": "h7l1nju",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783601297562
+  },
+  {
+    "id": "7txii3r",
+    "category": "Voice",
+    "text": "**lokixz_** left 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600884704
+  },
+  {
+    "id": "7vl0i1r",
+    "category": "Voice",
+    "text": "**ishowaimzz** moved to 𒆜 𝐎ᴩᴛɪᴍɪᴢᴀᴛɪᴏɴ ⌨️",
+    "timestamp": 1783600871905
+  },
+  {
+    "id": "yfkltbp",
+    "category": "Voice",
+    "text": "**izumieeeeee** moved to 𒆜 𝐎ᴩᴛɪᴍɪᴢᴀᴛɪᴏɴ ⌨️",
+    "timestamp": 1783600868310
+  },
+  {
+    "id": "5venb3h",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐎ᴩᴛɪᴍɪᴢᴀᴛɪᴏɴ ⌨️",
+    "timestamp": 1783600866849
+  },
+  {
+    "id": "jod6sv8",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600602611
+  },
+  {
+    "id": "lo0dcpp",
+    "category": "Voice",
+    "text": "**izumieeeeee** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600599567
+  },
+  {
+    "id": "r91l4ur",
+    "category": "Voice",
+    "text": "**ishowaimzz** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600592325
+  },
+  {
+    "id": "2sir0s0",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600590345
+  },
+  {
+    "id": "h7c5sad",
+    "category": "Voice",
+    "text": "**fifthiru.op** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600586009
+  },
+  {
+    "id": "h57wu5o",
+    "category": "Members",
+    "text": "**Rage Music** left the server",
+    "timestamp": 1783600572419
+  },
+  {
+    "id": "eodz7ru",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783600571103
+  },
+  {
+    "id": "1dzoygl",
+    "category": "Voice",
+    "text": "**itsz_mathy** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600540765
+  },
+  {
+    "id": "w2bkvvn",
+    "category": "Voice",
+    "text": "**fifthiru.op** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600484512
+  },
+  {
+    "id": "fcomrbk",
+    "category": "Members",
+    "text": "**Rage Music** left the server",
+    "timestamp": 1783600460316
+  },
+  {
+    "id": "e58yp44",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783600459020
+  },
+  {
+    "id": "ebhbuzj",
+    "category": "Voice",
+    "text": "**fifthiru.op** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600267786
+  },
+  {
+    "id": "qm08xfx",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783600257655
+  },
+  {
+    "id": "7mcax8l",
+    "category": "Members",
+    "text": "**Rage Music** left the server",
+    "timestamp": 1783600248455
+  },
+  {
+    "id": "doqv6qd",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783600247079
+  },
+  {
+    "id": "yzyamam",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783600167781
+  },
+  {
+    "id": "ysn904t",
+    "category": "Voice",
+    "text": "**itsz_mathy** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600080357
+  },
+  {
+    "id": "1rzhhbg",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783600054744
+  },
+  {
+    "id": "rr8f8wb",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783600046717
+  },
+  {
+    "id": "gv1919i",
+    "category": "Voice",
+    "text": "**keerthi0191** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783600024814
+  },
+  {
+    "id": "0rcztox",
+    "category": "Voice",
+    "text": "**keerthi0191** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783600003717
+  },
+  {
+    "id": "uhnanz4",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783599900700
+  },
+  {
+    "id": "kujze63",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐑ᴏʙʟᴇx 🃏",
+    "timestamp": 1783599899315
+  },
+  {
+    "id": "1ymr2xk",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599889453
+  },
+  {
+    "id": "8bdny9q",
+    "category": "Voice",
+    "text": "**izumieeeeee** joined 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783599878729
+  },
+  {
+    "id": "10bkqy4",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599860154
+  },
+  {
+    "id": "l5918y9",
+    "category": "Voice",
+    "text": "**_pookie__007** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599857958
+  },
+  {
+    "id": "7whlm4w",
+    "category": "Voice",
+    "text": "**_pookie__007** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599830216
+  },
+  {
+    "id": "0vc7dbj",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783599796265
+  },
+  {
+    "id": "eyqfps0",
+    "category": "Voice",
+    "text": "**ishowaimzz** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783599793132
+  },
+  {
+    "id": "gqohtwc",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599786574
+  },
+  {
+    "id": "jiw1v4a",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599776221
+  },
+  {
+    "id": "5r89yvf",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐓ʀɪᴏ 🍂",
+    "timestamp": 1783599774564
+  },
+  {
+    "id": "0xi8r3s",
+    "category": "Voice",
+    "text": "**stonnerz** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599765346
+  },
+  {
+    "id": "nfd51rv",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599763105
+  },
+  {
+    "id": "916pu1t",
+    "category": "Voice",
+    "text": "**pookie_awm** moved to 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599751319
+  },
+  {
+    "id": "ic7fx7j",
+    "category": "Voice",
+    "text": "**ishowaimzz** joined 𒆜 𝐃ᴜᴏ 🫧",
+    "timestamp": 1783599745435
+  },
+  {
+    "id": "9an43ty",
+    "category": "Voice",
+    "text": "**izumieeeeee** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599691848
+  },
+  {
+    "id": "tb4x0zd",
+    "category": "Members",
+    "text": "**Rage Music** left the server",
+    "timestamp": 1783599553445
+  },
+  {
+    "id": "txkc8qb",
+    "category": "Members",
+    "text": "**Rage Music** joined the server",
+    "timestamp": 1783599551990
+  },
+  {
+    "id": "4lf0qnl",
+    "category": "Voice",
+    "text": "**ishowaimzz** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599472243
+  },
+  {
+    "id": "7vhppim",
+    "category": "Voice",
+    "text": "**wt.void** left 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599438401
+  },
+  {
+    "id": "vobu5jb",
+    "category": "Voice",
+    "text": "**wt.void** joined 𒆜 𝐇ᴀɴɢ 𝐎ᴜᴛ🔋",
+    "timestamp": 1783599437064
+  },
+  {
+    "id": "arsat3s",
+    "category": "Voice",
+    "text": "**wt.void** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
+    "timestamp": 1783599437060
+  },
+  {
+    "id": "6ij7y8a",
+    "category": "Members",
+    "text": "**wt.void** joined the server",
+    "timestamp": 1783599424471
+  },
+  {
+    "id": "38eavtr",
+    "category": "Members",
+    "text": "**lee377195** joined the server",
+    "timestamp": 1783350960195
+  },
+  {
+    "id": "mpjr1d4",
+    "category": "Voice",
+    "text": "**wt.void** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783350494943
+  },
+  {
+    "id": "06w5tgl",
+    "category": "Voice",
+    "text": "**v033019** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783349928532
+  },
+  {
+    "id": "n6ajxrb",
+    "category": "Voice",
+    "text": "**v033019** left 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783349913028
+  },
+  {
+    "id": "y2t8e91",
+    "category": "Voice",
+    "text": "**keerthi0191** joined 柳┃ Hᴀɴɢᴏᴜᴛ",
+    "timestamp": 1783346600006
+  },
+  {
+    "id": "hi3am91",
+    "category": "Voice",
+    "text": "**rbzclasher** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
+    "timestamp": 1783346453873
+  },
+  {
+    "id": "98dyqsi",
+    "category": "Voice",
+    "text": "**fifthiru.op** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
+    "timestamp": 1783346428715
+  },
+  {
+    "id": "ompigtq",
+    "category": "Voice",
+    "text": "**wt.void** joined 柳┃ Hᴀɴɢᴏᴜᴛ",
+    "timestamp": 1783346424761
+  },
+  {
+    "id": "myrd8py",
+    "category": "Voice",
+    "text": "**aadhiirfan** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783346186803
+  },
+  {
+    "id": "1p6alhd",
+    "category": "Voice",
+    "text": "**aadhiirfan** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783346107399
+  },
+  {
+    "id": "1oy4m32",
+    "category": "Voice",
+    "text": "**wt.void** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783346100540
+  },
+  {
+    "id": "4x2wdf5",
+    "category": "Voice",
+    "text": "**wt.void** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783346098201
+  },
+  {
+    "id": "d6byi2p",
+    "category": "Voice",
+    "text": "**wt.void** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783346086981
+  },
+  {
+    "id": "3eq7k30",
+    "category": "Voice",
+    "text": "**fifthiru.op** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345747737
+  },
+  {
+    "id": "05px3x7",
+    "category": "Voice",
+    "text": "**fifthiru.op** left 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345696046
+  },
+  {
+    "id": "qc6ik14",
+    "category": "Voice",
+    "text": "**fifthiru.op** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345686244
+  },
+  {
+    "id": "103z606",
+    "category": "Voice",
+    "text": "**aadhiirfan** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783345682418
+  },
+  {
+    "id": "j9umnlm",
+    "category": "Voice",
+    "text": "**jackgaming0826** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783345557560
+  },
+  {
+    "id": "c0c0puw",
+    "category": "Voice",
+    "text": "**jackgaming0826** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783345493730
+  },
+  {
+    "id": "fplu0q0",
+    "category": "Voice",
+    "text": "**keerthi0191** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
+    "timestamp": 1783345401527
+  },
+  {
+    "id": "7y0iuj5",
+    "category": "Voice",
+    "text": "**jilluontop** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345310340
+  },
+  {
+    "id": "4dw4p9a",
+    "category": "Voice",
+    "text": "**jilluontop** left 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345294964
+  },
+  {
+    "id": "zdsfvb9",
+    "category": "Voice",
+    "text": "**p097398** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345287646
+  },
+  {
+    "id": "e082cyz",
+    "category": "Voice",
+    "text": "**p097398** left 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
+    "timestamp": 1783345272029
+  },
+  {
     "id": "7doa4er",
     "category": "Voice",
     "text": "**jilluappa** joined 柳┃ 𝗫ᴛʀᴇᴍᴇᴢᴢ",
@@ -10804,1013 +12418,5 @@
     "category": "Voice",
     "text": "**abdul088143** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
     "timestamp": 1783060595017
-  },
-  {
-    "id": "vielt3f",
-    "category": "Voice",
-    "text": "**abdul088143** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783060537024
-  },
-  {
-    "id": "afmf7mn",
-    "category": "Voice",
-    "text": "**abdul088143** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783060481493
-  },
-  {
-    "id": "h4tdgij",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783060241442
-  },
-  {
-    "id": "jd0ns5l",
-    "category": "Voice",
-    "text": "**ryzupc** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783060124553
-  },
-  {
-    "id": "4497lp8",
-    "category": "Voice",
-    "text": "**keerthi0191** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783060101860
-  },
-  {
-    "id": "yshqol8",
-    "category": "Voice",
-    "text": "**mrramana007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783060056757
-  },
-  {
-    "id": "zi73zpa",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783060036689
-  },
-  {
-    "id": "vuuno0e",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783060002750
-  },
-  {
-    "id": "dppyipe",
-    "category": "Voice",
-    "text": "**ryzupc** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783059977935
-  },
-  {
-    "id": "0xvw9wb",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059953354
-  },
-  {
-    "id": "4shhkel",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059950261
-  },
-  {
-    "id": "pecdvrc",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059879048
-  },
-  {
-    "id": "8moh2a7",
-    "category": "Voice",
-    "text": "**ryzupc** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059877553
-  },
-  {
-    "id": "9dqslw7",
-    "category": "Voice",
-    "text": "**ishowflashhhhh.** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059873682
-  },
-  {
-    "id": "fugtu4a",
-    "category": "Voice",
-    "text": "**ryzupc** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059827429
-  },
-  {
-    "id": "iqsnzrf",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059698648
-  },
-  {
-    "id": "yzsxv3u",
-    "category": "Voice",
-    "text": "**keerthi0191** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059695884
-  },
-  {
-    "id": "lterxa6",
-    "category": "Voice",
-    "text": "**mrramana007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783059055050
-  },
-  {
-    "id": "vly5gqn",
-    "category": "Voice",
-    "text": "**abdul088143** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057690005
-  },
-  {
-    "id": "53slam9",
-    "category": "Voice",
-    "text": "**abdul088143** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057650314
-  },
-  {
-    "id": "40fjy7h",
-    "category": "Members",
-    "text": "**fuckheist** joined the server",
-    "timestamp": 1783057491513
-  },
-  {
-    "id": "ggo1ece",
-    "category": "Voice",
-    "text": "**mrramana007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057413723
-  },
-  {
-    "id": "jnenfhw",
-    "category": "Voice",
-    "text": "**itzz_pookiee** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057341739
-  },
-  {
-    "id": "v4tpxdr",
-    "category": "Voice",
-    "text": "**mrramana007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057147625
-  },
-  {
-    "id": "jf66o4r",
-    "category": "Voice",
-    "text": "**mrramana007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057141002
-  },
-  {
-    "id": "zplg2wg",
-    "category": "Voice",
-    "text": "**mrramana007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783057092406
-  },
-  {
-    "id": "krxofph",
-    "category": "Voice",
-    "text": "**abdul088143** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783056182366
-  },
-  {
-    "id": "yhh2y53",
-    "category": "Voice",
-    "text": "**abdul088143** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783056120765
-  },
-  {
-    "id": "da7qpjo",
-    "category": "Voice",
-    "text": "**ishowrage15** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055885094
-  },
-  {
-    "id": "gre2jfr",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055824882
-  },
-  {
-    "id": "y1vvn15",
-    "category": "Voice",
-    "text": "**keerthi0191** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055821727
-  },
-  {
-    "id": "arok075",
-    "category": "Voice",
-    "text": "**abdul088143** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055691193
-  },
-  {
-    "id": "dxxv5gv",
-    "category": "Voice",
-    "text": "**abdul088143** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055520754
-  },
-  {
-    "id": "pe9q1j2",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055118871
-  },
-  {
-    "id": "abb1nx7",
-    "category": "Voice",
-    "text": "**itsz_mathy** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055105009
-  },
-  {
-    "id": "fwha1nr",
-    "category": "Voice",
-    "text": "**itsz_mathy** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783055045139
-  },
-  {
-    "id": "laehs0s",
-    "category": "Voice",
-    "text": "**tobi_efx** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054831883
-  },
-  {
-    "id": "uc0q7lc",
-    "category": "Voice",
-    "text": "**tk.hima** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054811666
-  },
-  {
-    "id": "vn6qdj5",
-    "category": "Voice",
-    "text": "**tobi_efx** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054803180
-  },
-  {
-    "id": "3aq2v32",
-    "category": "Voice",
-    "text": "**abdul088143** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054403801
-  },
-  {
-    "id": "28z3h3s",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054144441
-  },
-  {
-    "id": "oamboab",
-    "category": "Voice",
-    "text": "**rbzclasher** left 🎧┃𝗠ᴜꜱɪᴄ 𝟐𝟒/𝟕",
-    "timestamp": 1783054138656
-  },
-  {
-    "id": "bscxxai",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 🎧┃𝗠ᴜꜱɪᴄ 𝟐𝟒/𝟕",
-    "timestamp": 1783054130416
-  },
-  {
-    "id": "ig8g2e9",
-    "category": "Voice",
-    "text": "**rbzclasher** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783054130386
-  },
-  {
-    "id": "1whhlr1",
-    "category": "Voice",
-    "text": "**pookie_awm** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783053827630
-  },
-  {
-    "id": "vzwplit",
-    "category": "Voice",
-    "text": "**itzz_pookiee** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783053822391
-  },
-  {
-    "id": "dsssstl",
-    "category": "Voice",
-    "text": "**pookie_awm** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783053422265
-  },
-  {
-    "id": "pd35uov",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783051248158
-  },
-  {
-    "id": "8itltzy",
-    "category": "Voice",
-    "text": "**pookie_awm** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783050958775
-  },
-  {
-    "id": "pipk0yt",
-    "category": "Voice",
-    "text": "**2578840977** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783049104523
-  },
-  {
-    "id": "3sj8b0z",
-    "category": "Voice",
-    "text": "**2578840977** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783049099565
-  },
-  {
-    "id": "0un45yp",
-    "category": "Voice",
-    "text": "**ishowrage15** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783044172474
-  },
-  {
-    "id": "l6e2x8p",
-    "category": "Voice",
-    "text": "**2578840977** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783041785810
-  },
-  {
-    "id": "ecfggps",
-    "category": "Voice",
-    "text": "**2578840977** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783041754727
-  },
-  {
-    "id": "yjwzogj",
-    "category": "Voice",
-    "text": "**_winexnvrdie.** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783039407854
-  },
-  {
-    "id": "b0r6cix",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783039394758
-  },
-  {
-    "id": "mj8958n",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎼│Cɪɴᴇ Sᴏᴜɴᴅ",
-    "timestamp": 1783039392567
-  },
-  {
-    "id": "e8kzp3n",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎬│Cɪɴᴇ Vɪʙᴇs",
-    "timestamp": 1783039390352
-  },
-  {
-    "id": "hogs955",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎼│Cɪɴᴇ Sᴏᴜɴᴅ",
-    "timestamp": 1783039388129
-  },
-  {
-    "id": "a5houqi",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎬│Cɪɴᴇ Vɪʙᴇs",
-    "timestamp": 1783039385816
-  },
-  {
-    "id": "rb4czwm",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🗺️│Fᴜʟʟ ᴍᴀᴘ",
-    "timestamp": 1783039383578
-  },
-  {
-    "id": "dorz1q3",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🎮│Gᴀᴍᴇ ᴢᴏɴᴇ",
-    "timestamp": 1783039378780
-  },
-  {
-    "id": "s9zr6ci",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 🏛️│Mᴇᴇᴛɪɴɢ ʜᴀʟʟ",
-    "timestamp": 1783039375964
-  },
-  {
-    "id": "h22q4wv",
-    "category": "Voice",
-    "text": "**_winexnvrdie.** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783039358584
-  },
-  {
-    "id": "v5hhcjg",
-    "category": "Voice",
-    "text": "**mani_005005** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783032069947
-  },
-  {
-    "id": "hkubxkd",
-    "category": "Voice",
-    "text": "**mani_005005** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783032047432
-  },
-  {
-    "id": "hc2533v",
-    "category": "Voice",
-    "text": "**wizstonner** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783026882402
-  },
-  {
-    "id": "wpj1r8i",
-    "category": "Voice",
-    "text": "**wizstonner** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783026162560
-  },
-  {
-    "id": "gemyw5n",
-    "category": "Voice",
-    "text": "**wizstonner** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783026162556
-  },
-  {
-    "id": "nhv9vxg",
-    "category": "Voice",
-    "text": "**pookie_awm** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783026157948
-  },
-  {
-    "id": "6rdj2tn",
-    "category": "Voice",
-    "text": "**pookie_awm** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783026157943
-  },
-  {
-    "id": "8z9oilh",
-    "category": "Voice",
-    "text": "**wizstonner** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783025401589
-  },
-  {
-    "id": "6ctp9av",
-    "category": "Voice",
-    "text": "**wizstonner** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783025401588
-  },
-  {
-    "id": "96lzzmd",
-    "category": "Voice",
-    "text": "**pookie_awm** moved to 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783025397902
-  },
-  {
-    "id": "e52l3lz",
-    "category": "Voice",
-    "text": "**pookie_awm** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783025394216
-  },
-  {
-    "id": "04n81pm",
-    "category": "Voice",
-    "text": "**pookie_awm** left 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783025394203
-  },
-  {
-    "id": "okq4ah6",
-    "category": "Voice",
-    "text": "**wizstonner** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783023437377
-  },
-  {
-    "id": "15gusef",
-    "category": "Voice",
-    "text": "**pookie_awm** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1783023420320
-  },
-  {
-    "id": "rkvlnkw",
-    "category": "Voice",
-    "text": "**ft.scooby** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783016460585
-  },
-  {
-    "id": "i0gz5ke",
-    "category": "Voice",
-    "text": "**mrramana007** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007566983
-  },
-  {
-    "id": "0fsir7p",
-    "category": "Voice",
-    "text": "**alanlive007** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007499234
-  },
-  {
-    "id": "kki6n9b",
-    "category": "Voice",
-    "text": "**jackgaming0826** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007460662
-  },
-  {
-    "id": "hd8awx3",
-    "category": "Voice",
-    "text": "**alan_live_ff** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007451697
-  },
-  {
-    "id": "8l27de7",
-    "category": "Voice",
-    "text": "**alanlive007** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007445502
-  },
-  {
-    "id": "q99l7ih",
-    "category": "Voice",
-    "text": "**alan_live_ff** joined 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783007420367
-  },
-  {
-    "id": "jvvb157",
-    "category": "Voice",
-    "text": "**alan_live_ff** left 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783007418692
-  },
-  {
-    "id": "cmn5uu7",
-    "category": "Voice",
-    "text": "**alanlive007** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783007411204
-  },
-  {
-    "id": "wktrfzn",
-    "category": "Voice",
-    "text": "**alanlive007** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007392264
-  },
-  {
-    "id": "pne3u4z",
-    "category": "Voice",
-    "text": "**jackgaming0826** joined 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783007256489
-  },
-  {
-    "id": "jxhfw00",
-    "category": "Voice",
-    "text": "**alanlive007** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783007191443
-  },
-  {
-    "id": "upylbbl",
-    "category": "Voice",
-    "text": "**alanlive007** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007177430
-  },
-  {
-    "id": "vj803dk",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783007149834
-  },
-  {
-    "id": "gi5yzym",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783006957522
-  },
-  {
-    "id": "0o8mfhj",
-    "category": "Voice",
-    "text": "**alan_live_ff** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783006929740
-  },
-  {
-    "id": "43mg99w",
-    "category": "Voice",
-    "text": "**mrramana007** moved to 柳┃ Hᴀɴɢᴏᴜᴛ",
-    "timestamp": 1783006927112
-  },
-  {
-    "id": "tzta6jg",
-    "category": "Voice",
-    "text": "**mrramana007** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783006891083
-  },
-  {
-    "id": "jruxj4j",
-    "category": "Voice",
-    "text": "**tk.hima** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783006777410
-  },
-  {
-    "id": "a37typ5",
-    "category": "Voice",
-    "text": "**rbzclasher** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783006773264
-  },
-  {
-    "id": "ybicl6h",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783006759056
-  },
-  {
-    "id": "9vkpwx9",
-    "category": "Voice",
-    "text": "**alan_live_ff** moved to 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783006756759
-  },
-  {
-    "id": "3p3izyo",
-    "category": "Voice",
-    "text": "**alan_live_ff** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783006635904
-  },
-  {
-    "id": "wwxvr5m",
-    "category": "Voice",
-    "text": "**tk.hima** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783006305299
-  },
-  {
-    "id": "lnz6b7c",
-    "category": "Voice",
-    "text": "**ft.scooby** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783006115811
-  },
-  {
-    "id": "e19p3tb",
-    "category": "Voice",
-    "text": "**tk.hima** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783006111158
-  },
-  {
-    "id": "0jg15w9",
-    "category": "Voice",
-    "text": "**pookie_awm** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783006033568
-  },
-  {
-    "id": "ut4g8ac",
-    "category": "Voice",
-    "text": "**pookie_awm** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005732473
-  },
-  {
-    "id": "tt899zf",
-    "category": "Voice",
-    "text": "**ft.scooby** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005720972
-  },
-  {
-    "id": "lmjd6d1",
-    "category": "Server",
-    "text": "Channel **#keerthi0191's Channel** was deleted",
-    "timestamp": 1783005683297
-  },
-  {
-    "id": "8lgre1h",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005672945
-  },
-  {
-    "id": "sc4zdvy",
-    "category": "Server",
-    "text": "Channel **#keerthi0191's Channel** was deleted",
-    "timestamp": 1783005647938
-  },
-  {
-    "id": "3878iso",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to keerthi0191's Channel",
-    "timestamp": 1783005647431
-  },
-  {
-    "id": "fah91wy",
-    "category": "Server",
-    "text": "Channel **#keerthi0191's Channel** was created",
-    "timestamp": 1783005646848
-  },
-  {
-    "id": "rrdxz0l",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to keerthi0191's Channel",
-    "timestamp": 1783005646808
-  },
-  {
-    "id": "kwdydyc",
-    "category": "Server",
-    "text": "Channel **#keerthi0191's Channel** was created",
-    "timestamp": 1783005646295
-  },
-  {
-    "id": "u3fab8j",
-    "category": "Voice",
-    "text": "**keerthi0191** moved to 蝠┃ 𝖠ꜰᴋ",
-    "timestamp": 1783005645827
-  },
-  {
-    "id": "covnvaa",
-    "category": "Voice",
-    "text": "**tamizhangaming_** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005454484
-  },
-  {
-    "id": "mxzm8yc",
-    "category": "Voice",
-    "text": "**alanlive007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005432651
-  },
-  {
-    "id": "seqj4h6",
-    "category": "Voice",
-    "text": "**alanlive007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783005351994
-  },
-  {
-    "id": "zh2l30h",
-    "category": "Voice",
-    "text": "**xt.spidey** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783003659335
-  },
-  {
-    "id": "0et5z47",
-    "category": "Voice",
-    "text": "**_pookie__007** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783003627967
-  },
-  {
-    "id": "ow5mjep",
-    "category": "Voice",
-    "text": "**alan_live_ff** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783003538469
-  },
-  {
-    "id": "fz49qc8",
-    "category": "Voice",
-    "text": "**ssg_kutty** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783003472815
-  },
-  {
-    "id": "t27wi1s",
-    "category": "Voice",
-    "text": "**ssg_kutty** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002955320
-  },
-  {
-    "id": "qdbggxf",
-    "category": "Voice",
-    "text": "**ft.scooby** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002862503
-  },
-  {
-    "id": "m95iikl",
-    "category": "Voice",
-    "text": "**jackgaming0826** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002454033
-  },
-  {
-    "id": "o0n8m92",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002375931
-  },
-  {
-    "id": "tcwbrtk",
-    "category": "Voice",
-    "text": "**keerthi0191** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002369058
-  },
-  {
-    "id": "310o08l",
-    "category": "Voice",
-    "text": "**ft.scooby** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002278542
-  },
-  {
-    "id": "h9j4qes",
-    "category": "Voice",
-    "text": "**xt.spidey** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002133836
-  },
-  {
-    "id": "duczive",
-    "category": "Voice",
-    "text": "**xt.spidey** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783002116527
-  },
-  {
-    "id": "cjtfoz0",
-    "category": "Voice",
-    "text": "**_pookie__007** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783001730489
-  },
-  {
-    "id": "enw7jbi",
-    "category": "Voice",
-    "text": "**jackgaming0826** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783001552991
-  },
-  {
-    "id": "psltph4",
-    "category": "Voice",
-    "text": "**alan_live_ff** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783001547197
-  },
-  {
-    "id": "f3zisb6",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783001319625
-  },
-  {
-    "id": "2vpeabi",
-    "category": "Voice",
-    "text": "**keerthi0191** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1783001313530
-  },
-  {
-    "id": "ar0uauv",
-    "category": "Voice",
-    "text": "**_pookie__007** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783000975311
-  },
-  {
-    "id": "zm9vof2",
-    "category": "Voice",
-    "text": "**alan_live_ff** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783000744627
-  },
-  {
-    "id": "kptgstq",
-    "category": "Voice",
-    "text": "**jackgaming0826** left 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1783000552360
-  },
-  {
-    "id": "35fa3fh",
-    "category": "Voice",
-    "text": "**jackgaming0826** joined 獾┃ 𝖬ᴇᴇᴛɪɴɢᴢ",
-    "timestamp": 1782999614917
-  },
-  {
-    "id": "2dri1f9",
-    "category": "Members",
-    "text": "**Rage Music** joined the server",
-    "timestamp": 1782999501847
-  },
-  {
-    "id": "8dqysvo",
-    "category": "Voice",
-    "text": "**vizzy0069** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1782998732149
-  },
-  {
-    "id": "u93j9lz",
-    "category": "Members",
-    "text": "**vizzy0069** joined the server",
-    "timestamp": 1782998706870
-  },
-  {
-    "id": "2j36260",
-    "category": "Voice",
-    "text": "**itzz_pookiee** moved to 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1782998667154
-  },
-  {
-    "id": "uvatzak",
-    "category": "Members",
-    "text": "**hiyori0013** joined the server",
-    "timestamp": 1782998583307
-  },
-  {
-    "id": "e6iroms",
-    "category": "Voice",
-    "text": "**itzz_pookiee** joined 🎧│Gᴇɴᴇʀᴀʟ ᴠᴄ",
-    "timestamp": 1782998550131
-  },
-  {
-    "id": "0jfo1ir",
-    "category": "Voice",
-    "text": "**rbzclasher** left 𝐌ᴜꜱɪᴄ 𝐕ᴄ┆✮⋆˙",
-    "timestamp": 1782994995319
-  },
-  {
-    "id": "3faqh2r",
-    "category": "Members",
-    "text": "**Mimu** left the server",
-    "timestamp": 1782994871263
-  },
-  {
-    "id": "v4f31wo",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 𝐌ᴜꜱɪᴄ 𝐕ᴄ┆✮⋆˙",
-    "timestamp": 1782994853630
-  },
-  {
-    "id": "a18b3hb",
-    "category": "Members",
-    "text": "**Rage Music** joined the server",
-    "timestamp": 1782990666671
-  },
-  {
-    "id": "422i86x",
-    "category": "Members",
-    "text": "**ishowrage15** joined the server",
-    "timestamp": 1782989342609
-  },
-  {
-    "id": "g23ujmi",
-    "category": "Members",
-    "text": "**ishowrage15** left the server",
-    "timestamp": 1782989330926
-  },
-  {
-    "id": "5xv8gcu",
-    "category": "Server",
-    "text": "Channel **#🤖 Bots: 14** was created",
-    "timestamp": 1782989301916
-  },
-  {
-    "id": "twq8z8w",
-    "category": "Server",
-    "text": "Channel **#🤖 Bots: 14** was deleted",
-    "timestamp": 1782989300853
-  },
-  {
-    "id": "sz1252a",
-    "category": "Server",
-    "text": "Channel **#🟢 Online: 72** was deleted",
-    "timestamp": 1782989285596
-  },
-  {
-    "id": "wcqcbzk",
-    "category": "Members",
-    "text": "**Xtremezz Music** joined the server",
-    "timestamp": 1782986792030
-  },
-  {
-    "id": "06rw4mh",
-    "category": "Server",
-    "text": "Channel **#🟢 Online: 72** was created",
-    "timestamp": 1782985516152
-  },
-  {
-    "id": "00ykq77",
-    "category": "Server",
-    "text": "Channel **#🟢 Online: 72** was deleted",
-    "timestamp": 1782985515145
-  },
-  {
-    "id": "i7o7jfv",
-    "category": "Server",
-    "text": "Channel **#🎤 In Voice: 4** was deleted",
-    "timestamp": 1782980050605
-  },
-  {
-    "id": "0q1vrtd",
-    "category": "Server",
-    "text": "Channel **#🚀 Boosts: 6** was deleted",
-    "timestamp": 1782979610864
-  },
-  {
-    "id": "efwt80m",
-    "category": "Server",
-    "text": "Channel **#🛡️ Staff: 12** was deleted",
-    "timestamp": 1782979408228
-  },
-  {
-    "id": "bh8uyzx",
-    "category": "Server",
-    "text": "Channel **#📈 Joins Today: 0** was deleted",
-    "timestamp": 1782979107616
-  },
-  {
-    "id": "3c456en",
-    "category": "Voice",
-    "text": "**rbzclasher** left 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1782978741708
-  },
-  {
-    "id": "fm4nuoa",
-    "category": "Voice",
-    "text": "**rbzclasher** joined 柳┃ 𝗚ᴇɴᴇʀᴀʟ 𝗩ᴄ",
-    "timestamp": 1782978713240
-  },
-  {
-    "id": "h6x5tnu",
-    "category": "Server",
-    "text": "Channel **#👥 Members: 616** was deleted",
-    "timestamp": 1782978643607
-  },
-  {
-    "id": "qdkbjch",
-    "category": "Members",
-    "text": "**Xtremezz Music** joined the server",
-    "timestamp": 1782968093229
-  },
-  {
-    "id": "k7vzlcw",
-    "category": "Server",
-    "text": "Channel **#蓟┃𝚈ᴏᴜᴛᴜʙᴇ-𝙰ʟᴇʀᴛꜱ** was deleted",
-    "timestamp": 1782930316890
-  },
-  {
-    "id": "o6pu4us",
-    "category": "Server",
-    "text": "Channel **#蓟┃𝐀ɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ** was created",
-    "timestamp": 1782889196108
-  },
-  {
-    "id": "nnwp71v",
-    "category": "Server",
-    "text": "Channel **#蓟┃𝐀ɴɴᴏᴜɴᴄᴇᴍᴇɴᴛ** was deleted",
-    "timestamp": 1782889195266
   }
 ]

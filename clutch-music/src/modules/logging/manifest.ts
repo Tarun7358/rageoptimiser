@@ -50,7 +50,7 @@ export const LoggingManifest: ModuleManifest = {
           type: 1, // SUB_COMMAND
           options: [
             { name: 'category', type: 3, description: 'The log category (e.g. security, moderation, voice)', required: true },
-            { name: 'channel', type: 7, description: 'The text channel to send logs to', required: true }
+            { name: 'channel', type: 7, description: 'The text channel to send logs to', required: true, channel_types: [0, 5] }
           ]
         },
         {

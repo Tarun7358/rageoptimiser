@@ -1,6 +1,11 @@
 import { AuditLogEvent, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
-import { checkWhitelistPermission, getGuildAndCheckPermission } from '../../utils/whitelistCheck.js';
+import { checkWhitelistPermission, getGuildAndCheckPermission, checkBypassImmunity } from '../../utils/whitelistCheck.js';
+import { Database } from '../../core/Database.js';
+
+// UPM Live Snapshots & Active Quarantines tracking
+export const liveSnapshots = new Map<string, any>();
+export const activeQuarantines = new Set<string>();
 
 // Simple in-memory tracker for rate limits
 interface ActionTracker {
@@ -27,77 +32,244 @@ function checkRateLimit(guildId: string, userId: string, ruleId: string, limit: 
   return tracker.count >= limit;
 }
 
-async function isExecutorBypassed(guild: any, executorId: string, config: any, context?: any, ruleId?: string): Promise<boolean> {
-  // 1. Guild owner always bypasses
-  if (executorId === guild.ownerId) return true;
+function isRecentEntry(entry: any, maxAgeMs = 5000): boolean {
+  if (!entry) return false;
+  const now = Date.now();
+  const created = entry.createdTimestamp;
+  return (now - created) < maxAgeMs;
+}
 
-  // 2. Check whitelist by targetId (supporting both strings and objects)
-  const whitelist = config.whitelist || [];
-  if (whitelist.some((w: any) => {
-    if (!w) return false;
-    if (typeof w === 'string') return w === executorId;
-    return w.targetId === executorId;
-  })) return true;
+export async function captureLiveSnapshot(guild: any) {
+  const channels = guild.channels.cache.map((channel: any) => ({
+    id: channel.id,
+    name: channel.name,
+    type: channel.type,
+    parentId: channel.parentId,
+    position: channel.position,
+    permissionOverwrites: channel.permissionOverwrites.cache.map((o: any) => ({
+      id: o.id,
+      type: o.type,
+      allow: o.allow.bitfield.toString(),
+      deny: o.deny.bitfield.toString()
+    })),
+    topic: channel.topic || null,
+    nsfw: channel.nsfw || false,
+    rateLimitPerUser: channel.rateLimitPerUser || 0,
+    userLimit: channel.userLimit || 0,
+    bitrate: channel.bitrate || null,
+    rtcRegion: channel.rtcRegion || null
+  }));
 
-  // 3. Check exception roles
-  const exceptionRoleIds: string[] = config.exceptionRoleIds || [];
-  if (exceptionRoleIds.length > 0) {
-    const member = await guild.members.fetch(executorId).catch(() => null);
-    if (member) {
-      const hasException = member.roles.cache.some((r: any) => exceptionRoleIds.includes(r.id));
-      if (hasException) return true;
-    }
+  const roles = guild.roles.cache.map((role: any) => ({
+    id: role.id,
+    name: role.name,
+    color: role.color,
+    hoist: role.hoist,
+    permissions: role.permissions.bitfield.toString(),
+    position: role.position,
+    mentionable: role.mentionable
+  }));
+
+  const guildSettings = {
+    name: guild.name,
+    icon: guild.icon || null,
+    banner: guild.banner || null,
+    vanityURLCode: guild.vanityURLCode || null,
+    verificationLevel: guild.verificationLevel,
+    defaultMessageNotifications: guild.defaultMessageNotifications,
+    explicitContentFilter: guild.explicitContentFilter,
+    systemChannelId: guild.systemChannelId || null,
+    rulesChannelId: guild.rulesChannelId || null,
+    publicUpdatesChannelId: guild.publicUpdatesChannelId || null
+  };
+
+  return {
+    timestamp: Date.now(),
+    channels,
+    roles,
+    guildSettings
+  };
+}
+
+export async function saveLiveSnapshotToDb(guildId: string, snap: any) {
+  liveSnapshots.set(guildId, snap);
+
+  const db = Database.getDb();
+  if (db) {
+    await db.collection('upm_snapshots').doc(guildId).set(snap);
   }
+}
 
-  // 4. Check dynamic module whitelists (member, bot, role) if context and ruleId are provided
-  if (context && ruleId) {
-    const modules = context.getModulesState ? context.getModulesState() : [];
+export async function restoreFromLiveSnapshot(guild: any, client: any, context: any) {
+  const guildId = guild.id;
+  context.logSyncEvent(guildId, '🔄 [UPM Restore]: Initializing full server restoration sequence...', 'info');
 
-    const isBypassedForRule = (enabledModules: string[]) => {
-      if (enabledModules.includes(ruleId)) return true;
-      if (ruleId.startsWith('anti_') && (enabledModules.includes('Anti-Nuke') || enabledModules.includes('anti_nuke') || enabledModules.includes('anti-nuke'))) return true;
-      return false;
-    };
-
-    // Check member whitelist
-    const mwModule = modules.find((m: any) => m.id === 'member_whitelist');
-    const members = mwModule?.config?.members || [];
-    const memberRecord = members.find((m: any) => m.userId === executorId && m.status === 'active');
-    if (memberRecord) {
-      const enabledModules = memberRecord.enabledModules || [];
-      if (isBypassedForRule(enabledModules)) return true;
-    }
-
-    // Check bot whitelist
-    const bwModule = modules.find((m: any) => m.id === 'bot_whitelist');
-    const bots = bwModule?.config?.bots || [];
-    const botRecord = bots.find((b: any) => b.userId === executorId && b.status === 'active');
-    if (botRecord) {
-      const enabledModules = botRecord.enabledModules || [];
-      if (isBypassedForRule(enabledModules)) return true;
-    }
-
-    // Check role whitelist
-    const rwModule = modules.find((m: any) => m.id === 'role_whitelist');
-    const roles = rwModule?.config?.roles || [];
-    const activeRoles = roles.filter((r: any) => r.status === 'active');
-    if (activeRoles.length > 0) {
-      const member = await guild.members.fetch(executorId).catch(() => null);
-      if (member) {
-        for (const roleRecord of activeRoles) {
-          if (member.roles.cache.has(roleRecord.roleId)) {
-            const enabledModules = roleRecord.enabledModules || [];
-            if (isBypassedForRule(enabledModules)) return true;
-          }
-        }
+  let snap = liveSnapshots.get(guildId);
+  if (!snap) {
+    const db = Database.getDb();
+    if (db) {
+      const doc = await db.collection('upm_snapshots').doc(guildId).get();
+      if (doc.exists) {
+        snap = doc.data();
+        liveSnapshots.set(guildId, snap);
       }
     }
   }
 
-  return false;
+  if (!snap) {
+    context.logSyncEvent(guildId, '❌ [UPM Restore Failed]: No snapshot found in database or memory.', 'warn');
+    return;
+  }
+
+  // Restore Guild Settings
+  if (snap.guildSettings) {
+    const gs = snap.guildSettings;
+    const needsEdit = guild.name !== gs.name ||
+                      guild.verificationLevel !== gs.verificationLevel ||
+                      guild.explicitContentFilter !== gs.explicitContentFilter;
+    if (needsEdit) {
+      await guild.edit({
+        name: gs.name,
+        verificationLevel: gs.verificationLevel,
+        explicitContentFilter: gs.explicitContentFilter,
+        systemChannelId: gs.systemChannelId,
+        rulesChannelId: gs.rulesChannelId,
+        publicUpdatesChannelId: gs.publicUpdatesChannelId
+      }).catch(() => null);
+    }
+  }
+
+  // Restore Roles
+  const roleMap = new Map<string, any>();
+  if (snap.roles) {
+    const sortedRoles = [...snap.roles].sort((a, b) => a.position - b.position);
+    for (const rSnap of sortedRoles) {
+      if (rSnap.name === '@everyone') {
+        const everyoneRole = guild.roles.everyone;
+        if (everyoneRole && everyoneRole.permissions.bitfield.toString() !== rSnap.permissions) {
+          await everyoneRole.setPermissions(BigInt(rSnap.permissions)).catch(() => null);
+        }
+        roleMap.set(rSnap.id, everyoneRole);
+        continue;
+      }
+
+      let existingRole = guild.roles.cache.get(rSnap.id) || guild.roles.cache.find((r: any) => r.name === rSnap.name && !r.managed);
+      if (!existingRole) {
+        existingRole = await guild.roles.create({
+          name: rSnap.name,
+          color: rSnap.color,
+          hoist: rSnap.hoist,
+          permissions: BigInt(rSnap.permissions),
+          mentionable: rSnap.mentionable,
+          reason: 'UPM Recovery: Recreating deleted role'
+        }).catch(() => null);
+      } else {
+        const diff = existingRole.color !== rSnap.color ||
+                     existingRole.hoist !== rSnap.hoist ||
+                     existingRole.mentionable !== rSnap.mentionable ||
+                     existingRole.permissions.bitfield.toString() !== rSnap.permissions;
+        if (diff) {
+          await existingRole.edit({
+            color: rSnap.color,
+            hoist: rSnap.hoist,
+            mentionable: rSnap.mentionable,
+            permissions: BigInt(rSnap.permissions)
+          }).catch(() => null);
+        }
+      }
+
+      if (existingRole) {
+        roleMap.set(rSnap.id, existingRole);
+      }
+    }
+  }
+
+  // Restore Channels
+  if (snap.channels) {
+    const categories = snap.channels.filter((c: any) => c.type === 4);
+    const otherChannels = snap.channels.filter((c: any) => c.type !== 4);
+    const channelMap = new Map<string, any>();
+
+    const restoreChannel = async (cSnap: any, parentActualId?: string) => {
+      let existingChannel = guild.channels.cache.get(cSnap.id) || guild.channels.cache.find((c: any) => c.name === cSnap.name && c.type === cSnap.type);
+
+      const overwrites = (cSnap.permissionOverwrites || []).map((o: any) => {
+        let targetId = o.id;
+        const mappedRole = roleMap.get(o.id);
+        if (mappedRole) {
+          targetId = mappedRole.id;
+        }
+        return {
+          id: targetId,
+          type: o.type,
+          allow: BigInt(o.allow),
+          deny: BigInt(o.deny)
+        };
+      });
+
+      if (!existingChannel) {
+        existingChannel = await guild.channels.create({
+          name: cSnap.name,
+          type: cSnap.type,
+          parent: parentActualId || undefined,
+          nsfw: cSnap.nsfw,
+          topic: cSnap.topic || undefined,
+          rateLimitPerUser: cSnap.rateLimitPerUser || undefined,
+          userLimit: cSnap.userLimit || undefined,
+          bitrate: cSnap.bitrate || undefined,
+          rtcRegion: cSnap.rtcRegion || undefined,
+          permissionOverwrites: overwrites,
+          reason: 'UPM Recovery: Recreating deleted channel'
+        }).catch(() => null);
+      } else {
+        await existingChannel.edit({
+          name: cSnap.name,
+          parent: parentActualId || undefined,
+          nsfw: cSnap.nsfw,
+          topic: cSnap.topic || undefined,
+          rateLimitPerUser: cSnap.rateLimitPerUser || undefined,
+          userLimit: cSnap.userLimit || undefined,
+          bitrate: cSnap.bitrate || undefined,
+          rtcRegion: cSnap.rtcRegion || undefined,
+          permissionOverwrites: overwrites
+        }).catch(() => null);
+      }
+
+      if (existingChannel) {
+        channelMap.set(cSnap.id, existingChannel);
+      }
+    };
+
+    for (const catSnap of categories) {
+      await restoreChannel(catSnap);
+    }
+    for (const chSnap of otherChannels) {
+      const parentActualId = chSnap.parentId ? channelMap.get(chSnap.parentId)?.id : undefined;
+      await restoreChannel(chSnap, parentActualId);
+    }
+  }
+
+  context.logSyncEvent(guildId, '✅ [UPM Restore Completed]: Full server state successfully restored from snapshot.', 'success');
 }
 
-async function punishViolator(client: any, guild: any, executorId: string, executorTag: string, reason: string, ruleAction: string, config: any, context: any) {
+async function isExecutorBypassed(guild: any, executorId: string, config: any, context?: any, ruleId?: string): Promise<boolean> {
+  return checkBypassImmunity(executorId, guild, context, ruleId);
+}
+
+async function punishViolator(client: any, guild: any, executorId: string, executorTag: string, reason: string, ruleAction: string, config: any, context: any, ruleId?: string) {
+  let bypassed = await isExecutorBypassed(guild, executorId, config, context, ruleId);
+  if (ruleId === 'anti_role_grant') {
+    bypassed = bypassed || await isExecutorBypassed(guild, executorId, config, context, 'anti_member_update');
+  }
+  if (bypassed) {
+    context.logSyncEvent(guild.id, `🛡️ [Anti-Nuke Safety]: Prevented punishment of bypassed/whitelisted user ${executorTag} for rule: ${ruleId || 'general'}.`, 'info');
+    return;
+  }
+
+  if (activeQuarantines.has(executorId)) return;
+  activeQuarantines.add(executorId);
+  setTimeout(() => activeQuarantines.delete(executorId), 10000); // 10s cooldown to mitigate race conditions
+
   try {
     const member = await guild.members.fetch(executorId).catch(() => null);
     if (!member) return;
@@ -587,7 +759,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelDelete }).catch(() => null);
-          const deletionLog = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id);
+          const deletionLog = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id && isRecentEntry(e));
           if (!deletionLog) return;
 
           const executor = deletionLog.executor;
@@ -614,7 +786,7 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted channel #${channel.name}.`, 'success');
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Deletion (#${channel.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Deletion (#${channel.name})`, rule.action, config, context, 'anti_channel_delete');
         } catch (err) {
           console.error(err);
         }
@@ -638,7 +810,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelCreate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -654,7 +826,7 @@ export const SecurityManifest: ModuleManifest = {
             await channel.delete('Anti-Nuke Recovery: Deleting unauthorized channel.').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Creation (#${channel.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Creation (#${channel.name})`, rule.action, config, context, 'anti_channel_create');
         } catch (err) {
           console.error(err);
         }
@@ -678,7 +850,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newChannel.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newChannel.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -707,7 +879,7 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Update (#${newChannel.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Update (#${newChannel.name})`, rule.action, config, context, 'anti_channel_update');
         } catch (err) {
           console.error(err);
         }
@@ -731,7 +903,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleCreate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -747,7 +919,7 @@ export const SecurityManifest: ModuleManifest = {
             await role.delete('Anti-Nuke Recovery: Deleting unauthorized role.').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Creation (${role.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Creation (${role.name})`, rule.action, config, context, 'anti_role_create');
         } catch (err) {
           console.error(err);
         }
@@ -771,7 +943,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleDelete }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -796,7 +968,7 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted role "${role.name}".`, 'success');
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Deletion (${role.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Deletion (${role.name})`, rule.action, config, context, 'anti_role_delete');
         } catch (err) {
           console.error(err);
         }
@@ -820,7 +992,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newRole.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newRole.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -843,7 +1015,7 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Update (${newRole.name})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Update (${newRole.name})`, rule.action, config, context, 'anti_role_update');
         } catch (err) {
           console.error(err);
         }
@@ -862,6 +1034,14 @@ export const SecurityManifest: ModuleManifest = {
           const guild = newMember.guild;
           if (!guild) return;
 
+          // Proactively try to update the live snapshot to match current guild state
+          try {
+            const snap = await captureLiveSnapshot(guild);
+            await saveLiveSnapshotToDb(guild.id, snap);
+          } catch (snapErr) {
+            console.error('Failed to update live snapshot on member update:', snapErr);
+          }
+
           const oldRoles = oldMember.roles.cache;
           const newRoles = newMember.roles.cache;
           const addedRoles = newRoles.filter((r: any) => !oldRoles.has(r.id));
@@ -873,22 +1053,34 @@ export const SecurityManifest: ModuleManifest = {
           if (!hasAdmin && !isMonitored) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newMember.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newMember.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
           if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_member_update')) return;
+          
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant') ||
+                             await isExecutorBypassed(guild, executor.id, config, context, 'anti_member_update');
+          if (isBypassed) return;
 
           if (config.roleMonitorMode === 'Custom Selection' && !isMonitored) return;
 
+          const rules = config.rules || {};
+          const rule = rules.anti_role_grant || rules.anti_member_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+          if (!rule.enabled) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
+          if (!triggered) return;
+
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.tag} by ${executor.tag}.`, 'warn');
 
-          for (const [roleId] of addedRoles) {
-            await newMember.roles.remove(roleId).catch(console.error);
+          if (rule.recovery) {
+            for (const [roleId] of addedRoles) {
+              await newMember.roles.remove(roleId).catch(console.error);
+            }
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.tag}`, 'quarantine', config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.tag}`, rule.action, config, context, 'anti_role_grant');
         } catch (err) {
           console.error(err);
         }
@@ -912,7 +1104,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberBanAdd }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === ban.user.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === ban.user.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -928,7 +1120,7 @@ export const SecurityManifest: ModuleManifest = {
             await guild.members.unban(ban.user.id, 'Anti-Nuke Recovery: Revoking unauthorized ban').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Ban of ${ban.user.tag}`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Ban of ${ban.user.tag}`, rule.action, config, context, 'anti_ban');
         } catch (err) {
           console.error(err);
         }
@@ -952,7 +1144,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberKick }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === member.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === member.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -964,7 +1156,7 @@ export const SecurityManifest: ModuleManifest = {
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized kick of ${member.user.tag} by ${executor.tag}.`, 'warn');
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Kick of ${member.user.tag}`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Kick of ${member.user.tag}`, rule.action, config, context, 'anti_kick');
         } catch (err) {
           console.error(err);
         }
@@ -989,7 +1181,7 @@ export const SecurityManifest: ModuleManifest = {
           if (!guild) return;
 
           const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.BotAdd }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === member.id);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === member.id && isRecentEntry(e));
           if (!logEntry) return;
 
           const executor = logEntry.executor;
@@ -1005,7 +1197,346 @@ export const SecurityManifest: ModuleManifest = {
             await member.kick('Anti-Nuke Recovery: Kicking unauthorized bot').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Bot Addition (${member.user.tag})`, rule.action, config, context);
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Bot Addition (${member.user.tag})`, rule.action, config, context, 'anti_bot_add');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'webhookUpdate',
+      handler: async (client: any, channel: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+
+        try {
+          const guild = channel.guild;
+          if (!guild) return;
+
+          const [createLogs, deleteLogs, updateLogs] = await Promise.all([
+            guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.WebhookCreate }).catch(() => null),
+            guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.WebhookDelete }).catch(() => null),
+            guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.WebhookUpdate }).catch(() => null)
+          ]);
+
+          const entries = [
+            ...(createLogs?.entries.values() || []),
+            ...(deleteLogs?.entries.values() || []),
+            ...(updateLogs?.entries.values() || [])
+          ].filter(e => isRecentEntry(e));
+
+          const logEntry = entries.find((e: any) => e.channel?.id === channel.id || e.targetId === channel.id);
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+
+          let ruleName = 'anti_webhook_update';
+          if (logEntry.action === AuditLogEvent.WebhookCreate) ruleName = 'anti_webhook_create';
+          if (logEntry.action === AuditLogEvent.WebhookDelete) ruleName = 'anti_webhook_delete';
+
+          const rule = rules[ruleName] || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+          if (!rule.enabled) return;
+
+          if (await isExecutorBypassed(guild, executor.id, config, context, ruleName)) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, ruleName, rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized webhook activity (${ruleName.replace('anti_', '')}) in #${channel.name} by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery && logEntry.action === AuditLogEvent.WebhookCreate) {
+            const webhooks = await channel.fetchWebhooks().catch(() => null);
+            if (webhooks) {
+              const targetWh = webhooks.find((wh: any) => wh.id === logEntry.targetId);
+              if (targetWh) {
+                await targetWh.delete('Anti-Nuke Recovery: Deleting unauthorized webhook').catch(console.error);
+              }
+            }
+          }
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Webhook Activity (${ruleName})`, rule.action, config, context, ruleName);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'emojiCreate',
+      handler: async (client: any, emoji: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_create || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = emoji.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.EmojiCreate }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === emoji.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_create')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_create', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji creation by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery) {
+            await emoji.delete('Anti-Nuke Recovery: Deleting unauthorized emoji').catch(console.error);
+          }
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Creation`, rule.action, config, context, 'anti_emoji_create');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'emojiDelete',
+      handler: async (client: any, emoji: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_delete || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = emoji.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.EmojiDelete }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === emoji.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_delete')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_delete', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji deletion by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery) {
+            await guild.emojis.create({ attachment: emoji.url, name: emoji.name, reason: 'Anti-Nuke Recovery: Restoring deleted emoji' }).catch(console.error);
+          }
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Deletion`, rule.action, config, context, 'anti_emoji_delete');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'emojiUpdate',
+      handler: async (client: any, oldEmoji: any, newEmoji: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = newEmoji.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.EmojiUpdate }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newEmoji.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_update')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_update', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji update by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery) {
+            await newEmoji.edit({ name: oldEmoji.name, reason: 'Anti-Nuke Recovery: Restoring original emoji state' }).catch(console.error);
+          }
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Update`, rule.action, config, context, 'anti_emoji_update');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'stickerCreate',
+      handler: async (client: any, sticker: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_create || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = sticker.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.StickerCreate }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === sticker.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_create')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_create', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker creation by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery) {
+            await sticker.delete('Anti-Nuke Recovery: Deleting unauthorized sticker').catch(console.error);
+          }
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Creation`, rule.action, config, context, 'anti_emoji_create');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'stickerDelete',
+      handler: async (client: any, sticker: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_delete || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = sticker.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.StickerDelete }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === sticker.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_delete')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_delete', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker deletion by ${executor.tag}.`, 'warn');
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Deletion`, rule.action, config, context, 'anti_emoji_delete');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'stickerUpdate',
+      handler: async (client: any, oldSticker: any, newSticker: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_emoji_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const guild = newSticker.guild;
+          if (!guild) return;
+
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.StickerUpdate }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newSticker.id && isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_emoji_update')) return;
+
+          const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_update', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker update by ${executor.tag}.`, 'warn');
+
+          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Update`, rule.action, config, context, 'anti_emoji_update');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    },
+    {
+      name: 'guildUpdate',
+      handler: async (client: any, oldGuild: any, newGuild: any, context: any) => {
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_guild_update || { enabled: true, limit: 1, window: 10, action: 'quarantine', recovery: true };
+
+        if (!rule.enabled) return;
+
+        try {
+          const fetchedLogs = await newGuild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.GuildUpdate }).catch(() => null);
+          const logEntry = fetchedLogs?.entries.find((e: any) => isRecentEntry(e));
+          if (!logEntry) return;
+
+          const executor = logEntry.executor;
+          if (!executor || executor.id === client.user.id) return;
+          if (await isExecutorBypassed(newGuild, executor.id, config, context, 'anti_guild_update')) return;
+
+          const triggered = checkRateLimit(newGuild.id, executor.id, 'anti_guild_update', rule.limit, rule.window);
+          if (!triggered) return;
+
+          context.logSyncEvent(newGuild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized guild update by ${executor.tag}.`, 'warn');
+
+          if (rule.recovery) {
+            await newGuild.edit({
+              name: oldGuild.name,
+              verificationLevel: oldGuild.verificationLevel,
+              explicitContentFilter: oldGuild.explicitContentFilter,
+              systemChannelId: oldGuild.systemChannelId,
+              rulesChannelId: oldGuild.rulesChannelId,
+              publicUpdatesChannelId: oldGuild.publicUpdatesChannelId,
+              reason: 'Anti-Nuke Recovery: Reverting unauthorized guild update'
+            }).catch(console.error);
+          }
+
+          await punishViolator(client, newGuild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Guild Update`, rule.action, config, context, 'anti_guild_update');
         } catch (err) {
           console.error(err);
         }
@@ -1013,6 +1544,84 @@ export const SecurityManifest: ModuleManifest = {
     }
   ],
   routes: [
+    {
+      path: '/upm/snapshot',
+      method: 'post',
+      handler: async (req: any, res: any, context: any) => {
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can capture UPM snapshots.' });
+        }
+
+        const client = context.client;
+        const guildId = context.guildId || process.env.GUILD_ID;
+        if (!client || !guildId) {
+          return res.status(400).json({ error: 'Discord Client or Guild ID not available' });
+        }
+
+        const guild = await client.guilds.fetch(guildId).catch(() => null);
+        if (!guild) {
+          return res.status(404).json({ error: 'Guild not found' });
+        }
+
+        try {
+          const snap = await captureLiveSnapshot(guild);
+          await saveLiveSnapshotToDb(guild.id, snap);
+
+          // Update UPM snapshot config metadata in security module config
+          const modules = context.getModulesState ? context.getModulesState() : [];
+          const secModule = modules.find((m: any) => m.id === 'security');
+          const currentConfig = secModule?.config || {};
+          context.updateModuleConfig('security', {
+            ...currentConfig,
+            upmSnapshot: {
+              timestamp: snap.timestamp,
+              channelsCount: snap.channels?.length || 0,
+              rolesCount: snap.roles?.length || 0
+            }
+          });
+
+          context.logSyncEvent(guild.id, 'Live Snapshot captured successfully from dashboard.', 'success');
+          res.json({ success: true, timestamp: snap.timestamp, channelsCount: snap.channels?.length, rolesCount: snap.roles?.length });
+        } catch (e: any) {
+          res.status(500).json({ error: e.message });
+        }
+      }
+    },
+    {
+      path: '/upm/restore',
+      method: 'post',
+      handler: async (req: any, res: any, context: any) => {
+        if (!req.user) {
+          return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+        const hasPermission = await getGuildAndCheckPermission(req.user, context);
+        if (!hasPermission) {
+          return res.status(403).json({ success: false, error: 'Access Denied: Only the Owner and whitelisted users can restore UPM snapshots.' });
+        }
+
+        const client = context.client;
+        const guildId = context.guildId || process.env.GUILD_ID;
+        if (!client || !guildId) {
+          return res.status(400).json({ error: 'Discord Client or Guild ID not available' });
+        }
+
+        const guild = await client.guilds.fetch(guildId).catch(() => null);
+        if (!guild) {
+          return res.status(404).json({ error: 'Guild not found' });
+        }
+
+        try {
+          restoreFromLiveSnapshot(guild, client, context).catch(console.error);
+          res.json({ success: true, message: 'Restore sequence initiated' });
+        } catch (e: any) {
+          res.status(500).json({ error: e.message });
+        }
+      }
+    },
     {
       path: '/state',
       method: 'get',

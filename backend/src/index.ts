@@ -37,11 +37,12 @@ import { VoiceManagerManifest } from './modules/voice_manager/manifest.js';
 import { BulkOpsManifest } from './modules/bulk_ops/manifest.js';
 import { OwnerManifest } from './modules/owner/manifest.js';
 import { DiagnosticsManifest } from './modules/diagnostics/manifest.js';
+import { VoiceProtectionManifest } from './modules/voice-protection/index.js';
 
 dotenv.config();
 
 // All manifests in one place for easy iteration
-const ALL_MANIFESTS = [
+export const ALL_MANIFESTS = [
   // Existing
   SecurityManifest,
   ModerationManifest,
@@ -71,6 +72,7 @@ const ALL_MANIFESTS = [
   BulkOpsManifest,
   OwnerManifest,
   DiagnosticsManifest,
+  VoiceProtectionManifest,
 ];
 
 // Web-server excluded manifests (no routes needed for some)
@@ -143,7 +145,7 @@ async function bootstrap() {
     webServer.onApprovalAction = async (guildId, action, reason) => {
       await gateway.handleApprovalAction(guildId, action, reason);
     };
-    webServer.triggerEmergencyLock = async () => gateway.triggerEmergencyLock();
+    webServer.triggerEmergencyLock = async (guildId?) => gateway.triggerEmergencyLock(guildId);
     webServer.getDiscordClient = () => gateway.client;
     webServer.syncRegistryCallback = (guildId?) => gateway.syncRegistry(guildId);
 
@@ -156,6 +158,14 @@ async function bootstrap() {
     process.exit(1);
   }
 }
+
+process.on('uncaughtException', (err) => {
+  console.error('🔥 CRITICAL: Uncaught Exception caught by global handler:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 CRITICAL: Unhandled Rejection caught by global handler:', reason);
+});
 
 bootstrap();
 

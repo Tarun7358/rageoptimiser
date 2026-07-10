@@ -50,12 +50,14 @@ export interface DiscordCommandOption {
   description: string;
   required?: boolean;
   options?: DiscordCommandOption[];
+  [key: string]: any;
 }
 
 export interface DiscordCommand {
   name: string;
   description: string;
   options?: DiscordCommandOption[];
+  [key: string]: any;
 }
 
 export interface ModuleManifest {

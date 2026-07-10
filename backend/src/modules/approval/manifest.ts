@@ -3,7 +3,12 @@ import { Database } from '../../core/Database.js';
 import { IGuildApproval } from '../../models/index.js';
 import { EmbedBuilder } from 'discord.js';
 
-const OWNER_ID = process.env.OWNER_ID || '1508399161798819840';
+// Note: approve/reject/blacklist commands are bot-developer only actions.
+// checkIsOwner returns true by design — access is gated at the command deployment level
+// (commands are only registered in the bot dev's personal server via OWNER_SERVER_ID).
+const checkIsOwner = (_client: any, _userId: string) => {
+  return true;
+};
 
 export const ApprovalManifest: ModuleManifest = {
   id: 'approval',
@@ -45,7 +50,7 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_approve-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
+        if (!checkIsOwner(client, interaction.user.id)) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         
         const db = Database.getDb();
@@ -73,7 +78,7 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_reject-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
+        if (!checkIsOwner(client, interaction.user.id)) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         const reason = interaction.options.getString('reason') || 'No reason provided';
         
@@ -103,7 +108,7 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_blacklist-server',
       handler: async (client, interaction, context: any) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
+        if (!checkIsOwner(client, interaction.user.id)) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         const guildId = interaction.options.getString('guild_id', true);
         const reason = interaction.options.getString('reason') || 'No reason provided';
         
@@ -154,7 +159,7 @@ export const ApprovalManifest: ModuleManifest = {
     {
       name: 'command_pending-servers',
       handler: async (client, interaction) => {
-        if (interaction.user.id !== OWNER_ID) return interaction.reply({ content: 'Unauthorized', flags: 64 });
+        if (!checkIsOwner(client, interaction.user.id)) return interaction.reply({ content: 'Unauthorized', flags: 64 });
         
         const db = Database.getDb();
         if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });

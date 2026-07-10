@@ -185,219 +185,6 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     });
   };
 
-  // Privileged Action Elevation Middleware
-  const requireElevation = (req: any, res: any, next: any) => {
-    // 1. Verify standard token first
-    authenticateToken(req, res, async () => {
-      const user = req.user;
-      
-      // 2. Fetch user from DB to check if TOTP is enabled
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-      
-      const userDoc = await db.collection('admin_users').where('username', '==', user.username).get();
-      if (userDoc.empty) return res.status(401).json({ error: 'User not found' });
-      
-      const adminData = userDoc.docs[0].data();
-      
-      // If TOTP is not enabled, we just allow the action for now.
-      // But based on spec, Owner MUST have TOTP enabled for privileged actions. 
-      // If they don't, they can't do it. But to prevent lockouts, if they haven't set it up, they can't do privileged actions.
-      if (!adminData.totpEnabled) {
-        // Enforce TOTP setup for owner
-        if (user.role === 'owner') {
-           return res.status(403).json({ error: 'ELEVATION_REQUIRED_SETUP', message: 'You must enable Two-Factor Authentication in Settings -> Security to perform this action.' });
-        }
-        return next(); // non-owners without TOTP can proceed if they are allowed by the endpoint (role checks should be in the endpoint)
-      }
-
-      // 3. Check for elevated token
-      const elevatedToken = req.headers['x-elevated-token'];
-      if (!elevatedToken) {
-        return res.status(403).json({ error: 'ELEVATION_REQUIRED', message: 'Privileged action requires TOTP verification.' });
-      }
-
-      // 4. Verify elevated token
-      jwt.verify(elevatedToken, (process.env.JWT_SECRET || 'fallback_secret') as string, (err: any, elevatedData: any) => {
-        if (err || elevatedData.type !== 'elevation' || elevatedData.username !== user.username) {
-          return res.status(403).json({ error: 'ELEVATION_EXPIRED', message: 'Elevated session expired or invalid.' });
-        }
-        next();
-      });
-    });
-  };
-
-  // Login Route
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-
-      const user = await AuthService.authenticate(username, password);
-      
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role }, 
-        process.env.JWT_SECRET || 'fallback_secret', 
-        { expiresIn: '1d' }
-      );
-      
-      res.json({ token, role: user.role, username: user.username });
-    } catch (err: any) {
-      if (err.message === 'ACCOUNT_LOCKED') {
-        return res.status(403).json({ error: 'Account locked. Too many failed attempts.' });
-      }
-      console.error('Login error:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
-  // --- TOTP Authentication Endpoints ---
-
-  app.get('/api/auth/totp/status', authenticateToken, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-      
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      if (userDoc.empty) return res.status(404).json({ error: 'User not found' });
-      
-      const adminData = userDoc.docs[0].data();
-      res.json({ enabled: !!adminData.totpEnabled });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to fetch TOTP status.' });
-    }
-  });
-
-  app.get('/api/auth/totp/setup', authenticateToken, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-      if (req.user.role !== 'owner') return res.status(403).json({ error: 'Only the Owner can setup TOTP.' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      if (userDoc.empty) return res.status(404).json({ error: 'User not found' });
-      
-      const adminData = userDoc.docs[0].data();
-      if (adminData.totpEnabled) {
-        return res.status(400).json({ error: 'TOTP is already enabled.' });
-      }
-
-      // Generate secret and QR
-      const { secret, uri } = SecurityService.generateTotpSecret(req.user.username);
-      const qrCodeDataUrl = await QRCode.toDataURL(uri);
-
-      // Save encrypted secret temporarily (until verified)
-      const encryptedSecret = SecurityService.encrypt(secret);
-      await userDoc.docs[0].ref.update({
-        totpSecret: encryptedSecret
-      });
-
-      res.json({ secret, qrCodeUrl: qrCodeDataUrl });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to generate TOTP setup.' });
-    }
-  });
-
-  app.post('/api/auth/totp/verify-setup', authenticateToken, async (req: any, res: any) => {
-    try {
-      const { code } = req.body;
-      if (!code) return res.status(400).json({ error: 'Code is required' });
-
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      const adminData = userDoc.docs[0].data();
-
-      if (!adminData.totpSecret) return res.status(400).json({ error: 'No TOTP setup found.' });
-
-      const secret = SecurityService.decrypt(adminData.totpSecret);
-      const isValid = await SecurityService.verifyTotpToken(code, secret);
-
-      if (!isValid) {
-        return res.status(400).json({ error: 'Invalid Google Authenticator code.' });
-      }
-
-      const recoveryCodes = SecurityService.generateRecoveryCodes();
-      
-      await userDoc.docs[0].ref.update({
-        totpEnabled: true,
-        recoveryCodes: recoveryCodes // In a real prod environment, these should be hashed. Storing plaintext for this MVP so owner can view if needed.
-      });
-
-      registry.logSyncEvent(`Owner enabled Two-Factor Authentication (TOTP).`, 'success');
-
-      res.json({ success: true, recoveryCodes });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to verify TOTP setup.' });
-    }
-  });
-
-  app.post('/api/auth/elevate', authenticateToken, async (req: any, res: any) => {
-    try {
-      const { code } = req.body;
-      if (!code) return res.status(400).json({ error: 'Code is required' });
-
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      const adminData = userDoc.docs[0].data();
-
-      if (!adminData.totpEnabled || !adminData.totpSecret) {
-        return res.status(400).json({ error: 'TOTP is not enabled on this account.' });
-      }
-
-      const secret = SecurityService.decrypt(adminData.totpSecret);
-      const isValid = await SecurityService.verifyTotpToken(code, secret);
-
-      if (!isValid) {
-        registry.logSyncEvent(`Failed privileged elevation attempt for ${req.user.username}. Invalid code.`, 'warn');
-        return res.status(400).json({ error: 'Invalid Google Authenticator code.' });
-      }
-
-      // Generate a short-lived token (5 minutes)
-      const elevatedToken = jwt.sign(
-        { username: req.user.username, type: 'elevation' },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '5m' }
-      );
-
-      registry.logSyncEvent(`User ${req.user.username} successfully elevated session for privileged actions.`, 'info');
-      res.json({ success: true, elevatedToken });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to elevate session.' });
-    }
-  });
-
-  app.post('/api/auth/totp/disable', requireElevation, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      
-      await userDoc.docs[0].ref.update({
-        totpEnabled: false,
-        totpSecret: null,
-        recoveryCodes: null
-      });
-
-      registry.logSyncEvent(`Owner completely disabled Two-Factor Authentication.`, 'warn');
-      res.json({ success: true });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to disable TOTP.' });
-    }
-  });
 
   app.get('/api/state', (req, res) => {
     const metrics = server.getBotMetrics ? server.getBotMetrics() : { latency: 0, uptime: 'Offline' };
@@ -411,7 +198,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     });
   });
 
-  app.post('/api/system/override', requireElevation, async (req: any, res: any) => {
+  app.post('/api/system/override', authenticateToken, async (req: any, res: any) => {
     const { action, value } = req.body;
     // Check if user is owner
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied: Only the Owner may perform this action.' });
@@ -436,7 +223,6 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.post('/api/modules/:id', authenticateToken, (req: any, res: any, next: any) => {
-    if (req.params.id === 'security') return requireElevation(req, res, next);
     next();
   }, (req, res) => {
     const mod = registry.updateModuleConfig(req.params.id, req.body);
@@ -445,7 +231,6 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.post('/api/modules/:id/toggle', authenticateToken, (req: any, res: any, next: any) => {
-    if (req.params.id === 'security') return requireElevation(req, res, next);
     next();
   }, (req, res) => {
     const { enabledOverride } = req.body;
@@ -465,7 +250,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.json({ success: true });
   });
 
-  app.post('/api/commands/sync', requireElevation, async (req: any, res: any) => {
+  app.post('/api/commands/sync', authenticateToken, async (req: any, res: any) => {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied: Only the Owner may perform this action.' });
     if (server.deployCommandsCallback) {
       await server.deployCommandsCallback();

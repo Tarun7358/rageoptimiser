@@ -53,7 +53,7 @@ export class WebServer {
   private clients: Set<WebSocket> = new Set();
   public getBotMetrics: (() => { latency: number; uptime: string }) | null = null;
   public deployCommandsCallback: (() => Promise<void>) | null = null;
-  public triggerEmergencyLock: (() => Promise<void>) | null = null;
+  public triggerEmergencyLock: ((guildId?: string) => Promise<void>) | null = null;
   public onApprovalAction?: (guildId: string, action: string, reason?: string) => Promise<void>;
   public publicFeed?: PublicFeedManager;
   public getDiscordClient?: () => any;
@@ -88,6 +88,11 @@ export class WebServer {
 
     this.server = createServer(this.app);
     this.wss = new WebSocketServer({ port: Number(process.env.WS_PORT || 5001) });
+
+    // Security warning: JWT_SECRET must be set in production
+    if (!process.env.JWT_SECRET) {
+      console.warn('⚠️  WARNING: JWT_SECRET environment variable is not set! Using insecure fallback secret. Set JWT_SECRET in your .env file before deploying to production.');
+    }
 
     this.setupRoutes();
     this.setupWebSockets();
@@ -244,7 +249,13 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     // Calculate simple stats
     const activeModulesCount = modules.filter(m => m.status === 'ready' || m.status === 'enabled').length;
     const protectedServers = 1; // Assuming single-guild dashboard
-    const threatsBlocked = 286; // Mock data as requested by user
+
+    // Compute threats blocked from real data: quarantined users + security warn events in sync logs
+    const secMod = modules.find(m => m.id === 'security');
+    const quarantinedCount = (secMod?.config?.quarantinedUsers || []).length;
+    const syncLogs = registry.getSyncLogs();
+    const securityWarnCount = syncLogs.filter(l => l.type === 'warn' && l.msg.includes('[Anti-Nuke')).length;
+    const threatsBlocked = quarantinedCount + securityWarnCount;
 
     res.json({
       activeModules: activeModulesCount,
@@ -258,13 +269,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
 
 
 
-  // Privileged Action Elevation Middleware
-  const requireElevation = (req: any, res: any, next: any) => {
-    // 1. Verify standard token first
-    authenticateToken(req, res, () => {
-      next();
-    });
-  };
+
 
   // Login Route
   app.post('/api/auth/login', async (req, res) => {
@@ -299,149 +304,6 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     }
   });
 
-  // --- TOTP Authentication Endpoints ---
-
-  app.get('/api/auth/totp/status', authenticateToken, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-      
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      if (userDoc.empty) return res.status(404).json({ error: 'User not found' });
-      
-      const adminData = userDoc.docs[0].data();
-      res.json({ enabled: !!adminData.totpEnabled });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to fetch TOTP status.' });
-    }
-  });
-
-  app.get('/api/auth/totp/setup', authenticateToken, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-      if (req.user.role !== 'owner') return res.status(403).json({ error: 'Only the Owner can setup TOTP.' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      if (userDoc.empty) return res.status(404).json({ error: 'User not found' });
-      
-      const adminData = userDoc.docs[0].data();
-      if (adminData.totpEnabled) {
-        return res.status(400).json({ error: 'TOTP is already enabled.' });
-      }
-
-      // Generate secret and QR
-      const { secret, uri } = SecurityService.generateTotpSecret(req.user.username);
-      const qrCodeDataUrl = await QRCode.toDataURL(uri);
-
-      // Save encrypted secret temporarily (until verified)
-      const encryptedSecret = SecurityService.encrypt(secret);
-      await userDoc.docs[0].ref.update({
-        totpSecret: encryptedSecret
-      });
-
-      res.json({ secret, qrCodeUrl: qrCodeDataUrl });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to generate TOTP setup.' });
-    }
-  });
-
-  app.post('/api/auth/totp/verify-setup', authenticateToken, async (req: any, res: any) => {
-    try {
-      const { code } = req.body;
-      if (!code) return res.status(400).json({ error: 'Code is required' });
-
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      const adminData = userDoc.docs[0].data();
-
-      if (!adminData.totpSecret) return res.status(400).json({ error: 'No TOTP setup found.' });
-
-      const secret = SecurityService.decrypt(adminData.totpSecret);
-      const isValid = await SecurityService.verifyTotpToken(code, secret);
-
-      if (!isValid) {
-        return res.status(400).json({ error: 'Invalid Google Authenticator code.' });
-      }
-
-      const recoveryCodes = SecurityService.generateRecoveryCodes();
-      
-      await userDoc.docs[0].ref.update({
-        totpEnabled: true,
-        recoveryCodes: recoveryCodes // In a real prod environment, these should be hashed. Storing plaintext for this MVP so owner can view if needed.
-      });
-
-      registry.logSyncEvent(`Owner enabled Two-Factor Authentication (TOTP).`, 'success');
-
-      res.json({ success: true, recoveryCodes });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to verify TOTP setup.' });
-    }
-  });
-
-  app.post('/api/auth/elevate', authenticateToken, async (req: any, res: any) => {
-    try {
-      const { code } = req.body;
-      if (!code) return res.status(400).json({ error: 'Code is required' });
-
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      const adminData = userDoc.docs[0].data();
-
-      if (!adminData.totpEnabled || !adminData.totpSecret) {
-        return res.status(400).json({ error: 'TOTP is not enabled on this account.' });
-      }
-
-      const secret = SecurityService.decrypt(adminData.totpSecret);
-      const isValid = await SecurityService.verifyTotpToken(code, secret);
-
-      if (!isValid) {
-        registry.logSyncEvent(`Failed privileged elevation attempt for ${req.user.username}. Invalid code.`, 'warn');
-        return res.status(400).json({ error: 'Invalid Google Authenticator code.' });
-      }
-
-      // Generate a short-lived token (5 minutes)
-      const elevatedToken = jwt.sign(
-        { username: req.user.username, type: 'elevation' },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: '5m' }
-      );
-
-      registry.logSyncEvent(`User ${req.user.username} successfully elevated session for privileged actions.`, 'info');
-      res.json({ success: true, elevatedToken });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to elevate session.' });
-    }
-  });
-
-  app.post('/api/auth/totp/disable', requireElevation, async (req: any, res: any) => {
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-      const userDoc = await db.collection('admin_users').where('username', '==', req.user.username).get();
-      
-      await userDoc.docs[0].ref.update({
-        totpEnabled: false,
-        totpSecret: null,
-        recoveryCodes: null
-      });
-
-      registry.logSyncEvent(`Owner completely disabled Two-Factor Authentication.`, 'warn');
-      res.json({ success: true });
-    } catch (e: any) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to disable TOTP.' });
-    }
-  });
   app.get('/api/state', authenticateToken, authorizeGuildAccess, async (req, res) => {
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
     // Trigger a live Discord sync before returning — ensures fresh roles/channels on each load
@@ -459,7 +321,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     });
   });
 
-  app.post('/api/system/override', requireElevation, async (req: any, res: any) => {
+  app.post('/api/system/override', authenticateToken, authorizeGuildAccess, async (req: any, res: any) => {
     const { action, value } = req.body;
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied: Only the Owner may perform this action.' });
@@ -469,7 +331,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
         res.json({ success: true, maintenanceMode: value });
       } else if (action === 'emergency_lock') {
         if (server.triggerEmergencyLock) {
-          await server.triggerEmergencyLock();
+          await server.triggerEmergencyLock(guildId);
           res.json({ success: true });
         } else {
           res.status(500).json({ error: 'Emergency Lock callback not linked to Gateway' });
@@ -510,7 +372,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     }
   });
 
-  app.post('/api/system/staff', requireElevation, async (req: any, res) => {
+  app.post('/api/system/staff', authenticateToken, async (req: any, res) => {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     const { username, password, role } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -542,7 +404,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     }
   });
 
-  app.delete('/api/system/staff/:username', requireElevation, async (req: any, res) => {
+  app.delete('/api/system/staff/:username', authenticateToken, async (req: any, res) => {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     const { username } = req.params;
     if (username === 'admin') return res.status(400).json({ error: 'Cannot delete primary owner account' });
@@ -565,7 +427,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   // --- BROADCASTER ENDPOINT ---
-  app.post('/api/system/broadcast', requireElevation, async (req: any, res: any) => {
+  app.post('/api/system/broadcast', authenticateToken, async (req: any, res: any) => {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'Message content is required' });
@@ -605,20 +467,14 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.status(503).json({ error: 'Discord Gateway not connected' });
   });
 
-  app.post('/api/modules/:id', authenticateToken, authorizeGuildAccess, (req: any, res: any, next: any) => {
-    if (req.params.id === 'security') return requireElevation(req, res, next);
-    next();
-  }, (req, res) => {
+  app.post('/api/modules/:id', authenticateToken, authorizeGuildAccess, (req, res) => {
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
     const mod = registry.updateModuleConfig(guildId, req.params.id, req.body);
     if (!mod) return res.status(404).json({ error: 'Module not found' });
     res.json(mod);
   });
 
-  app.post('/api/modules/:id/toggle', authenticateToken, authorizeGuildAccess, (req: any, res: any, next: any) => {
-    if (req.params.id === 'security') return requireElevation(req, res, next);
-    next();
-  }, (req, res) => {
+  app.post('/api/modules/:id/toggle', authenticateToken, authorizeGuildAccess, (req, res) => {
     const { enabledOverride } = req.body;
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
     const mod = registry.toggleModule(guildId, req.params.id, enabledOverride);
@@ -639,7 +495,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.json({ success: true });
   });
 
-  app.post('/api/commands/sync', requireElevation, async (req: any, res: any) => {
+  app.post('/api/commands/sync', authenticateToken, async (req: any, res: any) => {
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied: Only the Owner may perform this action.' });
     if (server.deployCommandsCallback) {
       await server.deployCommandsCallback();

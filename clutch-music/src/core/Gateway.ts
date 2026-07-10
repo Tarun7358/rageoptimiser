@@ -106,9 +106,18 @@ export class Gateway {
   }
 
   private setupListeners() {
-    this.client.once(Events.ClientReady, () => {
+    this.client.once(Events.ClientReady, async () => {
       console.log(`Discord client connected as ${this.client.user?.tag}`);
       this.logSyncEvent(`Discord gateway connected as ${this.client.user?.tag}`, 'success');
+      await this.client.application?.fetch().catch(() => null);
+      
+      // Deploy commands to all guilds the bot is currently in on startup
+      for (const [guildId] of this.client.guilds.cache) {
+        await this.forceDeployCommands(guildId).catch((err) => {
+          console.error(`[Gateway] Startup deploy failed for guild ${guildId}:`, err);
+        });
+      }
+
       // syncRegistry and syncApprovals are handled by Core bot
       // this.syncRegistry();
       // Voice presence for Music Bot
@@ -126,9 +135,21 @@ export class Gateway {
     });
 
     this.client.on('guildCreate', async (guild) => {
-      if (guild.id === process.env.GUILD_ID) return; // Skip main server
+      if (guild.id === process.env.GUILD_ID) {
+        await this.forceDeployCommands(guild.id).catch((err) => {
+          console.error(`[Gateway] Failed to deploy commands for main guild ${guild.id}:`, err);
+        });
+        // BUG #2 FIX: Also sync main guild to Firestore as Approved so it's never marked Pending on reboot
+        await this.syncApprovals().catch(() => {});
+        return;
+      }
       this.logSyncEvent(`Discord Event: Bot joined new guild "${guild.name}" (${guild.id}). Entering Pending Mode.`, 'warn');
       
+      // Deploy slash commands to the newly joined guild instantly first!
+      await this.forceDeployCommands(guild.id).catch((err) => {
+        console.error(`[Gateway] Failed to deploy commands for new guild ${guild.id}:`, err);
+      });
+
       try {
         // await guild.members.fetch(); // Ensure we have member counts
         
@@ -193,31 +214,8 @@ export class Gateway {
           await db.collection('approvals').doc(guild.id).set(approvalData, { merge: true });
         }
 
-        // Notify Bot Owner
-        const ownerId = process.env.OWNER_ID || '1508399161798819840'; // Fallback to provided owner ID if not in env
-        try {
-          const botOwner = await this.client.users.fetch(ownerId);
-          if (botOwner) {
-            const embed = new EmbedBuilder()
-              .setTitle('🛡️ New Server Approval Request')
-              .setDescription(`Rage Optimiser joined **${guild.name}**. All features are locked until approved.`)
-              .addFields(
-                { name: 'Guild ID', value: guild.id, inline: true },
-                { name: 'Owner', value: `${owner.user.tag} (${owner.id})`, inline: true },
-                { name: 'Members', value: `${guild.memberCount} (${humanCount} Humans, ${botCount} Bots)`, inline: true },
-                { name: 'Created At', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:R>`, inline: true },
-                { name: 'Risk Level', value: `${finalRiskLevel} (Score: ${finalRiskScore})`, inline: true }
-              )
-              .setThumbnail(guild.iconURL() || null)
-              .setColor('#FACC15')
-              .setFooter({ text: 'Awaiting Approval' });
-
-            // Send notification (without buttons for now, owner will use commands or dashboard)
-            await botOwner.send({ embeds: [embed] }).catch(() => {});
-          }
-        } catch (e) {
-          console.error('[Gateway] Failed to notify bot owner of new guild:', e);
-        }
+        // BUG #3 FIX: Removed duplicate owner DM — the main Core Bot already handles this notification.
+        // Sending from both bots causes double-DM spam. Music bot stays silent on guild join.
 
       } catch (e) {
         console.error('[Gateway] Error handling guildCreate:', e);
@@ -359,32 +357,6 @@ export class Gateway {
 
     // Slash Command & Component Button routing
     this.client.on('interactionCreate', async (interaction) => {
-      // PRE-FLIGHT CHECK: OWNER APPROVAL SYSTEM
-      if (interaction.guildId && interaction.guildId !== process.env.GUILD_ID) {
-        const isApprovalCommand = interaction.isChatInputCommand() && 
-          ['approve-server', 'reject-server', 'pending-servers', 'blacklisted-servers', 'server-info', 'suspend-server', 'unsuspend-server', 'blacklist-server'].includes(interaction.commandName);
-
-        if (!isApprovalCommand && interaction.user.id !== process.env.OWNER_ID) {
-          let approvalStatus = 'Pending';
-          const db = Database.getDb();
-          if (db) {
-            const docSnap = await db.collection('approvals').doc(interaction.guildId).get();
-            if (docSnap.exists) {
-              approvalStatus = (docSnap.data() as IGuildApproval).status;
-            }
-          }
-
-          if (approvalStatus !== 'Approved') {
-            if (interaction.isRepliable()) {
-              await interaction.reply({ 
-                content: '🚫 **Server Pending Approval**\nThis server has not yet been approved by the Rage Optimiser owner.\nPlease wait until approval is granted. All features are currently locked.',
-                flags: 64 
-              }).catch(() => {});
-            }
-            return;
-          }
-        }
-      }
 
       if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
@@ -392,7 +364,10 @@ export class Gateway {
         // SYSTEM MAINTENANCE MODE CHECK
         const settings = this.getGlobalSettings();
         if (settings.maintenanceMode) {
-          const isOwner = interaction.user.id === interaction.guild?.ownerId || interaction.user.id === process.env.OWNER_ID;
+          const isOwner = interaction.user.id === interaction.guild?.ownerId || 
+                          interaction.user.id === process.env.OWNER_ID ||
+                          interaction.user.id === this.client.application?.owner?.id ||
+                          ((this.client.application?.owner as any)?.members && (this.client.application?.owner as any).members.has(interaction.user.id));
           const member = interaction.member;
           // Check if admin
           let isAdmin = isOwner;
@@ -403,8 +378,16 @@ export class Gateway {
           if (!isAdmin) {
              this.logSyncEvent(`Blocked command /${commandName} from ${interaction.user.tag} due to active Maintenance Mode.`, 'warn');
              if (interaction.isRepliable()) {
+               // BUG #12 FIX: Upgrade to premium embed instead of plain text
                await interaction.reply({
-                 content: '🚧 **System Maintenance Mode Active**\nThe server is currently in lockdown mode. All public bot commands are temporarily disabled. Please check back later.',
+                 embeds: [
+                   new EmbedBuilder()
+                     .setTitle('🚧 Maintenance Mode Active')
+                     .setDescription('The bot is currently in **lockdown mode**. All public commands are temporarily disabled.\n\nPlease check back shortly.')
+                     .setColor(0xF59E0B)
+                     .setFooter({ text: 'Rage Optimiser System' })
+                     .setTimestamp()
+                 ],
                  flags: 64
                }).catch(() => {});
              }
@@ -551,10 +534,10 @@ export class Gateway {
     }
   }
 
-  public async forceDeployCommands() {
+  public async forceDeployCommands(targetGuildId?: string) {
     const token = process.env.DISCORD_TOKEN;
     const clientId = process.env.CLIENT_ID;
-    const guildId = process.env.GUILD_ID;
+    const guildId = targetGuildId || process.env.GUILD_ID;
 
     if (!token || !clientId || !guildId) return;
 
@@ -574,14 +557,27 @@ export class Gateway {
     const rest = new REST({ version: '10' }).setToken(token);
 
     try {
-      console.log(`Deploying ${commands.length} application commands to Discord API...`);
+      console.log(`Deploying ${commands.length} application commands to Guild ${guildId}...`);
       await rest.put(
         Routes.applicationGuildCommands(clientId, guildId),
         { body: commands }
       );
       this.logSyncEvent('Slash commands successfully registered on Discord REST API.', 'success');
-    } catch (error) {
-      console.error('Failed to deploy slash commands:', error);
+    } catch (error: any) {
+      if (error.code === 50001 || error.status === 403) {
+        console.warn(`[Gateway] Guild command registration failed with Missing Access (50001). Retrying globally...`);
+        try {
+          await rest.put(
+            Routes.applicationCommands(clientId),
+            { body: commands }
+          );
+          this.logSyncEvent('Slash commands successfully registered globally as fallback.', 'success');
+        } catch (globalErr) {
+          console.error('[Gateway] Failed to deploy slash commands globally:', globalErr);
+        }
+      } else {
+        console.error('Failed to deploy slash commands:', error);
+      }
     }
   }
 
@@ -635,7 +631,7 @@ export class Gateway {
   private async checkMusicVoicePresence() {
     const modules = this.getModulesState ? this.getModulesState() : [];
     const musicModule = modules.find((m: any) => m.id === 'music');
-    if (!musicModule || musicModule.status !== 'enabled') return;
+    if (!musicModule) return;
 
     const config = musicModule.config || {};
     const channelId = config.defaultMusicChannelId;
@@ -648,8 +644,13 @@ export class Gateway {
     if (!guild) return;
 
     const currentConnection = getVoiceConnection(guildId);
+
+    // BUG #1 FIX: QueueManager.getQueue always returns a queue (creates one if absent),
+    // but we must guard against operating on it if 24/7 mode is off and no real queue exists.
     const queue = QueueManager.getQueue(guildId);
-    const isPlaying = queue && queue.currentTrack !== null;
+    if (!queue) return;
+
+    const isPlaying = queue.currentTrack !== null;
 
     if (is247 && channelId) {
       const channel = guild.channels.cache.get(channelId);
@@ -658,33 +659,35 @@ export class Gateway {
       // Connect if not connected anywhere
       if (!currentConnection) {
         this.logSyncEvent(`Music 24/7: Connecting to default voice channel #${channel.name}...`, 'info');
-        queue.connection = joinVoiceChannel({
+        const newConn = joinVoiceChannel({
           channelId: channel.id,
           guildId: guild.id,
           adapterCreator: guild.voiceAdapterCreator as any,
           selfDeaf: true,
           selfMute: false
         });
-        queue.connection.on(VoiceConnectionStatus.Disconnected, () => {
+        newConn.on(VoiceConnectionStatus.Disconnected, () => {
           queue.destroy();
         });
+        queue.connection = newConn;
       } else if (!isPlaying && currentConnection.joinConfig.channelId !== channelId) {
-        // Return to default channel if idle and in another channel for the timeout duration
+        // Return to default channel if idle and past the auto-disconnect timeout
         const timeoutMins = config.autoDisconnectTimer || 5;
         if (!queue.idleSince) queue.idleSince = Date.now();
         
         if (Date.now() - queue.idleSince >= timeoutMins * 60 * 1000) {
           this.logSyncEvent(`Music 24/7: Returning to default voice channel #${channel.name}...`, 'info');
-          queue.connection = joinVoiceChannel({
+          const newConn = joinVoiceChannel({
             channelId: channel.id,
             guildId: guild.id,
             adapterCreator: guild.voiceAdapterCreator as any,
             selfDeaf: true,
             selfMute: false
           });
-          queue.connection.on(VoiceConnectionStatus.Disconnected, () => {
+          newConn.on(VoiceConnectionStatus.Disconnected, () => {
             queue.destroy();
           });
+          queue.connection = newConn;
           queue.idleSince = null;
         }
       }

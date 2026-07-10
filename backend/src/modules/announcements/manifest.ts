@@ -32,7 +32,7 @@ export const AnnouncementsManifest: ModuleManifest = {
           type: 1,
           options: [
             { name: 'message', type: 3, description: 'Announcement content', required: true },
-            { name: 'channel', type: 7, description: 'Target channel (default: configured channel)', required: false },
+            { name: 'channel', type: 7, description: 'Target channel (default: configured channel)', required: false, channel_types: [0, 5] },
             { name: 'ping_everyone', type: 5, description: 'Ping @everyone?', required: false },
             { name: 'ping_role', type: 8, description: 'Role to ping', required: false },
             { name: 'embed', type: 5, description: 'Send as embed?', required: false },
@@ -56,7 +56,7 @@ export const AnnouncementsManifest: ModuleManifest = {
           options: [
             { name: 'title', type: 3, description: 'Embed title', required: true },
             { name: 'description', type: 3, description: 'Embed description', required: true },
-            { name: 'channel', type: 7, description: 'Target channel', required: false },
+            { name: 'channel', type: 7, description: 'Target channel', required: false, channel_types: [0, 5] },
             { name: 'color', type: 3, description: 'Embed color hex', required: false },
             { name: 'image', type: 3, description: 'Image URL', required: false },
             { name: 'thumbnail', type: 3, description: 'Thumbnail URL', required: false },

@@ -103,6 +103,7 @@ export const BotWhitelistManifest: ModuleManifest = {
       name: 'guildMemberAdd',
       handler: async (client: any, member: any, context: any) => {
         if (!member.user.bot) return;
+        if (process.env.MUSIC_CLIENT_ID && member.id === process.env.MUSIC_CLIENT_ID) return;
 
         const modules = context.getModulesState ? context.getModulesState() : [];
         const bwModule = modules.find((m: any) => m.id === 'bot_whitelist');
@@ -164,7 +165,13 @@ export const BotWhitelistManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const hasPermission = await checkWhitelistPermission(interaction.user.id, interaction.guild, context);
         if (!hasPermission) {
-          return interaction.reply({ content: '🔒 **Access Denied** — Only the Server Owner and whitelisted users can manage the whitelist.', flags: 64 });
+          const embed = new EmbedBuilder()
+            .setTitle('🔒 Access Denied')
+            .setColor(0xEF4444)
+            .setDescription('Only the **Server Owner** and whitelisted administrators can manage the Bot Whitelist.')
+            .setFooter({ text: 'Rage Optimiser Security' })
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         const group = interaction.options.getSubcommandGroup();
@@ -173,7 +180,13 @@ export const BotWhitelistManifest: ModuleManifest = {
         const bwModule = modules.find((m: any) => m.id === 'bot_whitelist');
         
         if (!bwModule || bwModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Bot Whitelist module is not enabled in the dashboard.', flags: 64 });
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Module Disabled')
+            .setColor(0xEF4444)
+            .setDescription('The **Bot Whitelist** module is not currently enabled in the dashboard.')
+            .setFooter({ text: 'Rage Optimiser Security' })
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         let bots = bwModule.config.bots || [];
@@ -183,7 +196,15 @@ export const BotWhitelistManifest: ModuleManifest = {
           const role = interaction.options.getRole('managed_role', true);
           const notes = interaction.options.getString('notes') || '';
           
-          if (!targetBot.bot) return interaction.reply({ content: '❌ Target user is not a bot.', flags: 64 });
+          if (!targetBot.bot) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Invalid Target')
+              .setColor(0xEF4444)
+              .setDescription('The selected user is not a bot. To whitelist members, please use the `/member whitelist` command.')
+              .setFooter({ text: 'Rage Optimiser Security' })
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
           
           let botRecord = bots.find((b: BotWhitelistRecord) => b.userId === targetBot.id);
           
@@ -260,7 +281,12 @@ export const BotWhitelistManifest: ModuleManifest = {
           collector.on('collect', async (i: any) => {
             const hasPerm = await checkWhitelistPermission(i.user.id, i.guild, context);
             if (!hasPerm) {
-              return i.reply({ content: '🔒 **Access Denied** — Only the Server Owner and whitelisted users can modify the whitelist.', flags: 64 });
+              const embedErr = new EmbedBuilder()
+                .setTitle('🔒 Access Denied')
+                .setColor(0xEF4444)
+                .setDescription('Only the **Server Owner** and whitelisted administrators can modify the whitelist.')
+                .setTimestamp();
+              return i.reply({ embeds: [embedErr], flags: 64 });
             }
 
             const newBypasses = i.values || [];
@@ -291,25 +317,55 @@ export const BotWhitelistManifest: ModuleManifest = {
         if (group === 'whitelist' && subcommand === 'remove') {
           const targetBot = interaction.options.getUser('bot_user', true);
           if (!bots.find((b: BotWhitelistRecord) => b.userId === targetBot.id)) {
-            return interaction.reply({ content: '❌ This bot is not whitelisted.', flags: 64 });
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Not Whitelisted')
+              .setColor(0xEF4444)
+              .setDescription(`The bot **${targetBot.tag}** is not currently whitelisted.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
           }
           
           bots = bots.filter((b: BotWhitelistRecord) => b.userId !== targetBot.id);
           context.updateModuleConfig('bot_whitelist', { bots });
           context.logSyncEvent(`[Bot Whitelist] Removed bot ${targetBot.tag} via command.`, 'info');
-          return interaction.reply({ content: `🗑️ Removed bot **${targetBot.tag}** from the whitelist.`, flags: 64 });
+
+          const embed = new EmbedBuilder()
+            .setTitle('🗑️ Bot Removed')
+            .setColor(0x7C5CFC)
+            .setDescription(`Successfully removed bot **${targetBot.tag}** from the whitelist.`)
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         if (group === 'whitelist' && subcommand === 'list') {
-          if (bots.length === 0) return interaction.reply({ content: 'The bot whitelist is currently empty.', flags: 64 });
-          const list = bots.map((b: BotWhitelistRecord) => `- **${b.tag}** (Role: <@&${b.managedRoleId}>) [${b.status.toUpperCase()}]`).join('\n');
-          return interaction.reply({ content: `**Whitelisted Bots:**\n${list}`, flags: 64 });
+          if (bots.length === 0) {
+            const embed = new EmbedBuilder()
+              .setTitle('🤖 Whitelisted Bots')
+              .setColor(0x7C5CFC)
+              .setDescription('The bot whitelist is currently empty.')
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
+          const list = bots.map((b: BotWhitelistRecord) => `• **${b.tag}** (Role: <@&${b.managedRoleId}>) [${b.status.toUpperCase()}]`).join('\n');
+          const embed = new EmbedBuilder()
+            .setTitle('🤖 Whitelisted Bots')
+            .setColor(0x7C5CFC)
+            .setDescription(list)
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         if (group === 'whitelist' && subcommand === 'info') {
           const targetBot = interaction.options.getUser('bot_user', true);
           const b = bots.find((x: BotWhitelistRecord) => x.userId === targetBot.id);
-          if (!b) return interaction.reply({ content: '❌ This bot is not whitelisted.', flags: 64 });
+          if (!b) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Not Whitelisted')
+              .setColor(0xEF4444)
+              .setDescription(`The bot **${targetBot.tag}** is not whitelisted.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
           
           const embed = new EmbedBuilder()
             .setTitle(`Bot Info: ${b.tag}`)
@@ -328,10 +384,24 @@ export const BotWhitelistManifest: ModuleManifest = {
         if (group === 'whitelist' && subcommand === 'sync') {
           const targetBot = interaction.options.getUser('bot_user', true);
           const b = bots.find((x: BotWhitelistRecord) => x.userId === targetBot.id);
-          if (!b) return interaction.reply({ content: '❌ This bot is not whitelisted.', flags: 64 });
+          if (!b) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Not Whitelisted')
+              .setColor(0xEF4444)
+              .setDescription(`The bot **${targetBot.tag}** is not whitelisted.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
 
           const member = await interaction.guild.members.fetch(targetBot.id).catch(() => null);
-          if (!member) return interaction.reply({ content: '❌ Bot is not in the server.', flags: 64 });
+          if (!member) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Bot Not Found')
+              .setColor(0xEF4444)
+              .setDescription(`The bot **${targetBot.tag}** is not currently in the server.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
 
           try {
             const rolesToRemove = member.roles.cache.filter((r: any) => r.name !== '@everyone' && !r.managed && r.id !== b.managedRoleId);
@@ -339,9 +409,20 @@ export const BotWhitelistManifest: ModuleManifest = {
               await member.roles.remove(id).catch(() => {});
             }
             await member.roles.add(b.managedRoleId).catch(() => {});
-            return interaction.reply({ content: `✅ Roles synced for **${targetBot.tag}**. Managed role applied, others stripped.`, flags: 64 });
+            
+            const embed = new EmbedBuilder()
+              .setTitle('✅ Bot Roles Synced')
+              .setColor(0x10B981)
+              .setDescription(`Successfully synced roles for **${targetBot.tag}**. Managed role applied, others stripped.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
           } catch (e) {
-            return interaction.reply({ content: `❌ Failed to sync roles: ${e}`, flags: 64 });
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Sync Failed')
+              .setColor(0xEF4444)
+              .setDescription(`Failed to sync roles for **${targetBot.tag}**: ${e}`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
           }
         }
 
@@ -350,15 +431,33 @@ export const BotWhitelistManifest: ModuleManifest = {
           const role = interaction.options.getRole('new_role', true);
           const botRecord = bots.find((b: BotWhitelistRecord) => b.userId === targetBot.id);
           
-          if (!botRecord) return interaction.reply({ content: '❌ This bot is not whitelisted.', flags: 64 });
+          if (!botRecord) {
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Not Whitelisted')
+              .setColor(0xEF4444)
+              .setDescription(`The bot **${targetBot.tag}** is not whitelisted.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
+          }
           
           botRecord.managedRoleId = role.id;
           context.updateModuleConfig('bot_whitelist', { bots });
           context.logSyncEvent(`[Bot Whitelist] Updated managed role for ${targetBot.tag} to ${role.name}.`, 'info');
-          return interaction.reply({ content: `✅ Updated managed role for **${targetBot.tag}** to **${role.name}**.`, flags: 64 });
+          
+          const embed = new EmbedBuilder()
+            .setTitle('✅ Managed Role Updated')
+            .setColor(0x10B981)
+            .setDescription(`Successfully updated managed role for **${targetBot.tag}** to **${role.name}**.`)
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
-        await interaction.reply({ content: '❌ Subcommand not recognized or fully implemented yet.', flags: 64 });
+        const embed = new EmbedBuilder()
+          .setTitle('❌ Error')
+          .setColor(0xEF4444)
+          .setDescription('Subcommand not recognized or fully implemented yet.')
+          .setTimestamp();
+        await interaction.reply({ embeds: [embed], flags: 64 });
       }
     }
   ],
@@ -368,8 +467,10 @@ export const BotWhitelistManifest: ModuleManifest = {
       method: 'get',
       handler: async (req: any, res: any, context: any) => {
         const modules = context.getModulesState();
-        const mod = modules.find((m: any) => m.id === 'bot_whitelist');
-        res.json({ bots: mod?.config?.bots || [] });
+        const mwMod = modules.find((m: any) => m.id === 'member_whitelist');
+        const members = mwMod?.config?.members || [];
+        const bots = members.filter((m: any) => m.type === 'bot');
+        res.json({ bots });
       }
     },
     {
@@ -386,19 +487,24 @@ export const BotWhitelistManifest: ModuleManifest = {
 
         const { action, payload } = req.body;
         const modules = context.getModulesState();
-        const mod = modules.find((m: any) => m.id === 'bot_whitelist');
-        let bots = mod?.config?.bots || [];
+        const mwMod = modules.find((m: any) => m.id === 'member_whitelist');
+        let members = [...(mwMod?.config?.members || [])];
 
         const actor = req.user?.username || 'admin';
         const actorId = req.user?.id || '111';
         const logId = Math.random().toString(36).substring(2, 11);
 
         if (action === 'add') {
-          // If no enabledModules provided (e.g. from web UI), default to all
           if (!payload.enabledModules || payload.enabledModules.length === 0) {
             payload.enabledModules = protections.map(p => p.key);
           }
-          bots.push(payload);
+          const botRecord = {
+            ...payload,
+            type: 'bot',
+            status: payload.status || 'active',
+            createdDate: payload.createdDate || new Date().toISOString()
+          };
+          members.push(botRecord);
           context.logSyncEvent(`[Bot Whitelist] Added bot ${payload.tag}.`, 'success');
           
           context.registry.logWhitelistAudit(context.guildId, {
@@ -408,7 +514,7 @@ export const BotWhitelistManifest: ModuleManifest = {
             action: `Added bot ${payload.tag} to whitelist`,
             category: 'bot',
             targetBefore: null,
-            targetAfter: payload,
+            targetAfter: botRecord,
             timestamp: Date.now()
           });
           context.registry.logWhitelistActivity(context.guildId, {
@@ -421,8 +527,8 @@ export const BotWhitelistManifest: ModuleManifest = {
             timestamp: Date.now()
           });
         } else if (action === 'remove') {
-          const targetBot = bots.find((b: BotWhitelistRecord) => b.userId === payload.userId);
-          bots = bots.filter((b: BotWhitelistRecord) => b.userId !== payload.userId);
+          const targetBot = members.find((b: any) => b.userId === payload.userId && b.type === 'bot');
+          members = members.filter((b: any) => !(b.userId === payload.userId && b.type === 'bot'));
           context.logSyncEvent(`[Bot Whitelist] Removed bot ${payload.userId}.`, 'info');
           
           context.registry.logWhitelistAudit(context.guildId, {
@@ -445,8 +551,8 @@ export const BotWhitelistManifest: ModuleManifest = {
             timestamp: Date.now()
           });
         } else if (action === 'edit') {
-          const oldBot = bots.find((b: BotWhitelistRecord) => b.userId === payload.userId);
-          bots = bots.map((b: BotWhitelistRecord) => b.userId === payload.userId ? { ...b, ...payload } : b);
+          const oldBot = members.find((b: any) => b.userId === payload.userId && b.type === 'bot');
+          members = members.map((b: any) => (b.userId === payload.userId && b.type === 'bot') ? { ...b, ...payload } : b);
           context.logSyncEvent(`[Bot Whitelist] Updated configuration for bot ${payload.userId}.`, 'info');
           
           context.registry.logWhitelistAudit(context.guildId, {
@@ -470,7 +576,8 @@ export const BotWhitelistManifest: ModuleManifest = {
           });
         }
 
-        context.updateModuleConfig('bot_whitelist', { bots });
+        context.updateModuleConfig('member_whitelist', { members });
+        const bots = members.filter((m: any) => m.type === 'bot');
         res.json({ success: true, bots });
       }
     }

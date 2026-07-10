@@ -38,6 +38,13 @@ export interface Track {
 
 export function getPlaybackProgress(queue: GuildQueue): { elapsedStr: string; durationStr: string; bar: string } {
   if (!queue.currentTrack) return { elapsedStr: '00:00', durationStr: '00:00', bar: '━━━━━━━━━━━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━━━━━━━' };
+
+  // Hoisted here so it's available for the live-stream early-return below
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
   
   let elapsedMs = 0;
   if (queue.playbackStartTime) {
@@ -61,7 +68,8 @@ export function getPlaybackProgress(queue: GuildQueue): { elapsedStr: string; du
   }
   
   if (isNaN(durSec) || durSec === 0) {
-    durSec = 180; // fallback default
+    // BUG #11 FIX: Unknown/live-stream duration — show elapsed time with ∞ instead of a fake 3:00
+    return { elapsedStr: formatTime(elapsedSec), durationStr: '∞', bar: '━'.repeat(24) + '●' };
   }
 
   const progress = Math.min(elapsedSec / durSec, 1.0);
@@ -77,18 +85,13 @@ export function getPlaybackProgress(queue: GuildQueue): { elapsedStr: string; du
     }
   }
 
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
   return {
     elapsedStr: formatTime(elapsedSec),
     durationStr: formatTime(durSec),
     bar
   };
 }
+
 
 export class GuildQueue {
   public guildId: string;
@@ -233,15 +236,14 @@ export class GuildQueue {
   }
 
   public async play(track: Track, voiceChannel: any) {
+    // BUG #6 FIX: Null guard MUST come before any property access on voiceChannel.
+    // The old guard was after `this.client = voiceChannel.client` which would throw first.
+    if (!voiceChannel) throw new Error('You must be in a voice channel to play music.');
     await this.lockQueue();
     try {
       this.client = voiceChannel.client;
       this.textChannelId = this.textChannelId || voiceChannel.id;
       this.voiceChannel = voiceChannel;
-      
-      if (!voiceChannel) {
-        throw new Error('You must be in a voice channel to play music.');
-      }
 
       this.setupConnection(voiceChannel);
 
@@ -266,15 +268,13 @@ export class GuildQueue {
   }
 
   public async playPlaylist(tracks: Track[], voiceChannel: any) {
+    // BUG #6 FIX: Same null-guard ordering fix as play() — guard before property access.
+    if (!voiceChannel) throw new Error('You must be in a voice channel to play music.');
     await this.lockQueue();
     try {
       this.client = voiceChannel.client;
       this.textChannelId = this.textChannelId || voiceChannel.id;
       this.voiceChannel = voiceChannel;
-
-      if (!voiceChannel) {
-        throw new Error('You must be in a voice channel to play music.');
-      }
 
       this.setupConnection(voiceChannel);
 
@@ -656,6 +656,9 @@ export class GuildQueue {
       clearInterval(this.progressInterval);
       this.progressInterval = null;
     }
+    // BUG #8 FIX: Remove this queue from the static QueueManager registry to prevent memory leaks.
+    // Previously, destroyed queues remained in the Map, holding stale references to closed processes.
+    QueueManager.remove(this.guildId);
   }
 
   public async openControls(client: any) {
@@ -1015,11 +1018,16 @@ export class QueueManager {
     return queue;
   }
 
+  // BUG #8 FIX: Static remove method so GuildQueue.destroy() can clean itself
+  // from the registry, preventing memory leaks from stale queue references.
+  public static remove(guildId: string) {
+    this.queues.delete(guildId);
+  }
+
   public static deleteQueue(guildId: string) {
     const queue = this.queues.get(guildId);
     if (queue) {
-      queue.destroy();
-      this.queues.delete(guildId);
+      queue.destroy(); // destroy() now calls remove() internally
     }
   }
 }

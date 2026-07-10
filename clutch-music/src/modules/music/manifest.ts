@@ -17,11 +17,12 @@ import spotifyUrlInfo from 'spotify-url-info';
 const spotifyFn = (spotifyUrlInfo.default || spotifyUrlInfo) as any;
 const spotify = spotifyFn(fetch as any);
 
-// Permission checking helper
-function checkVoicePermissions(interaction: any, queue: GuildQueue): boolean {
+// BUG #9 FIX: Made async so interaction.reply() can be properly awaited.
+// Unawaited replies may silently fail if the interaction token expires.
+async function checkVoicePermissions(interaction: any, queue: GuildQueue): Promise<boolean> {
   const memberVoiceChannel = interaction.member?.voice?.channel;
   if (!memberVoiceChannel) {
-    interaction.reply({
+    await interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setTitle('⚠️ Voice Connection Required')
@@ -36,7 +37,7 @@ function checkVoicePermissions(interaction: any, queue: GuildQueue): boolean {
 
   if (queue.connection && queue.connection.joinConfig.channelId) {
     if (memberVoiceChannel.id !== queue.connection.joinConfig.channelId) {
-      interaction.reply({
+      await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('⚠️ Voice Channel Mismatch')
@@ -73,31 +74,142 @@ export const MusicManifest: ModuleManifest = {
       return { progress: errors.length === 0 ? 100 : 0, errors };
     }
   },
-  commands: [],
+  commands: [
+    {
+      name: 'play',
+      description: 'Stream audio from YouTube, Spotify, or SoundCloud',
+      options: [
+        {
+          name: 'query',
+          description: 'Song name or link to play',
+          type: 3,
+          required: true
+        }
+      ]
+    },
+    {
+      name: 'pause',
+      description: 'Pause playback'
+    },
+    {
+      name: 'resume',
+      description: 'Resume playback'
+    },
+    {
+      name: 'skip',
+      description: 'Skip the current track'
+    },
+    {
+      name: 'back',
+      description: 'Play the previous track'
+    },
+    {
+      name: 'stop',
+      description: 'Stop playback and clear the queue'
+    },
+    {
+      name: 'queue',
+      description: 'Show the upcoming track list'
+    },
+    {
+      name: 'shuffle',
+      description: 'Randomize the order of the queue'
+    },
+    {
+      name: 'loop',
+      description: 'Change the loop mode',
+      options: [
+        {
+          name: 'mode',
+          description: 'Loop mode target',
+          type: 3,
+          required: true,
+          choices: [
+            { name: 'track', value: 'track' },
+            { name: 'queue', value: 'queue' },
+            { name: 'off', value: 'off' }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'volume',
+      description: 'Adjust playback volume (0-200%)',
+      options: [
+        {
+          name: 'percent',
+          description: 'Volume level',
+          type: 4,
+          required: true
+        }
+      ]
+    },
+    {
+      name: 'clear',
+      description: 'Clear the entire upcoming queue'
+    },
+    {
+      name: 'autoplay',
+      description: 'Toggle autoplay mode'
+    },
+    {
+      name: 'help',
+      description: 'Display music help instructions'
+    }
+  ],
   routes: [
     {
       method: 'get',
       path: '/stats',
       handler: async (req: any, res: any, context: any) => {
         const queue = QueueManager.getQueue(context.guildId);
+
+        // BUG #5 FIX: Calculate real stats from live queue data.
+        // Previous implementation used completely hardcoded/fake values.
+        let activeListeners = 0;
+        if (queue.connection?.joinConfig.channelId) {
+          const vc = await context.client?.channels.fetch(queue.connection.joinConfig.channelId).catch(() => null);
+          if (vc) activeListeners = vc.members.filter((m: any) => !m.user.bot).size;
+        }
+
+        // Build most-played from actual play history frequency
+        const playCountMap = new Map<string, { title: string; playCount: number; duration: string }>();
+        for (const track of queue.playHistory) {
+          const key = track.url || track.title;
+          const existing = playCountMap.get(key);
+          if (existing) {
+            existing.playCount++;
+          } else {
+            playCountMap.set(key, { title: track.title, playCount: 1, duration: track.duration });
+          }
+        }
+        const mostPlayed = Array.from(playCountMap.values())
+          .sort((a, b) => b.playCount - a.playCount)
+          .slice(0, 5);
+
+        // Build active users from requester field in play history
+        const userActionMap = new Map<string, number>();
+        for (const track of queue.playHistory) {
+          if (track.requester && track.requester !== 'Autoplay Engine' && track.requester !== 'Dashboard') {
+            userActionMap.set(track.requester, (userActionMap.get(track.requester) || 0) + 1);
+          }
+        }
+        const activeUsers = Array.from(userActionMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([username, actionCount]) => ({ username, actionCount }));
+
         const stats = {
-          totalStreams: queue.playHistory.length + 124,
-          avgListeningTime: '42 mins',
-          activeListeners: queue.connection ? 3 : 0,
-          mostPlayed: [
-            { title: 'Lofi Chill Hip Hop Beat', playCount: 42, duration: '2:45' },
-            { title: 'Synthwave Nightride Theme', playCount: 29, duration: '3:15' },
-            { title: 'Acoustic Guitar Session', playCount: 18, duration: '4:10' }
-          ],
-          activeUsers: [
-            { username: 'rdxyz', actionCount: 84 },
-            { username: 'tarun', actionCount: 42 },
-            { username: 'guest', actionCount: 15 }
-          ]
+          totalStreams: queue.playHistory.length,
+          avgListeningTime: 'N/A',
+          activeListeners,
+          mostPlayed,
+          activeUsers
         };
         res.json(stats);
       }
     },
+
     {
       method: 'get',
       path: '/history',

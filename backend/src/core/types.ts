@@ -53,6 +53,13 @@ export interface DiscordCommandOption {
   required?: boolean;
   choices?: { name: string; value: string | number }[];
   options?: DiscordCommandOption[];
+  /** Restrict channel picker to specific channel types: 0=text, 2=voice, 5=announcement */
+  channel_types?: number[];
+  /** Enable autocomplete for string options */
+  autocomplete?: boolean;
+  /** Min/max values for integer/number options */
+  min_value?: number;
+  max_value?: number;
 }
 
 export interface DiscordCommand {

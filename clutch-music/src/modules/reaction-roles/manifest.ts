@@ -27,7 +27,7 @@ export const ReactionRolesManifest: ModuleManifest = {
       name: 'reactionrole',
       description: 'Spawn a reaction role panel.',
       options: [
-        { name: 'channel', type: 7, description: 'Channel to spawn panel in', required: true }
+        { name: 'channel', type: 7, description: 'Channel to spawn panel in', required: true, channel_types: [0, 5] }
       ]
     }
   ],

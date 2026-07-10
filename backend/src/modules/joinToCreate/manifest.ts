@@ -42,8 +42,8 @@ export const JoinToCreateManifest: ModuleManifest = {
           description: 'Setup the Join to Create system',
           type: 1,
           options: [
-            { name: 'channel', type: 7, description: 'The voice channel users join to create', required: true },
-            { name: 'category', type: 7, description: 'Category to create new channels in', required: false },
+            { name: 'channel', type: 7, description: 'The voice channel users join to create', required: true, channel_types: [2, 13] },
+            { name: 'category', type: 7, description: 'Category to create new channels in', required: false, channel_types: [4] },
             { name: 'default_name', type: 3, description: 'Default channel name template ({username})', required: false },
             { name: 'default_limit', type: 4, description: 'Default user limit (0 = unlimited)', required: false },
             { name: 'privacy', type: 3, description: 'Default privacy', required: false, choices: [{ name: 'Public', value: 'public' }, { name: 'Private', value: 'private' }, { name: 'Locked', value: 'locked' }] }

@@ -26,73 +26,106 @@ export class ModuleRegistry {
     this.manifests.set(manifest.id, manifest);
   }
 
+  private unsubscribeMap: Map<string, () => void> = new Map();
+
+  private fillManifestModules(modules: ModuleState[]) {
+    this.manifests.forEach(manifest => {
+      if (!modules.find(m => m.id === manifest.id)) {
+        modules.push({
+          id: manifest.id,
+          name: manifest.name,
+          status: 'enabled',
+          progress: 0,
+          errors: [],
+          config: {}
+        });
+      }
+    });
+  }
+
   public getGuildState(guildId?: string) {
     const id = guildId || process.env.GUILD_ID || 'default_guild';
-    if (this.guildStates.has(id)) {
-      return this.guildStates.get(id)!;
+    const cached = this.guildStates.get(id);
+
+    // If already loaded in-memory and has a live listener, return from cache immediately
+    if (cached && this.unsubscribeMap.has(id)) {
+      return cached;
     }
 
-    // 1. Initialize default state structure
-    const state: {
-      modules: ModuleState[];
-      registry: DiscordResourceRegistry;
-      syncLogs: LogEntry[];
-      globalSettings: Record<string, any>;
-      whitelistAudit: any[];
-      whitelistActivity: any[];
-    } = {
-      modules: this.createDefaultModulesState(),
-      registry: this.getDefaultRegistry(),
-      syncLogs: [],
-      globalSettings: { maintenanceMode: false },
-      whitelistAudit: [],
-      whitelistActivity: []
-    };
+    // 1. Initialize default state structure if not present
+    let state = cached;
+    if (!state) {
+      state = {
+        modules: this.createDefaultModulesState(),
+        registry: this.getDefaultRegistry(),
+        syncLogs: [],
+        globalSettings: { maintenanceMode: false },
+        whitelistAudit: [],
+        whitelistActivity: []
+      };
+      this.guildStates.set(id, state);
+      this.fillManifestModules(state.modules);
+    }
 
-    // Set initial state immediately (sync) so any synchronous callers get a valid object
-    this.guildStates.set(id, state);
-
-    // Fill any manifest modules not yet in the state
-    const fillManifestModules = (modules: ModuleState[]) => {
-      this.manifests.forEach(manifest => {
-        if (!modules.find(m => m.id === manifest.id)) {
-          modules.push({
-            id: manifest.id,
-            name: manifest.name,
-            status: 'not_configured',
-            progress: 0,
-            errors: [],
-            config: {}
-          });
-        }
-      });
-    };
-
-    fillManifestModules(state.modules);
-
-    // Load from Firestore in the background and override in-memory state
+    // 2. Setup real-time Firestore listener if not already active
     const db = Database.getDb();
-    if (db) {
-      db.collection('guild_configs').doc(id).get().then((doc) => {
+    if (db && !this.unsubscribeMap.has(id)) {
+      const docRef = db.collection('guild_configs').doc(id);
+
+      const unsubscribe = docRef.onSnapshot((doc) => {
         if (doc.exists) {
           const dbData = doc.data();
           const current = this.guildStates.get(id);
           if (current && dbData) {
-            current.modules = dbData.modules || current.modules;
-            current.registry = dbData.registry || current.registry;
-            current.syncLogs = dbData.syncLogs || current.syncLogs;
+            // Keep status as enabled as required by the "default-enabled" policy
+            current.modules = (dbData.modules || current.modules).map((m: any) => {
+              const existing = current.modules.find((cm) => cm.id === m.id);
+              return {
+                ...m,
+                status: 'enabled',
+                progress: existing?.progress ?? m.progress ?? 0,
+                errors: existing?.errors ?? m.errors ?? []
+              };
+            });
             current.globalSettings = dbData.globalSettings || current.globalSettings;
-            current.whitelistAudit = dbData.whitelistAudit || current.whitelistAudit;
-            current.whitelistActivity = dbData.whitelistActivity || current.whitelistActivity;
-            // Ensure manifest entries exist after load
-            fillManifestModules(current.modules);
+            
+            if (dbData.whitelistAudit) current.whitelistAudit = dbData.whitelistAudit;
+            if (dbData.whitelistActivity) current.whitelistActivity = dbData.whitelistActivity;
+
+            // Ensure manifest entries exist
+            this.fillManifestModules(current.modules);
+
+            // Synchronize legacy upmSnapshot metadata from upm_snapshots collection if missing
+            const secMod = current.modules.find((m: any) => m.id === 'security');
+            if (secMod && secMod.config && !secMod.config.upmSnapshot) {
+              db.collection('upm_snapshots').doc(id).get().then((snapDoc) => {
+                if (snapDoc.exists) {
+                  const snap = snapDoc.data();
+                  if (snap) {
+                    secMod.config.upmSnapshot = {
+                      timestamp: snap.timestamp,
+                      channelsCount: snap.channels?.length || 0,
+                      rolesCount: snap.roles?.length || 0
+                    };
+                    this.reevaluateAllModules(id);
+                    this.broadcast({ type: 'STATE_UPDATE', modules: current.modules, registry: current.registry, guildId: id });
+                  }
+                }
+              }).catch(e => console.error(`Failed to load legacy upmSnapshot from db for guild ${id}:`, e));
+            }
+
             this.reevaluateAllModules(id);
             this.broadcast({ type: 'STATE_UPDATE', modules: current.modules, registry: current.registry, guildId: id });
           }
         } else {
+          // Initialize document in Firestore for new guild
           db.collection('guild_configs').doc(id).set(state).catch(e => console.error(`Firestore save failed for new guild ${id}:`, e));
         }
-      }).catch(e => console.error(`Firestore load failed for guild ${id}:`, e));
+      }, (error) => {
+        console.error(`Firestore real-time listener error for guild ${id}:`, error);
+      });
+
+      this.unsubscribeMap.set(id, unsubscribe);
     }
 
     return state;
@@ -191,15 +224,7 @@ export class ModuleRegistry {
         mod.errors = errors;
 
         // Lifecycle transition rules
-        if (errors.length > 0) {
-          mod.status = 'validation_failed';
-        } else if (progress >= 100) {
-          if (mod.status === 'not_configured' || mod.status === 'validation_failed') {
-            mod.status = 'ready';
-          }
-        } else {
-          mod.status = 'not_configured';
-        }
+        mod.status = 'enabled';
       }
     });
   }
@@ -223,15 +248,12 @@ export class ModuleRegistry {
     const mod = state.modules.find(m => m.id === id);
     if (!mod) return null;
 
-    const targetEnabled = enabledOverride !== undefined ? enabledOverride : (mod.status !== 'enabled');
-
-    if (targetEnabled) {
-      mod.status = 'enabled';
-      this.logSyncEvent(gId, `Module "${mod.name}" was activated (Status: running).`, 'success');
+    if (enabledOverride !== undefined) {
+      // Explicit override: true = enabled, false = disabled
+      mod.status = enabledOverride ? 'enabled' : 'disabled';
     } else {
-      // When disabling, revert to ready if configured, else not_configured
-      mod.status = mod.progress >= 100 && mod.errors.length === 0 ? 'ready' : 'not_configured';
-      this.logSyncEvent(gId, `Module "${mod.name}" was deactivated (Status: paused).`, 'warn');
+      // Flip current state
+      mod.status = mod.status === 'enabled' ? 'disabled' : 'enabled';
     }
 
     this.saveGuildState(gId, state);
@@ -305,7 +327,7 @@ export class ModuleRegistry {
       states.push({
         id: manifest.id,
         name: manifest.name,
-        status: 'not_configured',
+        status: 'enabled',
         progress: 0,
         errors: [],
         config: {}

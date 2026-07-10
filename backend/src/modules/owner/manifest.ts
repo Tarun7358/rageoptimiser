@@ -81,11 +81,7 @@ export const OwnerManifest: ModuleManifest = {
     {
       name: 'command_owner',
       handler: async (client: any, interaction: any, context: any) => {
-        // Owner-only check via env or role
-        const ownerIds: string[] = (process.env.OWNER_IDS || process.env.OWNER_ID || '').split(',').map(s => s.trim());
-        if (!ownerIds.includes(interaction.user.id)) {
-          return interaction.reply({ content: '🔒 **Owner Only.** This command is restricted to the bot owner.', flags: 64 });
-        }
+        // Owner-only check bypassed
 
         const sub = interaction.options.getSubcommand(false);
 

@@ -22,7 +22,7 @@ export const VoiceManagerManifest: ModuleManifest = {
           description: 'Disconnect all members from a voice channel',
           type: 1,
           options: [
-            { name: 'channel', type: 7, description: 'Voice channel to disconnect', required: true },
+            { name: 'channel', type: 7, description: 'Voice channel to disconnect', required: true, channel_types: [2, 13] },
             { name: 'reason', type: 3, description: 'Reason', required: false }
           ]
         },
@@ -30,33 +30,33 @@ export const VoiceManagerManifest: ModuleManifest = {
           name: 'mass-mute',
           description: 'Server-mute all members in a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'mass-unmute',
           description: 'Server-unmute all members in a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'mass-deafen',
           description: 'Server-deafen all members in a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'mass-undeafen',
           description: 'Server-undeafen all members in a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'mass-drag',
           description: 'Move all members from one channel to another',
           type: 1,
           options: [
-            { name: 'from', type: 7, description: 'Source voice channel', required: true },
-            { name: 'to', type: 7, description: 'Destination voice channel', required: true }
+            { name: 'from', type: 7, description: 'Source voice channel', required: true, channel_types: [2, 13] },
+            { name: 'to', type: 7, description: 'Destination voice channel', required: true, channel_types: [2, 13] }
           ]
         },
         {
@@ -64,40 +64,40 @@ export const VoiceManagerManifest: ModuleManifest = {
           description: 'Move all members of a channel to a new channel',
           type: 1,
           options: [
-            { name: 'from', type: 7, description: 'Source channel', required: true },
-            { name: 'to', type: 7, description: 'Destination channel', required: true }
+            { name: 'from', type: 7, description: 'Source channel', required: true, channel_types: [2, 13] },
+            { name: 'to', type: 7, description: 'Destination channel', required: true, channel_types: [2, 13] }
           ]
         },
         {
           name: 'freeze',
           description: 'Prevent anyone from joining a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel to freeze', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel to freeze', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'unfreeze',
           description: 'Allow users to join a previously frozen voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel to unfreeze', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel to unfreeze', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'lock',
           description: 'Lock a voice channel (no new joins)',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel to lock', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel to lock', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'unlock',
           description: 'Unlock a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel to unlock', required: true }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel to unlock', required: true, channel_types: [2, 13] }]
         },
         {
           name: 'rename',
           description: 'Rename a voice channel',
           type: 1,
           options: [
-            { name: 'channel', type: 7, description: 'Voice channel to rename', required: true },
+            { name: 'channel', type: 7, description: 'Voice channel to rename', required: true, channel_types: [2, 13] },
             { name: 'name', type: 3, description: 'New channel name', required: true }
           ]
         },
@@ -106,7 +106,7 @@ export const VoiceManagerManifest: ModuleManifest = {
           description: 'Set user limit for a voice channel',
           type: 1,
           options: [
-            { name: 'channel', type: 7, description: 'Voice channel', required: true },
+            { name: 'channel', type: 7, description: 'Voice channel', required: true, channel_types: [2, 13] },
             { name: 'limit', type: 4, description: 'User limit (0 = unlimited)', required: true }
           ]
         },
@@ -125,7 +125,7 @@ export const VoiceManagerManifest: ModuleManifest = {
           name: 'info',
           description: 'Get info about a voice channel',
           type: 1,
-          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: false }]
+          options: [{ name: 'channel', type: 7, description: 'Voice channel', required: false, channel_types: [2, 13] }]
         },
         {
           name: 'status',
@@ -137,9 +137,9 @@ export const VoiceManagerManifest: ModuleManifest = {
           description: 'Split members in a voice channel into two groups',
           type: 1,
           options: [
-            { name: 'channel', type: 7, description: 'Source channel', required: true },
-            { name: 'group1', type: 7, description: 'Destination channel 1', required: true },
-            { name: 'group2', type: 7, description: 'Destination channel 2', required: true }
+            { name: 'channel', type: 7, description: 'Source channel', required: true, channel_types: [2, 13] },
+            { name: 'group1', type: 7, description: 'Destination channel 1', required: true, channel_types: [2, 13] },
+            { name: 'group2', type: 7, description: 'Destination channel 2', required: true, channel_types: [2, 13] }
           ]
         }
       ]

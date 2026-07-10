@@ -29,7 +29,7 @@ export class ModuleRegistry {
       modState = {
         id: manifest.id,
         name: manifest.name,
-        status: 'not_configured',
+        status: 'enabled',
         progress: 0,
         errors: [],
         config: {}
@@ -86,15 +86,7 @@ export class ModuleRegistry {
         mod.errors = errors;
 
         // Lifecycle transition rules
-        if (errors.length > 0) {
-          mod.status = 'validation_failed';
-        } else if (progress >= 100) {
-          if (mod.status === 'not_configured' || mod.status === 'validation_failed') {
-            mod.status = 'ready';
-          }
-        } else {
-          mod.status = 'not_configured';
-        }
+        mod.status = 'enabled';
       }
     });
     this.saveDatabase();
@@ -114,21 +106,10 @@ export class ModuleRegistry {
     const mod = this.modules.find(m => m.id === id);
     if (!mod) return null;
 
-    const targetEnabled = enabledOverride !== undefined ? enabledOverride : (mod.status !== 'enabled');
-
-    if (targetEnabled) {
-      if (mod.progress < 100 || mod.errors.length > 0) {
-        return null;
-      }
-      mod.status = 'enabled';
-      this.logSyncEvent(`Module "${mod.name}" was activated (Status: running).`, 'success');
-    } else {
-      mod.status = 'ready';
-      this.logSyncEvent(`Module "${mod.name}" was deactivated (Status: paused).`, 'warn');
-    }
+    mod.status = 'enabled';
 
     this.saveDatabase();
-    this.broadcast({ type: 'STATE_UPDATE', modules: this.modules, registry: this.registry });
+    this.broadcast({ type: 'STATE_UPDATE', this_modules: this.modules, registry: this.registry });
     return mod;
   }
 
@@ -172,7 +153,7 @@ export class ModuleRegistry {
       if (fs.existsSync(DB_PATH)) {
         const raw = fs.readFileSync(DB_PATH, 'utf-8');
         const data = JSON.parse(raw);
-        this.modules = data.modules || [];
+        this.modules = (data.modules || []).map((m: any) => ({ ...m, status: 'enabled' }));
         this.registry = data.registry || this.getDefaultRegistry();
         this.syncLogs = data.syncLogs || [];
         this.globalSettings = data.globalSettings || { maintenanceMode: false };

@@ -60,7 +60,13 @@ export const RoleWhitelistManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const hasPermission = await checkWhitelistPermission(interaction.user.id, interaction.guild, context);
         if (!hasPermission) {
-          return interaction.reply({ content: '🔒 **Access Denied** — Only the Server Owner and whitelisted users can manage the whitelist.', flags: 64 });
+          const embed = new EmbedBuilder()
+            .setTitle('🔒 Access Denied')
+            .setColor(0xEF4444)
+            .setDescription('Only the **Server Owner** and whitelisted administrators can manage the Role Whitelist.')
+            .setFooter({ text: 'Rage Optimiser Security' })
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const group = interaction.options.getSubcommandGroup();
@@ -69,7 +75,13 @@ export const RoleWhitelistManifest: ModuleManifest = {
         const rwModule = modules.find((m: any) => m.id === 'role_whitelist');
         
         if (!rwModule || rwModule.status !== 'enabled') {
-          return interaction.reply({ content: '❌ Role Whitelist module is not enabled in the dashboard.', flags: 64 });
+          const embed = new EmbedBuilder()
+            .setTitle('❌ Module Disabled')
+            .setColor(0xEF4444)
+            .setDescription('The **Role Whitelist** module is not currently enabled in the dashboard.')
+            .setFooter({ text: 'Rage Optimiser Security' })
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         let roles = rwModule.config.roles || [];
@@ -146,7 +158,12 @@ export const RoleWhitelistManifest: ModuleManifest = {
           collector.on('collect', async (i: any) => {
             const hasPerm = await checkWhitelistPermission(i.user.id, i.guild, context);
             if (!hasPerm) {
-              return i.reply({ content: '🔒 **Access Denied** — Only the Server Owner and whitelisted users can modify the whitelist.', flags: 64 });
+              const embedErr = new EmbedBuilder()
+                .setTitle('🔒 Access Denied')
+                .setColor(0xEF4444)
+                .setDescription('Only the **Server Owner** and whitelisted administrators can modify the whitelist.')
+                .setTimestamp();
+              return i.reply({ embeds: [embedErr], flags: 64 });
             }
 
             const newBypasses = i.values || [];
@@ -177,16 +194,32 @@ export const RoleWhitelistManifest: ModuleManifest = {
         if (group === 'whitelist' && subcommand === 'remove') {
           const targetRole = interaction.options.getRole('role', true);
           if (!roles.find((r: RoleWhitelistRecord) => r.roleId === targetRole.id)) {
-            return interaction.reply({ content: '❌ This role is not whitelisted.', flags: 64 });
+            const embed = new EmbedBuilder()
+              .setTitle('❌ Not Whitelisted')
+              .setColor(0xEF4444)
+              .setDescription(`The role **${targetRole.name}** is not currently whitelisted.`)
+              .setTimestamp();
+            return interaction.reply({ embeds: [embed], flags: 64 });
           }
           
           roles = roles.filter((r: RoleWhitelistRecord) => r.roleId !== targetRole.id);
           context.updateModuleConfig('role_whitelist', { roles });
           context.logSyncEvent(`[Role Whitelist] Removed role ${targetRole.name} via command.`, 'info');
-          return interaction.reply({ content: `🗑️ Removed role **${targetRole.name}** from the whitelist.`, flags: 64 });
+
+          const embed = new EmbedBuilder()
+            .setTitle('🗑️ Role Removed')
+            .setColor(0x7C5CFC)
+            .setDescription(`Successfully removed role **${targetRole.name}** from the whitelist.`)
+            .setTimestamp();
+          return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
-        await interaction.reply({ content: '❌ Subcommand not recognized or fully implemented yet.', flags: 64 });
+        const embed = new EmbedBuilder()
+          .setTitle('❌ Error')
+          .setColor(0xEF4444)
+          .setDescription('Subcommand not recognized or fully implemented yet.')
+          .setTimestamp();
+        await interaction.reply({ embeds: [embed], flags: 64 });
       }
     }
   ],
@@ -196,8 +229,10 @@ export const RoleWhitelistManifest: ModuleManifest = {
       method: 'get',
       handler: async (req: any, res: any, context: any) => {
         const modules = context.getModulesState();
-        const mod = modules.find((m: any) => m.id === 'role_whitelist');
-        res.json({ roles: mod?.config?.roles || [] });
+        const mwMod = modules.find((m: any) => m.id === 'member_whitelist');
+        const members = mwMod?.config?.members || [];
+        const roles = members.filter((m: any) => m.type === 'role');
+        res.json({ roles });
       }
     },
     {
@@ -206,15 +241,21 @@ export const RoleWhitelistManifest: ModuleManifest = {
       handler: async (req: any, res: any, context: any) => {
         const { action, payload } = req.body;
         const modules = context.getModulesState();
-        const mod = modules.find((m: any) => m.id === 'role_whitelist');
-        let roles = mod?.config?.roles || [];
+        const mwMod = modules.find((m: any) => m.id === 'member_whitelist');
+        let members = [...(mwMod?.config?.members || [])];
 
         const actor = req.user?.username || 'admin';
         const actorId = req.user?.id || '111';
         const logId = Math.random().toString(36).substring(2, 11);
 
         if (action === 'add') {
-          roles.push(payload);
+          const roleRecord = {
+            ...payload,
+            type: 'role',
+            status: payload.status || 'active',
+            createdDate: payload.createdDate || new Date().toISOString()
+          };
+          members.push(roleRecord);
           context.logSyncEvent(`[Role Whitelist] Added role ${payload.name}.`, 'success');
 
           context.registry.logWhitelistAudit(context.guildId, {
@@ -224,7 +265,7 @@ export const RoleWhitelistManifest: ModuleManifest = {
             action: `Added role ${payload.name} to whitelist`,
             category: 'role',
             targetBefore: null,
-            targetAfter: payload,
+            targetAfter: roleRecord,
             timestamp: Date.now()
           });
           context.registry.logWhitelistActivity(context.guildId, {
@@ -237,8 +278,8 @@ export const RoleWhitelistManifest: ModuleManifest = {
             timestamp: Date.now()
           });
         } else if (action === 'remove') {
-          const targetRole = roles.find((r: RoleWhitelistRecord) => r.roleId === payload.roleId);
-          roles = roles.filter((r: RoleWhitelistRecord) => r.roleId !== payload.roleId);
+          const targetRole = members.find((r: any) => r.roleId === payload.roleId && r.type === 'role');
+          members = members.filter((r: any) => !(r.roleId === payload.roleId && r.type === 'role'));
           context.logSyncEvent(`[Role Whitelist] Removed role ${payload.roleId}.`, 'info');
 
           context.registry.logWhitelistAudit(context.guildId, {
@@ -261,8 +302,8 @@ export const RoleWhitelistManifest: ModuleManifest = {
             timestamp: Date.now()
           });
         } else if (action === 'edit') {
-          const oldRole = roles.find((r: RoleWhitelistRecord) => r.roleId === payload.roleId);
-          roles = roles.map((r: RoleWhitelistRecord) => r.roleId === payload.roleId ? { ...r, ...payload } : r);
+          const oldRole = members.find((r: any) => r.roleId === payload.roleId && r.type === 'role');
+          members = members.map((r: any) => (r.roleId === payload.roleId && r.type === 'role') ? { ...r, ...payload } : r);
           context.logSyncEvent(`[Role Whitelist] Updated configuration for role ${payload.roleId}.`, 'info');
 
           context.registry.logWhitelistAudit(context.guildId, {
@@ -286,7 +327,8 @@ export const RoleWhitelistManifest: ModuleManifest = {
           });
         }
 
-        context.updateModuleConfig('role_whitelist', { roles });
+        context.updateModuleConfig('member_whitelist', { members });
+        const roles = members.filter((m: any) => m.type === 'role');
         res.json({ success: true, roles });
       }
     }

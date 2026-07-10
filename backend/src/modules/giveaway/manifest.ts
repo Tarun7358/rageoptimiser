@@ -85,7 +85,7 @@ export const GiveawayManifest: ModuleManifest = {
             { name: 'duration', type: 3, description: 'Duration (e.g. 1h, 30m, 1d)', required: true },
             { name: 'prize', type: 3, description: 'The giveaway prize', required: true },
             { name: 'winners', type: 4, description: 'Number of winners (default 1)', required: false },
-            { name: 'channel', type: 7, description: 'Channel for the giveaway (defaults to current)', required: false },
+            { name: 'channel', type: 7, description: 'Channel for the giveaway (defaults to current)', required: false, channel_types: [0, 5] },
             { name: 'description', type: 3, description: 'Giveaway description', required: false },
             { name: 'required_role', type: 8, description: 'Required role to enter', required: false }
           ]

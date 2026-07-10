@@ -39,25 +39,25 @@ export const BulkOpsManifest: ModuleManifest = {
           name: 'channel-lock',
           description: 'Lock all channels in a category',
           type: 1,
-          options: [{ name: 'category', type: 7, description: 'Category to lock (omit for all text channels)', required: false }]
+          options: [{ name: 'category', type: 7, description: 'Category to lock (omit for all text channels)', required: false, channel_types: [4] }]
         },
         {
           name: 'channel-unlock',
           description: 'Unlock all channels in a category',
           type: 1,
-          options: [{ name: 'category', type: 7, description: 'Category to unlock', required: false }]
+          options: [{ name: 'category', type: 7, description: 'Category to unlock', required: false, channel_types: [4] }]
         },
         {
           name: 'channel-hide',
           description: 'Hide all channels in a category',
           type: 1,
-          options: [{ name: 'category', type: 7, description: 'Category to hide', required: false }]
+          options: [{ name: 'category', type: 7, description: 'Category to hide', required: false, channel_types: [4] }]
         },
         {
           name: 'channel-unhide',
           description: 'Unhide all channels in a category',
           type: 1,
-          options: [{ name: 'category', type: 7, description: 'Category to unhide', required: false }]
+          options: [{ name: 'category', type: 7, description: 'Category to unhide', required: false, channel_types: [4] }]
         },
         {
           name: 'channel-slowmode',
@@ -65,7 +65,7 @@ export const BulkOpsManifest: ModuleManifest = {
           type: 1,
           options: [
             { name: 'seconds', type: 4, description: 'Slowmode duration (0 to disable)', required: true },
-            { name: 'category', type: 7, description: 'Category (omit for all text channels)', required: false }
+            { name: 'category', type: 7, description: 'Category (omit for all text channels)', required: false, channel_types: [4] }
           ]
         },
         {
@@ -73,7 +73,7 @@ export const BulkOpsManifest: ModuleManifest = {
           description: 'Add a prefix/suffix to all channels in a category',
           type: 1,
           options: [
-            { name: 'category', type: 7, description: 'Category', required: true },
+            { name: 'category', type: 7, description: 'Category', required: true, channel_types: [4] },
             { name: 'prefix', type: 3, description: 'Prefix to add', required: false },
             { name: 'suffix', type: 3, description: 'Suffix to add', required: false }
           ]
@@ -84,7 +84,7 @@ export const BulkOpsManifest: ModuleManifest = {
           type: 1,
           options: [
             { name: 'amount', type: 4, description: 'Number of messages (1-100)', required: true },
-            { name: 'channel', type: 7, description: 'Channel (defaults to current)', required: false },
+            { name: 'channel', type: 7, description: 'Channel (defaults to current)', required: false, channel_types: [0, 5] },
             { name: 'user', type: 6, description: 'Only delete messages from this user', required: false }
           ]
         },
@@ -119,7 +119,7 @@ export const BulkOpsManifest: ModuleManifest = {
           description: 'Sync channel permissions with its category',
           type: 1,
           options: [
-            { name: 'category', type: 7, description: 'Category (omit for all categories)', required: false }
+            { name: 'category', type: 7, description: 'Category (omit for all categories)', required: false, channel_types: [4] }
           ]
         },
         {
@@ -129,7 +129,7 @@ export const BulkOpsManifest: ModuleManifest = {
           options: [
             { name: 'names', type: 3, description: 'Channel names separated by commas', required: true },
             { name: 'type', type: 3, description: 'Channel type', required: false, choices: [{ name: 'Text', value: 'text' }, { name: 'Voice', value: 'voice' }] },
-            { name: 'category', type: 7, description: 'Category to create in', required: false }
+            { name: 'category', type: 7, description: 'Category to create in', required: false, channel_types: [4] }
           ]
         }
       ]
