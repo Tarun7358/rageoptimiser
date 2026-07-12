@@ -2,6 +2,8 @@ import { AuditLogEvent, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { checkWhitelistPermission, getGuildAndCheckPermission, checkBypassImmunity } from '../../utils/whitelistCheck.js';
 import { Database } from '../../core/Database.js';
+import { checkRoleAssignment } from '../join-role-guard/manifest.js';
+
 
 // UPM Live Snapshots & Active Quarantines tracking
 export const liveSnapshots = new Map<string, any>();
@@ -32,11 +34,12 @@ function checkRateLimit(guildId: string, userId: string, ruleId: string, limit: 
   return tracker.count >= limit;
 }
 
-function isRecentEntry(entry: any, maxAgeMs = 5000): boolean {
+function isRecentEntry(entry: any, maxAgeMs = 30000): boolean {
   if (!entry) return false;
   const now = Date.now();
   const created = entry.createdTimestamp;
-  return (now - created) < maxAgeMs;
+  const age = now - created;
+  return age < maxAgeMs && age > -10000;
 }
 
 export async function captureLiveSnapshot(guild: any) {
@@ -96,7 +99,25 @@ export async function saveLiveSnapshotToDb(guildId: string, snap: any) {
 
   const db = Database.getDb();
   if (db) {
-    await db.collection('upm_snapshots').doc(guildId).set(snap);
+    try {
+      const timestamp = snap.timestamp || Date.now();
+      const channels = JSON.stringify(snap.channels || []);
+      const roles = JSON.stringify(snap.roles || []);
+      const guildSettings = JSON.stringify(snap.guildSettings || {});
+
+      await Database.run(
+        `INSERT INTO upm_snapshots (guildId, timestamp, channels, roles, guildSettings)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(guildId) DO UPDATE SET
+           timestamp = excluded.timestamp,
+           channels = excluded.channels,
+           roles = excluded.roles,
+           guildSettings = excluded.guildSettings`,
+        [guildId, timestamp, channels, roles, guildSettings]
+      );
+    } catch (err) {
+      console.error('Failed to save live snapshot to SQLite database:', err);
+    }
   }
 }
 
@@ -108,10 +129,19 @@ export async function restoreFromLiveSnapshot(guild: any, client: any, context: 
   if (!snap) {
     const db = Database.getDb();
     if (db) {
-      const doc = await db.collection('upm_snapshots').doc(guildId).get();
-      if (doc.exists) {
-        snap = doc.data();
-        liveSnapshots.set(guildId, snap);
+      try {
+        const row = await Database.get('SELECT * FROM upm_snapshots WHERE guildId = ?', [guildId]);
+        if (row) {
+          snap = {
+            timestamp: row.timestamp,
+            channels: JSON.parse(row.channels || '[]'),
+            roles: JSON.parse(row.roles || '[]'),
+            guildSettings: JSON.parse(row.guildSettings || '{}')
+          };
+          liveSnapshots.set(guildId, snap);
+        }
+      } catch (err) {
+        console.error('Failed to fetch live snapshot from SQLite database:', err);
       }
     }
   }
@@ -744,34 +774,70 @@ export const SecurityManifest: ModuleManifest = {
     {
       name: 'channelDelete',
       handler: async (client: any, channel: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [channelDelete] Channel deleted: "#${channel.name}" (${channel.id}) in guild "${channel.guild.name}" (${channel.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [channelDelete] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [channelDelete] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_channel_delete || { enabled: true, limit: 1, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [channelDelete] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [channelDelete] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = channel.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelDelete }).catch(() => null);
-          const deletionLog = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id && isRecentEntry(e));
-          if (!deletionLog) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelDelete }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [channelDelete] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [channelDelete] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const deletionLog = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === channel.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [channelDelete] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!deletionLog) {
+            console.log(`[Anti-Nuke Debug] [channelDelete] No recent audit log entry found for target channel ${channel.id}`);
+            return;
+          }
 
           const executor = deletionLog.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_delete')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [channelDelete] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [channelDelete] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_delete');
+          console.log(`[Anti-Nuke Debug] [channelDelete] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_delete', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [channelDelete] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel deletion of #${channel.name} by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [channelDelete] Executing recovery (re-creating deleted channel)`);
             await guild.channels.create({
               name: channel.name,
               type: channel.type,
@@ -786,90 +852,164 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted channel #${channel.name}.`, 'success');
           }
 
+          console.log(`[Anti-Nuke Debug] [channelDelete] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Deletion (#${channel.name})`, rule.action, config, context, 'anti_channel_delete');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [channelDelete] Error in handler:', err);
         }
       }
     },
     {
       name: 'channelCreate',
       handler: async (client: any, channel: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [channelCreate] Channel created: "#${channel.name}" (${channel.id}) in guild "${channel.guild.name}" (${channel.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [channelCreate] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [channelCreate] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_channel_create || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [channelCreate] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [channelCreate] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = channel.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelCreate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === channel.id && isRecentEntry(e));
-          if (!logEntry) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelCreate }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [channelCreate] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [channelCreate] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const logEntry = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === channel.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [channelCreate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!logEntry) {
+            console.log(`[Anti-Nuke Debug] [channelCreate] No recent audit log entry found for target channel ${channel.id}`);
+            return;
+          }
 
           const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_create')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [channelCreate] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [channelCreate] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_create');
+          console.log(`[Anti-Nuke Debug] [channelCreate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_create', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [channelCreate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel creation #${channel.name} by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [channelCreate] Executing recovery (deleting created channel)`);
             await channel.delete('Anti-Nuke Recovery: Deleting unauthorized channel.').catch(console.error);
           }
 
+          console.log(`[Anti-Nuke Debug] [channelCreate] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Creation (#${channel.name})`, rule.action, config, context, 'anti_channel_create');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [channelCreate] Error in handler:', err);
         }
       }
     },
     {
       name: 'channelUpdate',
       handler: async (client: any, oldChannel: any, newChannel: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [channelUpdate] Channel updated: "#${newChannel.name}" (${newChannel.id}) in guild "${newChannel.guild.name}" (${newChannel.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_channel_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [channelUpdate] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = newChannel.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newChannel.id && isRecentEntry(e));
-          if (!logEntry) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.ChannelUpdate }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [channelUpdate] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const logEntry = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === newChannel.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [channelUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!logEntry) {
+            console.log(`[Anti-Nuke Debug] [channelUpdate] No recent audit log entry found for target channel ${newChannel.id}`);
+            return;
+          }
 
           const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_update')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [channelUpdate] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [channelUpdate] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_update');
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_update', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel update #${newChannel.name} by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [channelUpdate] Executing recovery (restoring channel properties)`);
             await newChannel.edit({
               name: oldChannel.name,
               type: oldChannel.type,
               topic: oldChannel.topic,
               nsfw: oldChannel.nsfw,
               parentId: oldChannel.parentId,
-              rateLimitPerUser: oldChannel.topic ? oldChannel.rateLimitPerUser : undefined,
+              rateLimitPerUser: oldChannel.rateLimitPerUser,
               permissionOverwrites: oldChannel.permissionOverwrites.cache.map((o: any) => ({
                 id: o.id,
                 type: o.type,
@@ -879,83 +1019,157 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Update (#${newChannel.name})`, rule.action, config, context, 'anti_channel_update');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [channelUpdate] Error in handler:', err);
         }
       }
     },
     {
       name: 'roleCreate',
       handler: async (client: any, role: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [roleCreate] Role created: "${role.name}" (${role.id}) in guild "${role.guild.name}" (${role.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [roleCreate] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [roleCreate] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_role_create || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [roleCreate] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [roleCreate] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = role.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleCreate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id && isRecentEntry(e));
-          if (!logEntry) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleCreate }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [roleCreate] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [roleCreate] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const logEntry = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === role.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [roleCreate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!logEntry) {
+            console.log(`[Anti-Nuke Debug] [roleCreate] No recent audit log entry found for target role ${role.id}`);
+            return;
+          }
 
           const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_create')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [roleCreate] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [roleCreate] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_create');
+          console.log(`[Anti-Nuke Debug] [roleCreate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_create', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [roleCreate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role creation "${role.name}" by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [roleCreate] Executing recovery (deleting role)`);
             await role.delete('Anti-Nuke Recovery: Deleting unauthorized role.').catch(console.error);
           }
 
+          console.log(`[Anti-Nuke Debug] [roleCreate] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Creation (${role.name})`, rule.action, config, context, 'anti_role_create');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [roleCreate] Error in handler:', err);
         }
       }
     },
     {
       name: 'roleDelete',
       handler: async (client: any, role: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [roleDelete] Role deleted: "${role.name}" (${role.id}) in guild "${role.guild.name}" (${role.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [roleDelete] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [roleDelete] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_role_delete || { enabled: true, limit: 1, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [roleDelete] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [roleDelete] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = role.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleDelete }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === role.id && isRecentEntry(e));
-          if (!logEntry) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleDelete }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [roleDelete] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [roleDelete] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const logEntry = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === role.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [roleDelete] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!logEntry) {
+            console.log(`[Anti-Nuke Debug] [roleDelete] No recent audit log entry found for target role ${role.id}`);
+            return;
+          }
 
           const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_delete')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [roleDelete] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [roleDelete] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_delete');
+          console.log(`[Anti-Nuke Debug] [roleDelete] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_delete', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [roleDelete] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role deletion of "${role.name}" by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [roleDelete] Executing recovery (restoring deleted role)`);
             await guild.roles.create({
               name: role.name,
               color: role.color,
@@ -968,43 +1182,80 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted role "${role.name}".`, 'success');
           }
 
+          console.log(`[Anti-Nuke Debug] [roleDelete] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Deletion (${role.name})`, rule.action, config, context, 'anti_role_delete');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [roleDelete] Error in handler:', err);
         }
       }
     },
     {
       name: 'roleUpdate',
       handler: async (client: any, oldRole: any, newRole: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [roleUpdate] Role updated: "${newRole.name}" (${newRole.id}) in guild "${newRole.guild.name}" (${newRole.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         const rules = config.rules || {};
         const rule = rules.anti_role_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
 
-        if (!rule.enabled) return;
+        console.log(`[Anti-Nuke Debug] [roleUpdate] Rule config:`, rule);
+        if (!rule.enabled) {
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Rule is disabled`);
+          return;
+        }
 
         try {
           const guild = newRole.guild;
           if (!guild) return;
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newRole.id && isRecentEntry(e));
-          if (!logEntry) return;
+          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.RoleUpdate }).catch((err: any) => {
+            console.error(`[Anti-Nuke Debug] [roleUpdate] Failed to fetch audit logs:`, err);
+            return null;
+          });
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Fetched ${fetchedLogs?.entries.size || 0} audit log entries`);
+          const logEntry = fetchedLogs?.entries.find((e: any) => {
+            const matches = e.targetId === newRole.id && isRecentEntry(e);
+            console.log(`[Anti-Nuke Debug] [roleUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+            return matches;
+          });
+
+          if (!logEntry) {
+            console.log(`[Anti-Nuke Debug] [roleUpdate] No recent audit log entry found for target role ${newRole.id}`);
+            return;
+          }
 
           const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          if (await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_update')) return;
+          if (!executor) {
+            console.log(`[Anti-Nuke Debug] [roleUpdate] Executor not found in audit log entry`);
+            return;
+          }
+          if (executor.id === client.user.id) {
+            console.log(`[Anti-Nuke Debug] [roleUpdate] Executor is the bot itself, ignoring`);
+            return;
+          }
+
+          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_update');
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_update', rule.limit, rule.window);
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
           context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role update for "${newRole.name}" by ${executor.tag}.`, 'warn');
 
           if (rule.recovery) {
+            console.log(`[Anti-Nuke Debug] [roleUpdate] Executing recovery (editing role back to old values)`);
             await newRole.edit({
               name: oldRole.name,
               color: oldRole.color,
@@ -1015,18 +1266,27 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
           await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Update (${newRole.name})`, rule.action, config, context, 'anti_role_update');
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [roleUpdate] Error in handler:', err);
         }
       }
     },
     {
       name: 'guildMemberUpdate',
       handler: async (client: any, oldMember: any, newMember: any, context: any) => {
+        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Member updated: "${newMember.user.tag}" (${newMember.id}) in guild "${newMember.guild.name}" (${newMember.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
-        if (!secModule || secModule.status !== 'enabled') return;
+        if (!secModule) {
+          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Security module not found`);
+          return;
+        }
+        if (secModule.status !== 'enabled') {
+          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Security module status is: ${secModule.status}`);
+          return;
+        }
 
         const config = secModule.config || {};
         
@@ -1044,45 +1304,174 @@ export const SecurityManifest: ModuleManifest = {
 
           const oldRoles = oldMember.roles.cache;
           const newRoles = newMember.roles.cache;
+
+          // 1. Role Grant Checks
           const addedRoles = newRoles.filter((r: any) => !oldRoles.has(r.id));
-          if (addedRoles.size === 0) return;
+          if (addedRoles.size > 0) {
+            // Join Guard Pre-Validation Interceptor
+            const guardResult = await checkRoleAssignment(client, newMember, addedRoles, context).catch(err => {
+              console.error('[Anti-Nuke Debug] Error running Join Role Guard:', err);
+              return 'ALLOW_CHECK' as const;
+            });
+            if (guardResult === 'IGNORE_EVENT') {
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Join Role Guard returned IGNORE_EVENT for ${newMember.user.tag}. Skipping anti-nuke role checks.`);
+              return;
+            }
 
-          const hasAdmin = addedRoles.some((r: any) => r.permissions.has(PermissionFlagsBits.Administrator));
-          const isMonitored = addedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
+            const hasAdmin = addedRoles.some((r: any) => r.permissions?.has?.(PermissionFlagsBits.Administrator));
+            const isMonitored = addedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
+            const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
 
-          if (!hasAdmin && !isMonitored) return;
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role grant detected for ${newMember.user.tag}: added ${addedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
 
-          const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
-          const logEntry = fetchedLogs?.entries.find((e: any) => e.targetId === newMember.id && isRecentEntry(e));
-          if (!logEntry) return;
 
-          const executor = logEntry.executor;
-          if (!executor || executor.id === client.user.id) return;
-          
-          const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant') ||
-                             await isExecutorBypassed(guild, executor.id, config, context, 'anti_member_update');
-          if (isBypassed) return;
+            if (hasAdmin || isMonitored || monitorAll) {
+              const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
+                console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberRoleUpdate logs:`, err);
+                return null;
+              });
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Fetched ${fetchedLogs?.entries.size || 0} MemberRoleUpdate audit entries`);
+              const logEntry = fetchedLogs?.entries.find((e: any) => {
+                const matches = e.targetId === newMember.id && isRecentEntry(e);
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+                return matches;
+              });
 
-          if (config.roleMonitorMode === 'Custom Selection' && !isMonitored) return;
-
-          const rules = config.rules || {};
-          const rule = rules.anti_role_grant || rules.anti_member_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
-          if (!rule.enabled) return;
-
-          const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
-          if (!triggered) return;
-
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.tag} by ${executor.tag}.`, 'warn');
-
-          if (rule.recovery) {
-            for (const [roleId] of addedRoles) {
-              await newMember.roles.remove(roleId).catch(console.error);
+              if (logEntry) {
+                const executor = logEntry.executor;
+                if (executor && executor.id !== client.user.id) {
+                  const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant');
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  if (!isBypassed) {
+                    if (config.roleMonitorMode !== 'Custom Selection' || isMonitored) {
+                      const rules = config.rules || {};
+                      const rule = rules.anti_role_grant || rules.anti_member_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_grant:`, rule);
+                      if (rule.enabled) {
+                        const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
+                        if (triggered) {
+                          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                          if (rule.recovery) {
+                            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing granted roles)`);
+                            for (const [roleId] of addedRoles) {
+                              await newMember.roles.remove(roleId).catch(console.error);
+                            }
+                          }
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
+                          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.tag}`, rule.action, config, context, 'anti_role_grant');
+                          return;
+                        }
+                      }
+                    }
+                  }
+                }
+              } else {
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] No recent MemberRoleUpdate audit log entry found for target user ${newMember.id}`);
+              }
             }
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.tag}`, rule.action, config, context, 'anti_role_grant');
+          // 2. Role Remove Checks
+          const removedRoles = oldRoles.filter((r: any) => !newRoles.has(r.id));
+          if (removedRoles.size > 0) {
+            const hasAdmin = removedRoles.some((r: any) => r.permissions?.has?.(PermissionFlagsBits.Administrator));
+            const isMonitored = removedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
+            const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
+
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role removal detected for ${newMember.user.tag}: removed ${removedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
+
+            if (hasAdmin || isMonitored || monitorAll) {
+              const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
+                console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberRoleUpdate logs:`, err);
+                return null;
+              });
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Fetched ${fetchedLogs?.entries.size || 0} MemberRoleUpdate audit entries`);
+              const logEntry = fetchedLogs?.entries.find((e: any) => {
+                const matches = e.targetId === newMember.id && isRecentEntry(e);
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+                return matches;
+              });
+
+              if (logEntry) {
+                const executor = logEntry.executor;
+                if (executor && executor.id !== client.user.id) {
+                  const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_remove');
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  if (!isBypassed) {
+                    const rules = config.rules || {};
+                    const rule = rules.anti_role_remove || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+                    console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_remove:`, rule);
+                    if (rule.enabled) {
+                      const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_remove', rule.limit, rule.window);
+                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
+                      if (triggered) {
+                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role removal from ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                        if (rule.recovery) {
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (adding back removed roles)`);
+                          await newMember.roles.add(Array.from(removedRoles.keys())).catch(console.error);
+                        }
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
+                        await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Removal from ${newMember.user.tag}`, rule.action, config, context, 'anti_role_remove');
+                        return;
+                      }
+                    }
+                  }
+                }
+              } else {
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] No recent MemberRoleUpdate audit log entry found for target user ${newMember.id}`);
+              }
+            }
+          }
+
+          // 3. Timeout Checks
+          if (newMember.communicationDisabledUntil !== oldMember.communicationDisabledUntil) {
+            const isTimedOut = newMember.communicationDisabledUntil && newMember.communicationDisabledUntil.getTime() > Date.now();
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Timeout status change for ${newMember.user.tag}: isTimedOut=${isTimedOut}`);
+            if (isTimedOut) {
+              const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberUpdate }).catch((err: any) => {
+                console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberUpdate logs:`, err);
+                return null;
+              });
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Fetched ${fetchedLogs?.entries.size || 0} MemberUpdate audit entries`);
+              const logEntry = fetchedLogs?.entries.find((e: any) => {
+                const matches = e.targetId === newMember.id && isRecentEntry(e);
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+                return matches;
+              });
+
+              if (logEntry) {
+                const executor = logEntry.executor;
+                if (executor && executor.id !== client.user.id) {
+                  const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_timeout');
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  if (!isBypassed) {
+                    const rules = config.rules || {};
+                    const rule = rules.anti_timeout || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+                    console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_timeout:`, rule);
+                    if (rule.enabled) {
+                      const triggered = checkRateLimit(guild.id, executor.id, 'anti_timeout', rule.limit, rule.window);
+                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
+                      if (triggered) {
+                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized member timeout on ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                        if (rule.recovery) {
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing timeout)`);
+                          await newMember.timeout(null, 'Anti-Nuke Recovery: Removing unauthorized timeout').catch(console.error);
+                        }
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
+                        await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Timeout on ${newMember.user.tag}`, rule.action, config, context, 'anti_timeout');
+                        return;
+                      }
+                    }
+                  }
+                }
+              } else {
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] No recent MemberUpdate audit log entry found for target user ${newMember.id}`);
+              }
+            }
+          }
         } catch (err) {
-          console.error(err);
+          console.error('[Anti-Nuke Debug] [guildMemberUpdate] Error in handler:', err);
         }
       }
     },

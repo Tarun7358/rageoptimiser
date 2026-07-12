@@ -611,6 +611,7 @@ export function Security({
             { id: 'whitelist', label: 'Smart Whitelist', icon: <Key size={16} /> },
             { id: 'managers', label: 'Trusted Managers', icon: <Users size={16} /> },
             { id: 'ultra_protection', label: 'Ultra Protection (UPM)', icon: <Shield size={16} /> },
+            { id: 'join_guard', label: 'Join Role Guard', icon: <UserCheck size={16} /> },
             { id: 'health', label: 'Vulnerability Scan', icon: <ScanIcon size={16} /> },
             { id: 'logs', label: 'Security Timeline', icon: <History size={16} /> }
           ].map(tab => (
@@ -1502,6 +1503,199 @@ export function Security({
               )}
             </div>
           )}
+
+
+          {/* TAB: JOIN ROLE GUARD */}
+          {activeTab === 'join_guard' && (() => {
+            const joinGuardModule = (modules || []).find(m => m.id === 'join_role_guard') || { config: {}, status: 'disabled' };
+            const joinGuardConfig = (joinGuardModule.config || {}) as any;
+            const isEnabled = joinGuardModule.status === 'enabled';
+
+            const handleToggleJoinGuard = () => {
+              const nextEnabled = !isEnabled;
+              onUpdateConfig('join_role_guard', {}, nextEnabled);
+              onSaveConfig(`Join Role Guard ${nextEnabled ? 'ENABLED' : 'DISABLED'}.`);
+              onManualTrigger(`Join Guard: Module status toggled to ${nextEnabled ? 'ACTIVE' : 'INACTIVE'}.`, nextEnabled ? 'success' : 'warning', 'Security');
+            };
+
+            const handleUpdateJoinGuardConfig = (newConfig: any) => {
+              onUpdateConfig('join_role_guard', { ...joinGuardConfig, ...newConfig });
+              onSaveConfig('Join Role Guard settings saved.');
+            };
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                
+                {/* Banner */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(79, 140, 255, 0.15) 0%, rgba(124, 92, 252, 0.15) 100%)',
+                  border: '1px solid rgba(79, 140, 255, 0.3)',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '20px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '12px',
+                      background: 'rgba(79, 140, 255, 0.2)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(79, 140, 255, 0.4)'
+                    }}>
+                      <UserCheck size={28} color="#4F8CFF" />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        Join Role Assignment Guard
+                        <span style={{ fontSize: '10px', background: '#4F8CFF', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 600 }}>STABLE</span>
+                      </h3>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px', maxWidth: '600px' }}>
+                        Prevent false anti-nuke alarms. Safely allow automated onboarding, membership screening, auto-roles, and trusted bot verifications while enforcing full anti-nuke lockdown on suspicious role elevations.
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <button 
+                      onClick={handleToggleJoinGuard}
+                      style={{
+                        padding: '12px 28px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: isEnabled ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)',
+                        color: '#fff',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                        transition: 'all 0.2s',
+                        textTransform: 'uppercase',
+                        fontSize: '13px'
+                      }}
+                    >
+                      {isEnabled ? '🟢 Guard Active' : '🔴 Guard Offline'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  
+                  {/* Settings Card */}
+                  <div className="section-panel" style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <h4 style={{ fontSize: '15px', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Sliders size={18} color="var(--accent-primary)" />
+                      Guard Parameters
+                    </h4>
+                    
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '12px', color: '#94A3B8' }}>Join Grace Period (seconds)</label>
+                      <input 
+                        type="number" 
+                        className="form-input-text" 
+                        min="5"
+                        max="300"
+                        value={joinGuardConfig.joinGracePeriod ?? 20}
+                        onChange={e => handleUpdateJoinGuardConfig({ joinGracePeriod: parseInt(e.target.value) || 20 })}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: '#fff' }}
+                      />
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.7, marginTop: '4px', display: 'block' }}>
+                        Time window after a user joins where auto-roles or onboarding clicks are ignored.
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={joinGuardConfig.enableJoinGuard !== false}
+                          onChange={e => handleUpdateJoinGuardConfig({ enableJoinGuard: e.target.checked })}
+                        />
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Enable Guard Pre-Validation</span>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={joinGuardConfig.debugMode === true}
+                          onChange={e => handleUpdateJoinGuardConfig({ debugMode: e.target.checked })}
+                        />
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Enable Debug Logging (Console Only)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Trust Options Card */}
+                  <div className="section-panel" style={{ padding: '20px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <h4 style={{ fontSize: '15px', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ShieldCheck size={18} color="#7C5CFC" />
+                      Ignore Criteria & Verification Origin
+                    </h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={joinGuardConfig.ignoreOnboarding !== false}
+                          onChange={e => handleUpdateJoinGuardConfig({ ignoreOnboarding: e.target.checked })}
+                        />
+                        <div>
+                          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 600, display: 'block' }}>Ignore Discord Onboarding</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.8 }}>Bypasses role grants originating from Discord native Onboarding setup.</span>
+                        </div>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={joinGuardConfig.ignoreScreening !== false}
+                          onChange={e => handleUpdateJoinGuardConfig({ ignoreScreening: e.target.checked })}
+                        />
+                        <div>
+                          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 600, display: 'block' }}>Ignore Membership Screening</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.8 }}>Bypasses role changes from completed screening rules.</span>
+                        </div>
+                      </label>
+
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={joinGuardConfig.ignoreTrustedBots !== false}
+                          onChange={e => handleUpdateJoinGuardConfig({ ignoreTrustedBots: e.target.checked })}
+                        />
+                        <div>
+                          <span style={{ fontSize: '13px', color: '#fff', fontWeight: 600, display: 'block' }}>Ignore Whitelisted/Trusted Bots</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.8 }}>Bypasses role assignments made by whitelisted verification or helper bots.</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Important Notice */}
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.05)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  gap: '12px',
+                  alignItems: 'flex-start'
+                }}>
+                  <AlertTriangle size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <p style={{ fontSize: '12px', color: '#f59e0b', margin: 0, lineHeight: 1.5 }}>
+                    <strong>Security Notice:</strong> The Join Guard will <strong>never</strong> ignore role assignments that contain administrative or highly dangerous permissions (such as Manage Server, Administrator, Manage Roles, Manage Channels). Any attempt to grant these permissions will always trigger full anti-nuke evaluation immediately, regardless of grace periods.
+                  </p>
+                </div>
+
+              </div>
+            );
+          })()}
 
           {/* TAB 6: SECURITY TIMELINE LOGS */}
           {activeTab === 'logs' && (

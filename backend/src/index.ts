@@ -1,10 +1,17 @@
+if (process.stdout && (process.stdout as any)._handle && typeof (process.stdout as any)._handle.setBlocking === 'function') {
+  (process.stdout as any)._handle.setBlocking(true);
+}
+if (process.stderr && (process.stderr as any)._handle && typeof (process.stderr as any)._handle.setBlocking === 'function') {
+  (process.stderr as any)._handle.setBlocking(true);
+}
+
 import dotenv from 'dotenv';
 import { ModuleRegistry } from './core/ModuleRegistry.js';
 import { WebServer } from './core/WebServer.js';
 import { Gateway } from './core/Gateway.js';
 import { Database } from './core/Database.js';
 import { PublicFeedManager } from './core/PublicFeedManager.js';
-import { AuthService } from './core/AuthService.js';
+
 
 // ---- Existing Feature Module Manifests ----
 import { SecurityManifest } from './modules/security/manifest.js';
@@ -16,15 +23,13 @@ import { BackupsManifest } from './modules/backups/manifest.js';
 import { CommunityManifest } from './modules/community/manifest.js';
 import { AutomationManifest } from './modules/automation/manifest.js';
 import { VoiceManifest } from './modules/voice/manifest.js';
-import { BotWhitelistManifest } from './modules/bot_whitelist/manifest.js';
 import { MemberWhitelistManifest } from './modules/member_whitelist/manifest.js';
-import { RoleWhitelistManifest } from './modules/role_whitelist/manifest.js';
 import { ReactionRolesManifest } from './modules/reaction-roles/manifest.js';
 import { LevelingManifest } from './modules/leveling/manifest.js';
 import { AutomodManifest } from './modules/automod/manifest.js';
-import { ApprovalManifest } from './modules/approval/manifest.js';
 import { DiscordDashboardManifest } from './modules/discord-dashboard/manifest.js';
 import { MusicManifest } from './modules/music/manifest.js';
+
 import { QueueManager } from './modules/music/QueueManager.js';
 
 // ---- NEW Feature Module Manifests ----
@@ -35,9 +40,11 @@ import { AnnouncementsManifest } from './modules/announcements/manifest.js';
 import { JoinToCreateManifest } from './modules/joinToCreate/manifest.js';
 import { VoiceManagerManifest } from './modules/voice_manager/manifest.js';
 import { BulkOpsManifest } from './modules/bulk_ops/manifest.js';
-import { OwnerManifest } from './modules/owner/manifest.js';
 import { DiagnosticsManifest } from './modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from './modules/voice-protection/index.js';
+import { JoinRoleAssignmentGuardManifest } from './modules/join-role-guard/manifest.js';
+
+
 
 dotenv.config();
 
@@ -53,15 +60,13 @@ export const ALL_MANIFESTS = [
   CommunityManifest,
   AutomationManifest,
   VoiceManifest,
-  BotWhitelistManifest,
   MemberWhitelistManifest,
-  RoleWhitelistManifest,
   ReactionRolesManifest,
   LevelingManifest,
   AutomodManifest,
-  ApprovalManifest,
   DiscordDashboardManifest,
   MusicManifest,
+
   // New
   BlacklistManifest,
   GiveawayManifest,
@@ -70,9 +75,9 @@ export const ALL_MANIFESTS = [
   JoinToCreateManifest,
   VoiceManagerManifest,
   BulkOpsManifest,
-  OwnerManifest,
   DiagnosticsManifest,
   VoiceProtectionManifest,
+  JoinRoleAssignmentGuardManifest,
 ];
 
 // Web-server excluded manifests (no routes needed for some)
@@ -88,7 +93,6 @@ async function bootstrap() {
   try {
     // 0. Connect Database
     await Database.connect();
-    await AuthService.provisionDefaultOwner();
 
     // 1. Initialize Module Registry
     registry = new ModuleRegistry((msgObj) => {
@@ -100,6 +104,9 @@ async function bootstrap() {
     for (const manifest of ALL_MANIFESTS) {
       registry.registerModule(manifest);
     }
+
+    // Load configurations from SQLite
+    await registry.loadAllGuilds();
 
     // Run initial evaluation across all registered configurations
     registry.reevaluateAllModules();
@@ -129,6 +136,7 @@ async function bootstrap() {
       publicFeed,
       (guildId, id, config) => registry.updateModuleConfig(guildId, id, config)
     );
+    registry.client = gateway.client;
 
     // Hook for auto-syncing quarantine when security config changes
     const originalUpdate = registry.updateModuleConfig.bind(registry);
@@ -142,9 +150,6 @@ async function bootstrap() {
 
     webServer.getBotMetrics = () => gateway.getMetrics();
     webServer.deployCommandsCallback = () => gateway.forceDeployCommands();
-    webServer.onApprovalAction = async (guildId, action, reason) => {
-      await gateway.handleApprovalAction(guildId, action, reason);
-    };
     webServer.triggerEmergencyLock = async (guildId?) => gateway.triggerEmergencyLock(guildId);
     webServer.getDiscordClient = () => gateway.client;
     webServer.syncRegistryCallback = (guildId?) => gateway.syncRegistry(guildId);
@@ -159,6 +164,9 @@ async function bootstrap() {
   }
 }
 
+import { fileURLToPath } from 'url';
+import path from 'path';
+
 process.on('uncaughtException', (err) => {
   console.error('🔥 CRITICAL: Uncaught Exception caught by global handler:', err);
 });
@@ -167,6 +175,19 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('🔥 CRITICAL: Unhandled Rejection caught by global handler:', reason);
 });
 
-bootstrap();
+const isMainFile = () => {
+  try {
+    if (!process.argv[1]) return false;
+    const mainPath = path.resolve(process.argv[1]);
+    const currentPath = path.resolve(fileURLToPath(import.meta.url));
+    return mainPath === currentPath;
+  } catch {
+    return false;
+  }
+};
+
+if (isMainFile()) {
+  bootstrap();
+}
 
 export { registry, webServer, gateway };

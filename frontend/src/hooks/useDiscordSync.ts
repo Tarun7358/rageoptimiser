@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from './useAuth';
 
 // Interfaces for synchronized resources
 export interface DiscordRole {
@@ -62,13 +63,12 @@ export const INITIAL_MODULES: ModuleState[] = [
   { id: 'automod', name: 'AI Automod', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'music', name: 'Music System', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'voice-protection', name: 'Voice Protection', status: 'not_configured', progress: 100, errors: [], config: {} },
-  { id: 'discord-dashboard', name: 'Discord Dashboard', status: 'config_required', progress: 0, errors: ['No target channel configured'], config: {} }
+  { id: 'discord-dashboard', name: 'Discord Dashboard', status: 'config_required', progress: 0, errors: ['No target channel configured'], config: {} },
+  { id: 'join_role_guard', name: 'Join Role Guard', status: 'enabled', progress: 100, errors: [], config: {} }
 ];
 
 export function useDiscordSync() {
-  // Read auth token directly — re-runs when auth changes
-  const [token, setToken] = useState<string | null>(localStorage.getItem('cn_token'));
-  const [guildId, setGuildId] = useState<string | null>(localStorage.getItem('cn_active_guild'));
+  const { token, activeGuildId: guildId } = useAuth();
 
   const [registry, setRegistry] = useState<DiscordResourceRegistry>({
     roles: [],
@@ -84,18 +84,6 @@ export function useDiscordSync() {
   const [musicPlayerState, setMusicPlayerState] = useState<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Poll for token and guild changes (login/logout, server select) since localStorage doesn't fire events in-tab
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentToken = localStorage.getItem('cn_token');
-      setToken(prev => (prev !== currentToken ? currentToken : prev));
-
-      const currentGuild = localStorage.getItem('cn_active_guild');
-      setGuildId(prev => (prev !== currentGuild ? currentGuild : prev));
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
   // Re-fetch and reconnect WebSocket whenever token or guild ID changes
   useEffect(() => {
     // Close any existing WS connection
@@ -106,6 +94,25 @@ export function useDiscordSync() {
 
     if (!token) {
       // Logged out — reset to defaults
+      setModules(INITIAL_MODULES);
+      setRegistry({ roles: [], channels: [], emojis: [], stickers: [], lastSyncTime: 'Just now' });
+      setSyncLogs([]);
+      setGlobalSettings({});
+      setMusicPlayerState(null);
+      return;
+    }
+
+    // Decode token to check if user is a guild_manager without a guildId
+    let isGuildManagerWithoutGuild = false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role === 'guild_manager' && !guildId) {
+        isGuildManagerWithoutGuild = true;
+      }
+    } catch {}
+
+    if (isGuildManagerWithoutGuild) {
+      // No active guild selected yet — reset to initial empty states and do not fetch/connect WS
       setModules(INITIAL_MODULES);
       setRegistry({ roles: [], channels: [], emojis: [], stickers: [], lastSyncTime: 'Just now' });
       setSyncLogs([]);
@@ -227,6 +234,26 @@ export function useDiscordSync() {
   };
 
   const updateModuleConfig = async (moduleId: string, newConfig: Record<string, any>, enabledOverride?: boolean) => {
+    const previousModules = [...modules];
+
+    // Optimistically update modules in-memory
+    setModules(prev => prev.map(m => {
+      if (m.id === moduleId) {
+        if (enabledOverride !== undefined) {
+          return {
+            ...m,
+            status: enabledOverride ? 'enabled' : 'not_configured'
+          };
+        } else {
+          return {
+            ...m,
+            config: { ...m.config, ...newConfig }
+          };
+        }
+      }
+      return m;
+    }));
+
     try {
       const token = localStorage.getItem('cn_token');
       const currentGuild = localStorage.getItem('cn_active_guild');
@@ -236,24 +263,31 @@ export function useDiscordSync() {
       };
       if (currentGuild) headers['X-Guild-Id'] = currentGuild;
 
+      let res;
       // If toggling active status
       if (enabledOverride !== undefined) {
-        await fetch(`http://localhost:5000/api/modules/${moduleId}/toggle`, {
+        res = await fetch(`http://localhost:5000/api/modules/${moduleId}/toggle`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ enabledOverride })
         });
       } else {
         // Just save config fields
-        await fetch(`http://localhost:5000/api/modules/${moduleId}`, {
+        res = await fetch(`http://localhost:5000/api/modules/${moduleId}`, {
           method: 'POST',
           headers,
           body: JSON.stringify(newConfig)
         });
       }
+
+      if (!res.ok) {
+        throw new Error(`Server returned status ${res.status}`);
+      }
     } catch (err) {
       console.error(`Failed to update config for module ${moduleId}:`, err);
       addSyncLog(`Update failed for ${moduleId}: API server offline.`, 'warn');
+      // Rollback to previous state on failure
+      setModules(previousModules);
     }
   };
 
