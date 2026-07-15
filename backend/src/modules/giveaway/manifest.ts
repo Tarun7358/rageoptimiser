@@ -180,7 +180,7 @@ export const GiveawayManifest: ModuleManifest = {
             channelId: targetChannel.id,
             messageId: msg.id,
             hostId: interaction.user.id,
-            hostTag: interaction.user.tag,
+            hostTag: interaction.user.username,
             prize,
             description,
             winnerCount,
@@ -193,7 +193,7 @@ export const GiveawayManifest: ModuleManifest = {
 
           giveaways.push(giveaway);
           saveGiveaways(giveaways);
-          context.logSyncEvent(`[Giveaway] Created giveaway "${prize}" by ${interaction.user.tag}.`, 'success');
+          context.logSyncEvent(`[Giveaway] Created giveaway "${prize}" by ${interaction.user.username}.`, 'success');
 
           // Schedule auto-end
           const timeout = setTimeout(() => endGiveaway(client, giveaway, context), ms);
@@ -256,7 +256,7 @@ export const GiveawayManifest: ModuleManifest = {
           const existing = activeGiveaways.get(id);
           if (existing) { clearTimeout(existing); activeGiveaways.delete(id); }
           saveGiveaways(giveaways.filter(g => g.id !== id));
-          context.logSyncEvent(`[Giveaway] Deleted giveaway "${id}" by ${interaction.user.tag}.`, 'info');
+          context.logSyncEvent(`[Giveaway] Deleted giveaway "${id}" by ${interaction.user.username}.`, 'info');
           await interaction.reply({ content: `🗑️ Giveaway \`${id}\` deleted.`, flags: 64 });
         }
 
@@ -315,7 +315,7 @@ export const GiveawayManifest: ModuleManifest = {
 
         gw.entries.push(interaction.user.id);
         context.updateModuleConfig('giveaway', { giveaways });
-        context.logSyncEvent(`[Giveaway] ${interaction.user.tag} entered giveaway "${gw.prize}".`, 'info');
+        context.logSyncEvent(`[Giveaway] ${interaction.user.username} entered giveaway "${gw.prize}".`, 'info');
         await interaction.reply({ content: `🎉 You've entered the giveaway for **${gw.prize}**! Good luck!`, flags: 64 });
       }
     },

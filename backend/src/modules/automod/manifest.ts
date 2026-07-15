@@ -1,7 +1,9 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
+
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
+}
 
 export const AutomodManifest: ModuleManifest = {
   id: 'automod',
@@ -96,7 +98,7 @@ export const AutomodManifest: ModuleManifest = {
             await message.channel.send(`${message.author}, your message was removed. Reason: **${reason}**`)
               .then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
             
-            context.logSyncEvent(`AutoMod: Removed message from ${message.author.tag} in #${message.channel.name} (${reason})`, 'warn');
+             context.logSyncEvent(`AutoMod: Removed message from ${userTag(message.author)} in #${message.channel.name} (${reason})`, 'warn');
             
             // Log to discord channel
             if (config.logChannelId) {
@@ -106,7 +108,7 @@ export const AutomodManifest: ModuleManifest = {
                   .setTitle('🛡️ AutoMod Intervention')
                   .setColor('#ff9900')
                   .addFields(
-                    { name: 'User', value: `${message.author.tag} (${message.author.id})` },
+                    { name: 'User', value: `${userTag(message.author)} (${message.author.id})` },
                     { name: 'Channel', value: `<#${message.channel.id}>` },
                     { name: 'Reason', value: reason },
                     { name: 'Content', value: message.content.substring(0, 1000) }

@@ -6,7 +6,7 @@ import { EmbedBuilder } from 'discord.js';
 const OWNER_ID = process.env.OWNER_ID || '1508399161798819840';
 
 const checkIsOwner = (client: any, userId: string) => {
-  return true;
+  return userId === OWNER_ID;
 };
 
 export const ApprovalManifest: ModuleManifest = {
@@ -55,17 +55,18 @@ export const ApprovalManifest: ModuleManifest = {
         const db = Database.getDb();
         if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
-        const docRef = db.collection('approvals').doc(guildId);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
+        const approval = await db.get<any>('SELECT guildName FROM approvals WHERE guildId = ?', [guildId]);
+        if (!approval) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
         
-        const approval = docSnap.data() as IGuildApproval;
-        await docRef.update({
-          status: 'Approved',
-          approvedBy: interaction.user.id,
-          approvedAt: Date.now(),
-          lastUpdated: Date.now()
-        });
+        await db.run(
+          `UPDATE approvals SET 
+            status = 'Approved', 
+            approvedBy = ?, 
+            approvedAt = ?, 
+            lastUpdated = ? 
+          WHERE guildId = ?`,
+          [interaction.user.id, Date.now(), Date.now(), guildId]
+        );
         
         if (context?.handleApprovalAction) {
           await context.handleApprovalAction(guildId, 'approve');
@@ -84,18 +85,19 @@ export const ApprovalManifest: ModuleManifest = {
         const db = Database.getDb();
         if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
-        const docRef = db.collection('approvals').doc(guildId);
-        const docSnap = await docRef.get();
-        if (!docSnap.exists) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
+        const approval = await db.get<any>('SELECT guildName FROM approvals WHERE guildId = ?', [guildId]);
+        if (!approval) return interaction.reply({ content: 'Guild not found in approval database.', flags: 64 });
         
-        const approval = docSnap.data() as IGuildApproval;
-        await docRef.update({
-          status: 'Rejected',
-          rejectedBy: interaction.user.id,
-          rejectedAt: Date.now(),
-          rejectionReason: reason,
-          lastUpdated: Date.now()
-        });
+        await db.run(
+          `UPDATE approvals SET 
+            status = 'Rejected', 
+            rejectedBy = ?, 
+            rejectedAt = ?, 
+            rejectionReason = ?, 
+            lastUpdated = ? 
+          WHERE guildId = ?`,
+          [interaction.user.id, Date.now(), reason, Date.now(), guildId]
+        );
 
         if (context?.handleApprovalAction) {
           await context.handleApprovalAction(guildId, 'reject', reason);
@@ -114,38 +116,35 @@ export const ApprovalManifest: ModuleManifest = {
         const db = Database.getDb();
         if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
-        const docRef = db.collection('approvals').doc(guildId);
-        const docSnap = await docRef.get();
+        const existing = await db.get<any>('SELECT guildId FROM approvals WHERE guildId = ?', [guildId]);
 
-        if (docSnap.exists) {
-          await docRef.update({
-            status: 'Blacklisted',
-            blacklistedBy: interaction.user.id,
-            blacklistedAt: Date.now(),
-            notes: reason,
-            lastUpdated: Date.now()
-          });
+        if (existing) {
+          await db.run(
+            `UPDATE approvals SET 
+              status = 'Blacklisted', 
+              blacklistedBy = ?, 
+              blacklistedAt = ?, 
+              notes = ?, 
+              lastUpdated = ? 
+            WHERE guildId = ?`,
+            [interaction.user.id, Date.now(), reason, Date.now(), guildId]
+          );
         } else {
-          await docRef.set({
-            guildId,
-            guildName: 'Unknown (Blacklisted before join)',
-            ownerId: 'Unknown',
-            ownerUsername: 'Unknown',
-            memberCount: 0,
-            botCount: 0,
-            humanCount: 0,
-            verificationLevel: 0,
-            premiumTier: 0,
-            premiumSubscriptionCount: 0,
-            riskScore: 100,
-            riskLevel: 'Critical',
-            status: 'Blacklisted',
-            blacklistedBy: interaction.user.id,
-            blacklistedAt: Date.now(),
-            notes: reason,
-            joinedAt: Date.now(),
-            lastUpdated: Date.now()
-          });
+          await db.run(
+            `INSERT INTO approvals (
+              guildId, guildName, ownerId, ownerUsername, memberCount, botCount, humanCount,
+              verificationLevel, premiumTier, premiumSubscriptionCount, riskScore, riskLevel,
+              status, blacklistedBy, blacklistedAt, notes, joinedAt, lastUpdated
+            ) VALUES (?, 'Unknown (Blacklisted before join)', 'Unknown', 'Unknown', 0, 0, 0, 0, 0, 0, 100, 'Critical', 'Blacklisted', ?, ?, ?, ?, ?)`,
+            [
+              guildId,
+              interaction.user.id,
+              Date.now(),
+              reason,
+              Date.now(),
+              Date.now()
+            ]
+          );
         }
 
         if (context?.handleApprovalAction) {
@@ -163,10 +162,8 @@ export const ApprovalManifest: ModuleManifest = {
         const db = Database.getDb();
         if (!db) return interaction.reply({ content: 'Database not connected.', flags: 64 });
 
-        const snapshot = await db.collection('approvals').where('status', '==', 'Pending').get();
-        if (snapshot.empty) return interaction.reply({ content: '✅ No pending servers!', flags: 64 });
-
-        const pending = snapshot.docs.map(doc => doc.data() as IGuildApproval);
+        const pending = await db.all<any>("SELECT guildName, guildId, riskScore, riskLevel FROM approvals WHERE status = 'Pending'");
+        if (pending.length === 0) return interaction.reply({ content: '✅ No pending servers!', flags: 64 });
 
         const embed = new EmbedBuilder()
           .setTitle('⏳ Pending Server Approvals')

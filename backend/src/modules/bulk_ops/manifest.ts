@@ -148,7 +148,7 @@ export const BulkOpsManifest: ModuleManifest = {
         await interaction.deferReply({ flags: 64 });
 
         const logBulk = (action: string, count: number) => {
-          context.logSyncEvent(`[Bulk Ops] ${interaction.user.tag} — ${action} (${count} items).`, 'warn');
+          context.logSyncEvent(`[Bulk Ops] ${interaction.user.username} — ${action} (${count} items).`, 'warn');
         };
 
         // ROLE ADD
@@ -299,7 +299,7 @@ export const BulkOpsManifest: ModuleManifest = {
         if (sub === 'ban-list') {
           const bans = await guild.bans.fetch();
           if (bans.size === 0) return interaction.editReply({ content: '📋 No banned users.' });
-          const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.tag} (${b.user.id}) — ${b.reason || 'No reason'}`);
+          const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.username} (${b.user.id}) — ${b.reason || 'No reason'}`);
           return interaction.editReply({ content: `🚫 **Banned Users (${bans.size}):**\n${lines.join('\n')}` });
         }
 
@@ -337,7 +337,7 @@ export const BulkOpsManifest: ModuleManifest = {
         // CLONE CHANNEL
         if (sub === 'clone-channel') {
           const source = interaction.options.getChannel('channel');
-          const cloned = await source.clone({ reason: `Cloned by ${interaction.user.tag}` });
+          const cloned = await source.clone({ reason: `Cloned by ${interaction.user.username}` });
           logBulk('Clone Channel', 1);
           return interaction.editReply({ content: `✅ Cloned ${source} → ${cloned}.` });
         }

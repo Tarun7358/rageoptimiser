@@ -96,7 +96,8 @@ export const LoggingManifest: ModuleManifest = {
                         interaction.member?.permissions?.has?.('Administrator');
         if (!isOwner) return interaction.reply({ content: '🔒 Requires Administrator.', flags: 64 });
         
-        const subcommand = interaction.options.getSubcommand();
+        const subcommand = interaction.options.getSubcommand(false);
+        if (!subcommand) return interaction.reply({ content: '❌ Please use a valid subcommand.', flags: 64 });
         const modules = context.getModulesState();
         const logMod = modules.find((m: any) => m.id === 'logging');
         const config = logMod?.config || {};
@@ -182,9 +183,10 @@ export const LoggingManifest: ModuleManifest = {
           if (!channel) channel = await message.guild?.channels.fetch(auditConfig.channelId).catch(() => null);
           
           if (channel && channel.isTextBased()) {
+            const authorText = message.author ? `${message.author} (\`${message.author.id}\`)` : 'Unknown User (Uncached Message)';
             const embed = new EmbedBuilder()
               .setTitle('🗑️ Message Deleted')
-              .setDescription(`**Author**: ${message.author} (\`${message.author?.id}\`)\n**Channel**: ${message.channel}\n\n**Content**:\n${message.content || '*No text content*'}`)
+              .setDescription(`**Author**: ${authorText}\n**Channel**: ${message.channel}\n\n**Content**:\n${message.content || '*No text content cached*'}`)
               .setColor('#ff4444')
               .setTimestamp();
             await channel.send({ embeds: [embed] });
@@ -195,7 +197,7 @@ export const LoggingManifest: ModuleManifest = {
     {
       name: 'messageUpdate',
       handler: async (client: any, data: any, context: any) => {
-        const { oldMessage, newMessage } = data;
+        let { oldMessage, newMessage } = data;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const logModule = modules.find((m: any) => m.id === 'logging');
         if (!logModule || logModule.status !== 'enabled') return;
@@ -203,6 +205,11 @@ export const LoggingManifest: ModuleManifest = {
         const config = logModule.config;
         const auditConfig = config['audit'];
         if (!auditConfig || !auditConfig.enabled || !auditConfig.channelId) return;
+
+        try {
+          if (oldMessage.partial) oldMessage = await oldMessage.fetch().catch(() => oldMessage);
+          if (newMessage.partial) newMessage = await newMessage.fetch().catch(() => newMessage);
+        } catch {}
 
         if (newMessage.author?.bot) return;
         if (oldMessage.content === newMessage.content) return; 
@@ -212,9 +219,10 @@ export const LoggingManifest: ModuleManifest = {
           if (!channel) channel = await newMessage.guild?.channels.fetch(auditConfig.channelId).catch(() => null);
           
           if (channel && channel.isTextBased()) {
+            const authorText = newMessage.author ? `${newMessage.author} (\`${newMessage.author.id}\`)` : 'Unknown User';
             const embed = new EmbedBuilder()
               .setTitle('✏️ Message Edited')
-              .setDescription(`**Author**: ${newMessage.author} (\`${newMessage.author?.id}\`)\n**Channel**: ${newMessage.channel}\n\n**Before**:\n${oldMessage.content || '*None*'}\n\n**After**:\n${newMessage.content || '*None*'}`)
+              .setDescription(`**Author**: ${authorText}\n**Channel**: ${newMessage.channel}\n\n**Before**:\n${oldMessage.content || '*None*'}\n\n**After**:\n${newMessage.content || '*None*'}`)
               .setColor('#ffaa00')
               .setTimestamp();
             await channel.send({ embeds: [embed] });

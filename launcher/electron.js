@@ -52,7 +52,7 @@ let actualDashboardPort = null;
 function getIcon() {
   const icoPath = path.join(__dirname, 'assets', 'icon.ico');
   const pngPath = path.join(__dirname, 'assets', 'icon.png');
-  const publicPng = path.resolve(BASE_PATH, 'public', 'cn-logo.png');
+  const publicPng = path.resolve(BASE_PATH, config.paths.dashboard || 'frontend', 'public', 'cn-logo.png');
 
   if (fs.existsSync(icoPath)) return nativeImage.createFromPath(icoPath);
   if (fs.existsSync(pngPath)) return nativeImage.createFromPath(pngPath);
@@ -288,7 +288,7 @@ async function runStartupSequence() {
   await sleep(300);
   const backendEnv = path.join(BASE_PATH, 'backend', '.env');
   const backendPkg = path.join(BASE_PATH, 'backend', 'package.json');
-  const dashPkg = path.join(BASE_PATH, 'package.json');
+  const dashPkg = path.join(BASE_PATH, config.paths.dashboard || 'frontend', 'package.json');
 
   if (!fs.existsSync(backendEnv)) {
     return sendError(STEPS[0].label, `Missing: backend/.env\n\nPlease create the .env file with your Discord token and other required variables.`);

@@ -1,8 +1,11 @@
 import { ModuleState, DiscordResourceRegistry, ModuleManifest, LogEntry } from './types.js';
 import { Database } from './Database.js';
+import { migrateToUnifiedWhitelist } from '../utils/whitelistCheck.js';
+import { EmbedBuilder } from 'discord.js';
 
 
 export class ModuleRegistry {
+  public client: any = null;
   private guildStates: Map<string, {
     modules: ModuleState[];
     registry: DiscordResourceRegistry;
@@ -26,8 +29,6 @@ export class ModuleRegistry {
     this.manifests.set(manifest.id, manifest);
   }
 
-  private unsubscribeMap: Map<string, () => void> = new Map();
-
   private fillManifestModules(modules: ModuleState[]) {
     this.manifests.forEach(manifest => {
       if (!modules.find(m => m.id === manifest.id)) {
@@ -43,17 +44,56 @@ export class ModuleRegistry {
     });
   }
 
+  public async loadAllGuilds() {
+    const db = Database.getDb();
+    if (!db) return;
+    try {
+      const rows = await db.all('SELECT * FROM guild_configs');
+      for (const row of rows) {
+        const modules = JSON.parse(row.modules || '[]');
+        const globalSettings = JSON.parse(row.globalSettings || '{}');
+        
+        const guildId = row.guildId;
+        const state = {
+          modules,
+          registry: this.getDefaultRegistry(),
+          syncLogs: [],
+          globalSettings,
+          whitelistAudit: [],
+          whitelistActivity: []
+        };
+        this.guildStates.set(guildId, state);
+        this.fillManifestModules(state.modules);
+        
+        // Sync legacy upmSnapshot metadata from upm_snapshots if missing
+        const secMod = state.modules.find((m: any) => m.id === 'security');
+        if (secMod && secMod.config && !secMod.config.upmSnapshot) {
+          const snap = await db.get('SELECT * FROM upm_snapshots WHERE guildId = ?', [guildId]);
+          if (snap) {
+            const channels = JSON.parse(snap.channels || '[]');
+            const roles = JSON.parse(snap.roles || '[]');
+            secMod.config.upmSnapshot = {
+              timestamp: snap.timestamp,
+              channelsCount: channels.length,
+              rolesCount: roles.length
+            };
+          }
+        }
+        
+        this.reevaluateAllModules(guildId);
+        this.triggerWhitelistMigration(guildId);
+      }
+      console.log(`[ModuleRegistry] Successfully pre-loaded ${rows.length} guild configurations from SQLite.`);
+    } catch (e: any) {
+      console.error('[ModuleRegistry] Failed to pre-load guild configurations:', e.message);
+    }
+  }
+
   public getGuildState(guildId?: string) {
     const id = guildId || process.env.GUILD_ID || 'default_guild';
-    const cached = this.guildStates.get(id);
+    let state = this.guildStates.get(id);
 
-    // If already loaded in-memory and has a live listener, return from cache immediately
-    if (cached && this.unsubscribeMap.has(id)) {
-      return cached;
-    }
-
-    // 1. Initialize default state structure if not present
-    let state = cached;
+    // If not in cache, create default and persist asynchronously
     if (!state) {
       state = {
         modules: this.createDefaultModulesState(),
@@ -65,67 +105,8 @@ export class ModuleRegistry {
       };
       this.guildStates.set(id, state);
       this.fillManifestModules(state.modules);
-    }
-
-    // 2. Setup real-time Firestore listener if not already active
-    const db = Database.getDb();
-    if (db && !this.unsubscribeMap.has(id)) {
-      const docRef = db.collection('guild_configs').doc(id);
-
-      const unsubscribe = docRef.onSnapshot((doc) => {
-        if (doc.exists) {
-          const dbData = doc.data();
-          const current = this.guildStates.get(id);
-          if (current && dbData) {
-            // Keep status as enabled as required by the "default-enabled" policy
-            current.modules = (dbData.modules || current.modules).map((m: any) => {
-              const existing = current.modules.find((cm) => cm.id === m.id);
-              return {
-                ...m,
-                status: 'enabled',
-                progress: existing?.progress ?? m.progress ?? 0,
-                errors: existing?.errors ?? m.errors ?? []
-              };
-            });
-            current.globalSettings = dbData.globalSettings || current.globalSettings;
-            
-            if (dbData.whitelistAudit) current.whitelistAudit = dbData.whitelistAudit;
-            if (dbData.whitelistActivity) current.whitelistActivity = dbData.whitelistActivity;
-
-            // Ensure manifest entries exist
-            this.fillManifestModules(current.modules);
-
-            // Synchronize legacy upmSnapshot metadata from upm_snapshots collection if missing
-            const secMod = current.modules.find((m: any) => m.id === 'security');
-            if (secMod && secMod.config && !secMod.config.upmSnapshot) {
-              db.collection('upm_snapshots').doc(id).get().then((snapDoc) => {
-                if (snapDoc.exists) {
-                  const snap = snapDoc.data();
-                  if (snap) {
-                    secMod.config.upmSnapshot = {
-                      timestamp: snap.timestamp,
-                      channelsCount: snap.channels?.length || 0,
-                      rolesCount: snap.roles?.length || 0
-                    };
-                    this.reevaluateAllModules(id);
-                    this.broadcast({ type: 'STATE_UPDATE', modules: current.modules, registry: current.registry, guildId: id });
-                  }
-                }
-              }).catch(e => console.error(`Failed to load legacy upmSnapshot from db for guild ${id}:`, e));
-            }
-
-            this.reevaluateAllModules(id);
-            this.broadcast({ type: 'STATE_UPDATE', modules: current.modules, registry: current.registry, guildId: id });
-          }
-        } else {
-          // Initialize document in Firestore for new guild
-          db.collection('guild_configs').doc(id).set(state).catch(e => console.error(`Firestore save failed for new guild ${id}:`, e));
-        }
-      }, (error) => {
-        console.error(`Firestore real-time listener error for guild ${id}:`, error);
-      });
-
-      this.unsubscribeMap.set(id, unsubscribe);
+      this.reevaluateAllModules(id);
+      this.saveGuildState(id, state);
     }
 
     return state;
@@ -170,7 +151,87 @@ export class ModuleRegistry {
     state.syncLogs.unshift(log);
     if (state.syncLogs.length > 100) state.syncLogs.pop();
     this.broadcast({ type: 'SYNC_LOG', log, guildId: id });
+
+    // Live Discord Log Forwarding
+    if (this.client && id && id !== 'default_guild') {
+      (async () => {
+        try {
+          const logModule = state.modules.find((m: any) => m.id === 'logging');
+          if (!logModule || logModule.status !== 'enabled') return;
+
+          const config = logModule.config || {};
+          let resolvedCategory: string | null = null;
+          let title = '';
+          let color = '#3498db';
+
+          const msgLower = finalMsg.toLowerCase();
+          if (msgLower.includes('webhook')) {
+            resolvedCategory = 'webhook';
+            title = '🔌 Webhook Security Log';
+            color = '#a855f7';
+          } else if (
+            msgLower.includes('anti-nuke') || 
+            msgLower.includes('restore') || 
+            msgLower.includes('lockdown') || 
+            msgLower.includes('re-created') ||
+            msgLower.includes('emergency')
+          ) {
+            resolvedCategory = 'antiNuke';
+            title = '🚨 Anti-Nuke Security Alert';
+            color = '#ff0055';
+          } else if (msgLower.includes('[security]') || msgLower.includes('whitelist')) {
+            resolvedCategory = 'security';
+            title = '🛡️ Security Event';
+            color = '#3498db';
+          } else if (
+            msgLower.includes('quarantine') || 
+            msgLower.includes('ban') || 
+            msgLower.includes('kick') || 
+            msgLower.includes('timeout') || 
+            msgLower.includes('mute') ||
+            msgLower.includes('punish')
+          ) {
+            resolvedCategory = 'moderation';
+            title = '🔨 Moderation Action';
+            color = '#f1c40f';
+          } else if (
+            msgLower.includes('joined') || 
+            msgLower.includes('left') || 
+            msgLower.includes('login') || 
+            msgLower.includes('sync') || 
+            msgLower.includes('startup') || 
+            msgLower.includes('database') ||
+            msgLower.includes('ready')
+          ) {
+            resolvedCategory = 'system';
+            title = '⚙️ System Log';
+            color = '#64748b';
+          }
+
+          if (resolvedCategory) {
+            const catConfig = config[resolvedCategory];
+            if (catConfig && catConfig.enabled && catConfig.channelId) {
+              const guild = await this.client.guilds.fetch(id).catch(() => null);
+              if (guild) {
+                const channel = await guild.channels.fetch(catConfig.channelId).catch(() => null);
+                if (channel && channel.isTextBased()) {
+                  const embed = new EmbedBuilder()
+                    .setTitle(title)
+                    .setDescription(finalMsg)
+                    .setColor(color as any)
+                    .setTimestamp();
+                  await channel.send({ embeds: [embed] });
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[Logging Forwarder Error]:', err);
+        }
+      })();
+    }
   }
+
 
   public getWhitelistAudit(guildId?: string): any[] {
     return this.getGuildState(guildId).whitelistAudit || [];
@@ -223,10 +284,46 @@ export class ModuleRegistry {
         mod.progress = progress;
         mod.errors = errors;
 
-        // Lifecycle transition rules
-        mod.status = 'enabled';
+        // M-4 FIX: Preserve 'disabled' status — do NOT force-enable modules that
+        // an admin has deliberately turned off via the toggle endpoint.
+        // Only transition modules that are not explicitly disabled.
+        if (mod.status !== 'disabled') {
+          mod.status = 'enabled';
+        }
       }
     });
+  }
+
+  private triggerWhitelistMigration(guildId: string, forceSave = false) {
+    const state = this.getGuildState(guildId);
+    let changed = false;
+    const contextAdapter = {
+      guildId,
+      client: this.client,
+      getModulesState: () => state.modules,
+      getRegistry: () => state.registry,
+      updateModuleConfig: (id: string, config: any) => {
+        const mod = state.modules.find(m => m.id === id);
+        if (mod) {
+          const oldConfig = mod.config || {};
+          const mergedConfig = { ...oldConfig, ...config };
+          if (JSON.stringify(oldConfig) !== JSON.stringify(mergedConfig)) {
+            mod.config = mergedConfig;
+            changed = true;
+          }
+        }
+        return mod;
+      },
+      logSyncEvent: (msg: string, type: 'info' | 'warn' | 'success') => {
+        this.logSyncEvent(guildId, msg, type);
+      }
+    };
+    migrateToUnifiedWhitelist(contextAdapter);
+    if (changed || forceSave) {
+      this.reevaluateAllModules(guildId);
+      this.saveGuildState(guildId, state);
+      this.broadcast({ type: 'STATE_UPDATE', modules: state.modules, registry: state.registry, guildId });
+    }
   }
 
   public updateModuleConfig(guildId: string | undefined, id: string, config: Record<string, any>): ModuleState | null {
@@ -237,7 +334,13 @@ export class ModuleRegistry {
 
     mod.config = { ...mod.config, ...config };
     this.reevaluateAllModules(gId);
-    this.saveGuildState(gId, state);
+
+    if (['member_whitelist', 'security', 'voice-protection'].includes(id)) {
+      this.triggerWhitelistMigration(gId, true);
+    } else {
+      this.saveGuildState(gId, state);
+    }
+
     this.broadcast({ type: 'STATE_UPDATE', modules: state.modules, registry: state.registry, guildId: gId });
     return mod;
   }
@@ -249,10 +352,8 @@ export class ModuleRegistry {
     if (!mod) return null;
 
     if (enabledOverride !== undefined) {
-      // Explicit override: true = enabled, false = disabled
       mod.status = enabledOverride ? 'enabled' : 'disabled';
     } else {
-      // Flip current state
       mod.status = mod.status === 'enabled' ? 'disabled' : 'enabled';
     }
 
@@ -261,53 +362,9 @@ export class ModuleRegistry {
     return mod;
   }
 
-  public simulateAction(guildId: string | undefined, actionType: string) {
-    const gId = guildId || process.env.GUILD_ID || 'default_guild';
-    const state = this.getGuildState(gId);
-
-    if (actionType === 'delete_role') {
-      const len = state.registry.roles.length;
-      state.registry.roles = state.registry.roles.filter(r => r.id !== 'r-5'); // Delete Verified Member
-      if (state.registry.roles.length < len) {
-        this.logSyncEvent(gId, 'Simulation: Deleted Role "Verified Member" (ID: r-5) inside Discord.', 'warn');
-      }
-    } else if (actionType === 'delete_channel') {
-      const len = state.registry.channels.length;
-      state.registry.channels = state.registry.channels.filter(c => c.id !== 'c-3'); // Delete audit-logs
-      if (state.registry.channels.length < len) {
-        this.logSyncEvent(gId, 'Simulation: Deleted Channel "audit-logs" (ID: c-3) inside Discord.', 'warn');
-      }
-    } else if (actionType === 'rename_channel') {
-      const chan = state.registry.channels.find(c => c.id === 'c-2');
-      if (chan) {
-        const old = chan.name;
-        chan.name = 'mod-chat-renamed';
-        this.logSyncEvent(gId, `Simulation: Renamed Channel #${old} to #${chan.name}`, 'info');
-      }
-    } else if (actionType === 'create_role') {
-      state.registry.roles.push({
-        id: `r-${Date.now()}`,
-        name: 'New Dynamic Role',
-        color: '#ff00ff',
-        membersCount: 1,
-        permissions: []
-      });
-      this.logSyncEvent(gId, 'Simulation: Created new role "New Dynamic Role" in Discord server.', 'success');
-    }
-
-    this.reevaluateAllModules(gId);
-    this.broadcast({ type: 'STATE_UPDATE', modules: state.modules, registry: state.registry, guildId: gId });
-  }
-
-  private saveGuildStateLocally(_guildId: string, _state: any) {
-    // Local file storage removed — Firestore is the only persistent storage
-  }
-
   public saveGuildState(guildId: string, state: any) {
-    this.saveGuildStateLocally(guildId, state);
     const db = Database.getDb();
     if (db) {
-      // Save only persistent configurations and states to Firestore to prevent quota exhaustion
       const persistentState = {
         modules: state.modules.map((m: any) => ({
           id: m.id,
@@ -317,7 +374,11 @@ export class ModuleRegistry {
         })),
         globalSettings: state.globalSettings || {}
       };
-      db.collection('guild_configs').doc(guildId).set(persistentState).catch(e => console.error(`Firestore save failed for guild ${guildId}:`, e));
+      
+      db.run(
+        'INSERT OR REPLACE INTO guild_configs (guildId, modules, globalSettings) VALUES (?, ?, ?)',
+        [guildId, JSON.stringify(persistentState.modules), JSON.stringify(persistentState.globalSettings)]
+      ).catch(e => console.error(`SQLite save failed for guild ${guildId}:`, e));
     }
   }
 
@@ -338,26 +399,11 @@ export class ModuleRegistry {
 
   private getDefaultRegistry(): DiscordResourceRegistry {
     return {
-      roles: [
-        { id: 'r-1', name: 'Server Owner', color: '#ff4444', membersCount: 1, permissions: ['ADMINISTRATOR'], position: 1 },
-        { id: 'r-2', name: 'Co-Owner', color: '#ff8800', membersCount: 2, permissions: ['ADMINISTRATOR'], position: 2 },
-        { id: 'r-3', name: 'Moderator Staff', color: '#33ccff', membersCount: 8, permissions: ['BAN_MEMBERS', 'KICK_MEMBERS', 'MANAGE_MESSAGES'], position: 3 },
-        { id: 'r-4', name: 'Community Assistant', color: '#99ff33', membersCount: 14, permissions: ['MANAGE_MESSAGES'], position: 4 },
-        { id: 'r-5', name: 'Verified Member', color: '#5533ff', membersCount: 842, permissions: [], position: 5 },
-        { id: 'r-6', name: 'Muted Quarantine', color: '#555555', membersCount: 0, permissions: [], position: 6 }
-      ],
-      channels: [
-        { id: 'c-1', name: 'general-chat', type: 'text', category: 'TEXT CHANNELS', permissions: [] },
-        { id: 'c-2', name: 'staff-discussion', type: 'text', category: 'STAFF ONLY', permissions: [] },
-        { id: 'c-3', name: 'audit-logs', type: 'text', category: 'STAFF ONLY', permissions: [] },
-        { id: 'c-4', name: 'security-alerts', type: 'text', category: 'STAFF ONLY', permissions: [] },
-        { id: 'c-5', name: 'welcome-lobby', type: 'text', category: 'WELCOME', permissions: [] },
-        { id: 'c-6', name: 'Support Tickets', type: 'category', category: '', permissions: [] }
-      ],
+      roles: [],
+      channels: [],
       emojis: [],
       stickers: [],
-      lastSyncTime: 'Just now'
+      lastSyncTime: 'Not synced yet'
     };
   }
 }
-

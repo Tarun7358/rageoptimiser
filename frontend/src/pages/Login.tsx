@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, ShieldAlert, Server, Activity, Database, Lock, User, Key, Globe, EyeOff, Eye, Loader2 } from 'lucide-react';
+import { Shield, ShieldAlert, Server, Activity, Database, Lock, Globe, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 // Discord brand SVG icon
@@ -12,14 +12,9 @@ const DiscordIcon = () => (
 
 export function Login() {
   const { login } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [status, setStatus] = useState<any>(null);
   const [discordLoading, setDiscordLoading] = useState(false);
-  
-  const [loadingState, setLoadingState] = useState<'idle' | 'authenticating' | 'permissions' | 'success'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+  const [status, setStatus] = useState<any>(null);
 
   // Check for OAuth errors in URL params
   useEffect(() => {
@@ -55,45 +50,7 @@ export function Login() {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username || !password) {
-      setErrorMsg('Please enter both username and password.');
-      return;
-    }
 
-    setErrorMsg('');
-    setLoadingState('authenticating');
-
-    try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed');
-      }
-
-      setLoadingState('permissions');
-      
-      // Simulate permission checking delay for premium UX
-      setTimeout(() => {
-        setLoadingState('success');
-        
-        setTimeout(() => {
-          login(data.token, { username: data.username, role: data.role });
-        }, 800);
-      }, 1000);
-
-    } catch (err: any) {
-      setErrorMsg(err.message);
-      setLoadingState('idle');
-    }
-  };
 
   return (
     <div className="login-container">
@@ -200,100 +157,34 @@ export function Login() {
             </div>
 
             <AnimatePresence mode="wait">
-              {loadingState === 'idle' ? (
-                <motion.div
-                  key="form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
-                >
-                  {errorMsg && (
-                    <div className="login-error">
-                      <ShieldAlert size={14} /> {errorMsg}
-                    </div>
-                  )}
-
-                  {/* Discord OAuth Button */}
-                  <button
-                    type="button"
-                    onClick={handleDiscordLogin}
-                    disabled={discordLoading}
-                    className="btn-discord-login"
-                  >
-                    {discordLoading ? (
-                      <Loader2 size={18} className="spin" />
-                    ) : (
-                      <DiscordIcon />
-                    )}
-                    {discordLoading ? 'Redirecting to Discord...' : 'Login with Discord'}
-                  </button>
-
-                  {/* OR Divider */}
-                  <div className="auth-divider">
-                    <span>or</span>
+              <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+              >
+                {errorMsg && (
+                  <div className="login-error">
+                    <ShieldAlert size={14} /> {errorMsg}
                   </div>
+                )}
 
-                  {/* Username/Password Form */}
-                  <form onSubmit={handleLogin} className="login-form">
-                    <div className="input-with-icon">
-                      <User size={16} />
-                      <input 
-                        type="text" 
-                        placeholder="Administrator Username" 
-                        value={username} 
-                        onChange={e => setUsername(e.target.value)} 
-                      />
-                    </div>
-                    <div className="input-with-icon">
-                      <Key size={16} />
-                      <input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="Access Password" 
-                        value={password} 
-                        onChange={e => setPassword(e.target.value)} 
-                      />
-                      <button 
-                        type="button" 
-                        className="reveal-btn" 
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    <button type="submit" className="login-submit">
-                      Authenticate Override
-                    </button>
-                  </form>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="login-loading-state"
+                {/* Discord OAuth Button */}
+                <button
+                  type="button"
+                  onClick={handleDiscordLogin}
+                  disabled={discordLoading}
+                  className="btn-discord-login"
                 >
-                  {loadingState === 'success' ? (
-                    <motion.div 
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="success-mark"
-                    >
-                      <Shield size={48} color="var(--color-success)" />
-                      <h3 style={{ color: 'var(--color-success)' }}>Authentication Successful</h3>
-                      <p>Redirecting to dashboard...</p>
-                    </motion.div>
+                  {discordLoading ? (
+                    <Loader2 size={18} className="spin" />
                   ) : (
-                    <div className="loading-steps">
-                      <Loader2 size={32} className="spin" color="var(--accent-primary)" />
-                      <h3 style={{ color: 'var(--text-primary)', marginTop: '20px' }}>
-                        {loadingState === 'authenticating' ? 'Verifying Credentials...' : 'Checking Permissions...'}
-                      </h3>
-                      <p style={{ color: 'var(--text-muted)' }}>Establishing secure session</p>
-                    </div>
+                    <DiscordIcon />
                   )}
-                </motion.div>
-              )}
+                  {discordLoading ? 'Redirecting to Discord...' : 'Login with Discord'}
+                </button>
+              </motion.div>
             </AnimatePresence>
 
             <div className="login-footer">

@@ -281,8 +281,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       const db = Database.getDb();
       if (!db) return res.json([]);
       
-      const snapshot = await db.collection('approvals').orderBy('joinedAt', 'desc').get();
-      const approvals = snapshot.docs.map(doc => doc.data() as IGuildApproval);
+      const approvals = await db.all<any>('SELECT * FROM approvals ORDER BY joinedAt DESC');
       res.json(approvals);
     } catch (e) {
       console.error(e);
@@ -311,31 +310,30 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     const { guildId } = req.params;
     
     try {
-      const docRef = db.collection('approvals').doc(guildId);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) return res.status(404).json({ error: 'Guild not found in approval system' });
+      const docSnap = await db.get<any>('SELECT status FROM approvals WHERE guildId = ?', [guildId]);
+      if (!docSnap) return res.status(404).json({ error: 'Guild not found in approval system' });
 
-      const updateData: Partial<IGuildApproval> = { lastUpdated: Date.now() };
+      let sql = '';
+      let params: any[] = [];
+      const now = Date.now();
 
       if (action === 'approve') {
-        updateData.status = 'Approved';
-        updateData.approvedAt = Date.now();
-        updateData.approvedBy = 'Dashboard Admin';
+        sql = 'UPDATE approvals SET status = ?, approvedAt = ?, approvedBy = ?, lastUpdated = ? WHERE guildId = ?';
+        params = ['Approved', now, 'Dashboard Admin', now, guildId];
       } else if (action === 'reject') {
-        updateData.status = 'Rejected';
-        updateData.rejectedAt = Date.now();
-        updateData.rejectionReason = reason;
+        sql = 'UPDATE approvals SET status = ?, rejectedAt = ?, rejectionReason = ?, lastUpdated = ? WHERE guildId = ?';
+        params = ['Rejected', now, reason || null, now, guildId];
       } else if (action === 'suspend') {
-        updateData.status = 'Suspended';
+        sql = 'UPDATE approvals SET status = ?, lastUpdated = ? WHERE guildId = ?';
+        params = ['Suspended', now, guildId];
       } else if (action === 'blacklist') {
-        updateData.status = 'Blacklisted';
-        updateData.blacklistedAt = Date.now();
-        updateData.notes = reason;
+        sql = 'UPDATE approvals SET status = ?, blacklistedAt = ?, notes = ?, lastUpdated = ? WHERE guildId = ?';
+        params = ['Blacklisted', now, reason || null, now, guildId];
       } else {
         return res.status(400).json({ error: 'Invalid action' });
       }
 
-      await docRef.update(updateData);
+      await db.run(sql, params);
       
       if (server.onApprovalAction) {
         await server.onApprovalAction(guildId, action, reason).catch(console.error);

@@ -24,7 +24,7 @@ export const VoiceProtectionRoutes = [
                 userId: raw.userId,
                 username: member.user.username,
                 avatar: member.user.avatar,
-                tag: member.user.tag,
+                tag: member.user.username,
                 channelId: raw.channelId,
                 channelName: channel ? channel.name : 'Unknown Channel'
               });

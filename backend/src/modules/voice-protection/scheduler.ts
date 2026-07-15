@@ -28,7 +28,7 @@ export async function runMuteCheck(client: any, guildId: string, config: any, co
           }
           if (context.logSyncEvent) {
             context.logSyncEvent(
-              `[Voice Protection] Automatically unmuted user ${member.user.tag} (Temporary mute expired).`,
+              `[Voice Protection] Automatically unmuted user ${member.user.username} (Temporary mute expired).`,
               'success'
             );
           }

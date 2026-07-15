@@ -16,7 +16,16 @@ export function BotWhitelist({ modules, registry, onUpdateConfig }: BotWhitelist
   const [newBotRole, setNewBotRole] = useState('');
   
   const mod = (modules || []).find(m => m.id === 'bot_whitelist');
-  const bots = mod?.config?.bots || [];
+  const bots = (mod?.config?.bots || [])
+    .filter((b: any) => 
+      b && 
+      b.userId && 
+      b.userId !== 'undefined' && 
+      b.userId !== 'null' && 
+      b.tag && 
+      b.tag !== 'undefined' && 
+      b.tag !== 'null'
+    );
 
   const handleToggleModule = async () => {
     if (!mod || !onUpdateConfig) return;
@@ -193,7 +202,7 @@ export function BotWhitelist({ modules, registry, onUpdateConfig }: BotWhitelist
                 <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>No bots whitelisted yet.</td>
               </tr>
             ) : bots.map((b: any) => (
-              <tr key={b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <tr key={b.userId || b.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '16px' }}>
                   <div style={{ fontWeight: 600 }}>{b.tag}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{b.userId}</div>

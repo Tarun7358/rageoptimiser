@@ -36,6 +36,7 @@ interface AuthContextType {
   guildApprovals: Record<string, ApprovalInfo>;
   activeGuildId: string | null;
   setActiveGuildId: (id: string | null) => void;
+  updateDiscordGuilds: (guilds: ManagedGuild[], approvals: Record<string, ApprovalInfo>) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -49,7 +50,8 @@ const AuthContext = createContext<AuthContextType>({
   managedGuilds: [],
   guildApprovals: {},
   activeGuildId: null,
-  setActiveGuildId: () => {}
+  setActiveGuildId: () => {},
+  updateDiscordGuilds: () => {}
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -108,6 +110,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('cn_guild_approvals', JSON.stringify(approvals));
   };
 
+  const updateDiscordGuilds = (guilds: ManagedGuild[], approvals: Record<string, ApprovalInfo>) => {
+    setManagedGuilds(guilds);
+    setGuildApprovals(approvals);
+    localStorage.setItem('cn_managed_guilds', JSON.stringify(guilds));
+    localStorage.setItem('cn_guild_approvals', JSON.stringify(approvals));
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -122,16 +131,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('cn_elevated_token');
   };
 
-  // Simple token expiration check
+  // H-6 FIX: Check token expiry both on mount/change AND periodically so a session
+  // that expires while the browser is open automatically logs the user out.
   useEffect(() => {
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.exp && payload.exp * 1000 < Date.now()) logout();
-      } catch {
-        logout();
+    const checkExpiry = () => {
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.exp && payload.exp * 1000 < Date.now()) logout();
+        } catch {
+          logout();
+        }
       }
-    }
+    };
+
+    checkExpiry(); // Check immediately on token change
+    const intervalId = setInterval(checkExpiry, 60 * 1000); // Re-check every 60 seconds
+    return () => clearInterval(intervalId);
   }, [token]);
 
   return (
@@ -139,7 +155,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       token, user, isAuthenticated: !!token,
       login, loginDiscord, logout,
       requireElevation,
-      managedGuilds, guildApprovals, activeGuildId, setActiveGuildId
+      managedGuilds, guildApprovals, activeGuildId, setActiveGuildId,
+      updateDiscordGuilds
     }}>
       {children}
     </AuthContext.Provider>

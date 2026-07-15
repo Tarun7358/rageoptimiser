@@ -21,7 +21,7 @@ import { Automation } from './pages/Automation';
 import { Logging } from './pages/Logging';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
-import { OwnerPanel } from './pages/OwnerPanel';
+import SocialUpdates from './pages/SocialUpdates';
 import { Tickets } from './pages/Tickets';
 import { Verification } from './pages/Verification';
 import { Backups } from './pages/Backups';
@@ -37,8 +37,8 @@ import { WhitelistActivity } from './pages/whitelist/Activity';
 import { WhitelistAudit } from './pages/whitelist/AuditLogs';
 import { WhitelistSettings } from './pages/whitelist/Settings';
 import { Incidents } from './pages/Incidents';
-import { ApprovalCenter } from './pages/ApprovalCenter';
 import { PublicDashboard } from './pages/PublicDashboard';
+
 import { Automod } from './pages/Automod';
 import { Download } from './pages/Download';
 import { Blacklist } from './pages/Blacklist';
@@ -219,6 +219,38 @@ function App() {
             onUpdateConfig={updateModuleConfig}
           />
         );
+      // H-1 FIX: Accept both 'social_updates' (sidebar ID / module ID) and
+      // legacy 'social-updates' deep-link strings so navigation always works.
+      case 'social_updates':
+      case 'social-updates':
+        return (
+          <SocialUpdates
+            registry={registry}
+            modules={modules}
+            updateModuleConfig={updateModuleConfig}
+            addSyncLog={(msg, type) => triggerToast(msg, type === 'warn' ? 'warning' : type as any)}
+          />
+        );
+      case 'social-youtube':
+        return (
+          <SocialUpdates
+            initialTab="youtube"
+            registry={registry}
+            modules={modules}
+            updateModuleConfig={updateModuleConfig}
+            addSyncLog={(msg, type) => triggerToast(msg, type === 'warn' ? 'warning' : type as any)}
+          />
+        );
+      case 'social-instagram':
+        return (
+          <SocialUpdates
+            initialTab="instagram"
+            registry={registry}
+            modules={modules}
+            updateModuleConfig={updateModuleConfig}
+            addSyncLog={(msg, type) => triggerToast(msg, type === 'warn' ? 'warning' : type as any)}
+          />
+        );
       case 'logs':
         return (
           <Logging
@@ -269,16 +301,10 @@ function App() {
             musicPlayerState={musicPlayerState}
           />
         );
-      case 'owner':
-        return (
-          <OwnerPanel
-            onSaveConfig={triggerToast}
-            onManualTrigger={pushManualEvent}
-            globalSettings={globalSettings}
-          />
-        );
+
       case 'roles':
-        return <Roles />;
+        // M-10 FIX: Pass required props to Roles page
+        return <Roles modules={modules} registry={registry} onUpdateConfig={updateModuleConfig} />;
       case 'whitelist-overview':
         return <WhitelistOverview modules={modules} registry={registry} onNavigate={handleNavigate} />;
       case 'whitelist-bots':
@@ -329,20 +355,7 @@ function App() {
             onUpdateConfig={updateModuleConfig}
           />
         );
-      case 'approval':
-        return (
-          <ApprovalCenter
-            notifications={notifications}
-            latency={latency}
-            uptime={uptime}
-            isLive={isLive}
-            onToggleLive={() => setIsLive(!isLive)}
-            onMarkAllRead={markAllNotificationsRead}
-            onClearNotifications={clearNotifications}
-            onOpenSearch={() => setSearchOpen(true)}
-            modules={modules}
-          />
-        );
+
       case 'blacklist':
         return (
           <Blacklist
@@ -403,22 +416,11 @@ function App() {
             onUpdateConfig={updateModuleConfig}
           />
         );
-      case 'logging':
-        return (
-          <Logging
-            onSaveConfig={triggerToast}
-            onManualTrigger={pushManualEvent}
-            modules={modules}
-            registry={registry}
-            onUpdateConfig={updateModuleConfig}
-          />
-        );
-      case 'bot_whitelist':
-        return <BotWhitelist modules={modules} registry={registry} />;
-      case 'member_whitelist':
-        return <MemberWhitelist modules={modules} registry={registry} />;
-      case 'role_whitelist':
-        return <RoleWhitelist modules={modules} registry={registry} />;
+      // C-5 FIX: Removed duplicate 'logging' case — 'logs' (lines above) is
+      // the canonical route that matches the sidebar nav item ID.
+      // C-6 FIX: Removed dead bot_whitelist/member_whitelist/role_whitelist cases.
+      // These were unreachable (sidebar uses 'whitelist-bots' etc.) AND missing
+      // the required onUpdateConfig prop which would cause a crash if reached.
       default:
         return (
           <DashboardHome

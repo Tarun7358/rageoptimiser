@@ -142,7 +142,7 @@ export const RemindersManifest: ModuleManifest = {
           const reminder: IReminder = {
             id: `rm_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
             userId: interaction.user.id,
-            userTag: interaction.user.tag,
+            userTag: interaction.user.username,
             guildId: interaction.guildId || undefined,
             channelId: interaction.channelId,
             message,
@@ -289,7 +289,7 @@ export const RemindersManifest: ModuleManifest = {
         if (client && userId) {
           try {
             const u = await client.users.fetch(userId).catch(() => null);
-            if (u) userTag = u.tag;
+            if (u) userTag = u.username;
           } catch {}
         }
 

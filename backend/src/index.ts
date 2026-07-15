@@ -1,3 +1,11 @@
+// C-1 FIX: dotenv MUST be configured before any ES module-level code
+// that reads process.env. Using createRequire so it runs synchronously
+// at the very top before any other imports resolve their env reads.
+import { createRequire } from 'module';
+const _require = createRequire(import.meta.url);
+const _dotenv = _require('dotenv');
+_dotenv.config();
+
 if (process.stdout && (process.stdout as any)._handle && typeof (process.stdout as any)._handle.setBlocking === 'function') {
   (process.stdout as any)._handle.setBlocking(true);
 }
@@ -43,9 +51,11 @@ import { BulkOpsManifest } from './modules/bulk_ops/manifest.js';
 import { DiagnosticsManifest } from './modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from './modules/voice-protection/index.js';
 import { JoinRoleAssignmentGuardManifest } from './modules/join-role-guard/manifest.js';
+import { SocialUpdatesManifest } from './modules/social-updates/manifest.js';
 
 
 
+// dotenv already loaded at module top — this secondary call is a no-op but kept for safety
 dotenv.config();
 
 // All manifests in one place for easy iteration
@@ -78,6 +88,7 @@ export const ALL_MANIFESTS = [
   DiagnosticsManifest,
   VoiceProtectionManifest,
   JoinRoleAssignmentGuardManifest,
+  SocialUpdatesManifest,
 ];
 
 // Web-server excluded manifests (no routes needed for some)
@@ -157,7 +168,7 @@ async function bootstrap() {
     gateway.registerModuleManifests(ALL_MANIFESTS);
 
     gateway.connect();
-    console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules (${ALL_MANIFESTS.length - 18} new).`);
+    console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules registered.`);
   } catch (error) {
     console.error('❌ Critical bootstrap error:', error);
     process.exit(1);

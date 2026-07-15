@@ -9,7 +9,7 @@ export async function isMemberImmune(member: any, config: any, context?: any): P
     // Fallback if context is not supplied (e.g. from tests)
     if (member.id === member.guild.ownerId) return true;
     if (config.whitelistedUsers?.includes(member.id)) return true;
-    if (config.whitelistedRoles?.some((rId: string) => member.roles.cache.has(rId))) return true;
+    if (config.whitelistedRoles?.some((rId: string) => rId && member.roles?.cache?.has(rId))) return true;
     return false;
   }
   return checkBypassImmunity(member.id, member.guild, context, 'voice_protection');
@@ -83,7 +83,7 @@ export async function executePunishment(
         await member.voice.setMute(true, 'Voice Protection: Excessive volume detected').catch(() => {});
       }
     } catch (err) {
-      console.error(`[Voice Protection] Failed to server-mute member ${member.user.tag}:`, err);
+      console.error(`[Voice Protection] Failed to server-mute member ${member.user.username}:`, err);
     }
   }
 

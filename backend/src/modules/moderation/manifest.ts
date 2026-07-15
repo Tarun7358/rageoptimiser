@@ -1,19 +1,46 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
+import { Database } from '../../core/Database.js';
 
-const WARNINGS_FILE = path.join(process.cwd(), 'src', 'warnings.json');
-
-function loadWarnings(): Record<string, any[]> {
-  try {
-    if (fs.existsSync(WARNINGS_FILE)) return JSON.parse(fs.readFileSync(WARNINGS_FILE, 'utf-8'));
-  } catch {}
-  return {};
+// Safe display name helper — user.username is deprecated in new Discord username system
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
 }
 
-function saveWarnings(data: Record<string, any[]>) {
-  try { fs.writeFileSync(WARNINGS_FILE, JSON.stringify(data, null, 2)); } catch {}
+// Firestore-backed warnings helpers — stored under guild_warnings/{guildId}/users/{userId}
+async function loadUserWarnings(guildId: string, userId: string): Promise<any[]> {
+  try {
+    const db = Database.getDb();
+    if (!db) return [];
+    const row = await db.get<any>('SELECT warnings FROM guild_warnings WHERE guildId = ? AND userId = ?', [guildId, userId]);
+    return row ? (JSON.parse(row.warnings || '[]')) : [];
+  } catch (e) {
+    console.error('[Moderation] Failed to load warnings from SQLite:', e);
+    return [];
+  }
+}
+
+async function saveUserWarnings(guildId: string, userId: string, warnings: any[]): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      'INSERT OR REPLACE INTO guild_warnings (guildId, userId, warnings) VALUES (?, ?, ?)',
+      [guildId, userId, JSON.stringify(warnings)]
+    );
+  } catch (e) {
+    console.error('[Moderation] Failed to save warnings to SQLite:', e);
+  }
+}
+
+async function clearUserWarnings(guildId: string, userId: string): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run('DELETE FROM guild_warnings WHERE guildId = ? AND userId = ?', [guildId, userId]);
+  } catch (e) {
+    console.error('[Moderation] Failed to clear warnings from SQLite:', e);
+  }
 }
 
 export const ModerationManifest: ModuleManifest = {
@@ -348,12 +375,12 @@ export const ModerationManifest: ModuleManifest = {
           return interaction.reply({ embeds: [errEmbed], flags: 64 });
         }
         const user = interaction.options.getUser('user');
-        const reason = interaction.options.getString('reason');
-        
-        const warnsData = loadWarnings();
-        if (!warnsData[user.id]) warnsData[user.id] = [];
-        warnsData[user.id].push({ reason, date: new Date().toISOString(), by: interaction.user.id });
-        saveWarnings(warnsData);
+        const reason = interaction.options.getString('reason') || 'No reason provided';
+        const guildId = interaction.guildId;
+
+        const warnings = await loadUserWarnings(guildId, user.id);
+        warnings.push({ reason, date: new Date().toISOString(), by: interaction.user.id, byTag: userTag(interaction.user) });
+        await saveUserWarnings(guildId, user.id, warnings);
 
         const successEmbed = new EmbedBuilder()
           .setTitle('⚠️ Security Action: Formal Notification Issued')
@@ -361,7 +388,8 @@ export const ModerationManifest: ModuleManifest = {
           .addFields(
             { name: 'Target Account', value: `${user} (${user.id})`, inline: true },
             { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-            { name: 'Warning Reason', value: reason }
+            { name: 'Warning Reason', value: reason },
+            { name: 'Total Warnings', value: `\`${warnings.length}\``, inline: true }
           )
           .setColor('#eab308')
           .setTimestamp()
@@ -374,11 +402,11 @@ export const ModerationManifest: ModuleManifest = {
       name: 'command_warnings',
       handler: async (client: any, interaction: any, context: any) => {
         const user = interaction.options.getUser('user');
-        const warnsData = loadWarnings();
-        const userWarns = warnsData[user.id] || [];
+        const guildId = interaction.guildId;
+        const userWarns = await loadUserWarnings(guildId, user.id);
         
         const embed = new EmbedBuilder()
-          .setTitle(`📜 Infraction Warning Log: ${user.tag}`)
+          .setTitle(`📜 Infraction Warning Log: ${userTag(user)}`)
           .setColor('#4f8cff')
           .setTimestamp()
           .setFooter({ text: 'Rage Optimiser • Infraction Logs' });
@@ -388,7 +416,7 @@ export const ModerationManifest: ModuleManifest = {
           return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
-        const lines = userWarns.map((w, i) => `**${i+1}.** ${w.reason} (by <@${w.by}>) - <t:${Math.floor(new Date(w.date).getTime()/1000)}:d>`);
+        const lines = userWarns.map((w: any, i: number) => `**${i+1}.** ${w.reason} (by <@${w.by}>) - <t:${Math.floor(new Date(w.date).getTime()/1000)}:d>`);
         embed.setDescription(lines.join('\n'));
         await interaction.reply({ embeds: [embed], flags: 64 });
       }
@@ -405,9 +433,8 @@ export const ModerationManifest: ModuleManifest = {
           return interaction.reply({ embeds: [errEmbed], flags: 64 });
         }
         const user = interaction.options.getUser('user');
-        const warnsData = loadWarnings();
-        delete warnsData[user.id];
-        saveWarnings(warnsData);
+        const guildId = interaction.guildId;
+        await clearUserWarnings(guildId, user.id);
 
         const successEmbed = new EmbedBuilder()
           .setTitle('✅ Warning Logs Revoked')
@@ -456,7 +483,7 @@ export const ModerationManifest: ModuleManifest = {
             .setTimestamp()
             .setFooter({ text: 'Rage Optimiser • Security System' });
           await interaction.reply({ embeds: [successEmbed], flags: 64 });
-          context.logSyncEvent(`Moderation: ${interaction.user.tag} purged ${amount} messages in #${interaction.channel.name}.`, 'info');
+          context.logSyncEvent(`Moderation: ${interaction.user.username} purged ${amount} messages in #${interaction.channel.name}.`, 'info');
         } catch (e) {
           const errEmbed = new EmbedBuilder()
             .setTitle('❌ Bulk Deletion Failed')
@@ -491,7 +518,7 @@ export const ModerationManifest: ModuleManifest = {
             .setTimestamp()
             .setFooter({ text: 'Rage Optimiser • Security System' });
           await interaction.reply({ embeds: [successEmbed] });
-          context.logSyncEvent(`Moderation: ${interaction.user.tag} locked #${interaction.channel.name}.`, 'warn');
+          context.logSyncEvent(`Moderation: ${interaction.user.username} locked #${interaction.channel.name}.`, 'warn');
         } catch (e) {
           const errEmbed = new EmbedBuilder()
             .setTitle('❌ Lockdown Execution Failed')
@@ -526,7 +553,7 @@ export const ModerationManifest: ModuleManifest = {
             .setTimestamp()
             .setFooter({ text: 'Rage Optimiser • Security System' });
           await interaction.reply({ embeds: [successEmbed] });
-          context.logSyncEvent(`Moderation: ${interaction.user.tag} unlocked #${interaction.channel.name}.`, 'success');
+          context.logSyncEvent(`Moderation: ${interaction.user.username} unlocked #${interaction.channel.name}.`, 'success');
         } catch (e) {
           const errEmbed = new EmbedBuilder()
             .setTitle('❌ Unlock Execution Failed')
@@ -703,7 +730,7 @@ export const ModerationManifest: ModuleManifest = {
 
           setTimeout(async () => {
             await interaction.guild.members.unban(member.user.id, 'Tempban duration expired.').catch(() => {});
-            context.logSyncEvent(`Moderation: Auto-unbanned ${member.user.tag} (tempban expired).`, 'success');
+            context.logSyncEvent(`Moderation: Auto-unbanned ${member.user.username} (tempban expired).`, 'success');
           }, ms);
         } catch (e) {
           const errEmbed = new EmbedBuilder()
@@ -763,10 +790,10 @@ export const ModerationManifest: ModuleManifest = {
       name: 'command_history',
       handler: async (client: any, interaction: any, context: any) => {
         const user = interaction.options.getUser('user');
-        const warnsData = loadWarnings();
-        const userWarns = warnsData[user.id] || [];
+        const guildId = interaction.guildId;
+        const userWarns = await loadUserWarnings(guildId, user.id);
         const embed = new EmbedBuilder()
-          .setTitle(`📜 Infraction History: ${user.tag}`)
+          .setTitle(`📜 Infraction History: ${userTag(user)}`)
           .setDescription(`Recorded historical warnings and administrative offenses for the specified account.`)
           .setColor('#ff4444')
           .setTimestamp()
@@ -775,7 +802,7 @@ export const ModerationManifest: ModuleManifest = {
         if (userWarns.length === 0) {
           embed.setDescription('No infraction warnings have been registered for this user.');
         } else {
-          const lines = userWarns.map((w, i) => `**${i+1}.** Warning: ${w.reason} (by <@${w.by}>) - <t:${Math.floor(new Date(w.date).getTime()/1000)}:d>`);
+          const lines = userWarns.map((w: any, i: number) => `**${i+1}.** Warning: ${w.reason} (by <@${w.by}>) - <t:${Math.floor(new Date(w.date).getTime()/1000)}:d>`);
           embed.setDescription(lines.join('\n'));
         }
         await interaction.reply({ embeds: [embed], flags: 64 });
@@ -807,7 +834,9 @@ function hasModAccess(interaction: any, context: any): boolean {
 }
 
 function logModAction(guild: any, target: any, moderator: any, action: string, reason: string, context: any) {
-  context.logSyncEvent(`Moderation: ${moderator.tag} executed **${action}** on ${target.tag}. Reason: ${reason}`, 'warn');
+  const modName = moderator?.globalName ?? moderator?.username ?? moderator?.tag ?? moderator?.id ?? 'Unknown';
+  const targetName = target?.globalName ?? target?.username ?? target?.tag ?? target?.id ?? 'Unknown';
+  context.logSyncEvent(`Moderation: ${modName} executed **${action}** on ${targetName}. Reason: ${reason}`, 'warn');
   
   const modules = context.getModulesState ? context.getModulesState() : [];
   const modModule = modules.find((m: any) => m.id === 'moderation');
@@ -819,8 +848,8 @@ function logModAction(guild: any, target: any, moderator: any, action: string, r
         .setTitle(`🛡️ Moderation: ${action}`)
         .setColor('#ff4444')
         .addFields(
-          { name: 'Target', value: `${target} (${target.id})`, inline: true },
-          { name: 'Moderator', value: `${moderator} (${moderator.id})`, inline: true },
+          { name: 'Target', value: `<@${target?.id ?? 'unknown'}> (${targetName})`, inline: true },
+          { name: 'Moderator', value: `<@${moderator?.id ?? 'unknown'}> (${modName})`, inline: true },
           { name: 'Reason', value: reason }
         )
         .setTimestamp();

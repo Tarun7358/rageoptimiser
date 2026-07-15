@@ -25,7 +25,7 @@ export async function checkRoleAssignment(
   const joinedAt = newMember.joinedTimestamp;
   if (!joinedAt) {
     if (debugMode) {
-      console.log(`[JoinGuard Debug] [Guild ${newMember.guild.id}] Member ${newMember.user.tag} does not have a joined timestamp. Allowing check.`);
+      console.log(`[JoinGuard Debug] [Guild ${newMember.guild.id}] Member ${newMember.user.username} does not have a joined timestamp. Allowing check.`);
     }
     return 'ALLOW_CHECK';
   }
@@ -36,7 +36,7 @@ export async function checkRoleAssignment(
 
   if (!recentlyJoined) {
     if (debugMode) {
-      console.log(`[JoinGuard Debug] [Guild ${newMember.guild.id}] Member ${newMember.user.tag} is outside the join grace period (${Math.round(elapsedMs / 1000)}s > ${gracePeriodSeconds}s). Allowing check.`);
+      console.log(`[JoinGuard Debug] [Guild ${newMember.guild.id}] Member ${newMember.user.username} is outside the join grace period (${Math.round(elapsedMs / 1000)}s > ${gracePeriodSeconds}s). Allowing check.`);
     }
     return 'ALLOW_CHECK';
   }
@@ -78,14 +78,14 @@ export async function checkRoleAssignment(
     // If we have dangerous permissions, we MUST NOT ignore even if there is no audit log entry
     if (hasDangerousPerms) {
       if (debugMode) {
-        console.log(`[JoinGuard Debug] [Guild ${guild.id}] No audit log entry, but dangerous permissions are being granted to ${newMember.user.tag}. Allowing check.`);
+        console.log(`[JoinGuard Debug] [Guild ${guild.id}] No audit log entry, but dangerous permissions are being granted to ${newMember.user.username}. Allowing check.`);
       }
       return 'ALLOW_CHECK';
     }
 
     if (ignoreOnboarding || ignoreScreening) {
       if (debugMode) {
-        console.log(`[JoinGuard Debug] [Guild ${guild.id}] No matching recent audit log found for ${newMember.user.tag} (inside grace period). Assuming onboarding/auto-role. Ignoring event.`);
+        console.log(`[JoinGuard Debug] [Guild ${guild.id}] No matching recent audit log found for ${newMember.user.username} (inside grace period). Assuming onboarding/auto-role. Ignoring event.`);
       }
       return 'IGNORE_EVENT';
     }
@@ -96,7 +96,7 @@ export async function checkRoleAssignment(
   const executor = logEntry.executor;
   if (!executor) {
     if (debugMode) {
-      console.log(`[JoinGuard Debug] [Guild ${guild.id}] Audit log entry found but no executor present for ${newMember.user.tag}. Allowing check.`);
+      console.log(`[JoinGuard Debug] [Guild ${guild.id}] Audit log entry found but no executor present for ${newMember.user.username}. Allowing check.`);
     }
     return 'ALLOW_CHECK';
   }
@@ -105,7 +105,7 @@ export async function checkRoleAssignment(
   if (executor.id === client.user.id) {
     if (hasDangerousPerms) {
       if (debugMode) {
-        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Rage Optimiser assigned a role with dangerous permissions to ${newMember.user.tag}. Allowing check.`);
+        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Rage Optimiser assigned a role with dangerous permissions to ${newMember.user.username}. Allowing check.`);
       }
       return 'ALLOW_CHECK';
     }
@@ -121,17 +121,17 @@ export async function checkRoleAssignment(
     if (isTrusted && ignoreTrustedBots) {
       if (hasDangerousPerms) {
         if (debugMode) {
-          console.log(`[JoinGuard Debug] [Guild ${guild.id}] Trusted bot ${executor.tag} assigned a role with dangerous permissions to ${newMember.user.tag}. Allowing check.`);
+          console.log(`[JoinGuard Debug] [Guild ${guild.id}] Trusted bot ${executor.username} assigned a role with dangerous permissions to ${newMember.user.username}. Allowing check.`);
         }
         return 'ALLOW_CHECK';
       }
       if (debugMode) {
-        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is trusted bot ${executor.tag}. Ignoring event.`);
+        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is trusted bot ${executor.username}. Ignoring event.`);
       }
       return 'IGNORE_EVENT';
     } else {
       if (debugMode) {
-        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is untrusted bot ${executor.tag}. Allowing check.`);
+        console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is untrusted bot ${executor.username}. Allowing check.`);
       }
       return 'ALLOW_CHECK';
     }
@@ -142,13 +142,13 @@ export async function checkRoleAssignment(
   const isWhitelisted = await checkBypassImmunity(executor.id, guild, context, 'anti_role_grant');
   if (isWhitelisted) {
     if (debugMode) {
-      console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is whitelisted user ${executor.tag}. Allowing check.`);
+      console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is whitelisted user ${executor.username}. Allowing check.`);
     }
     return 'ALLOW_CHECK';
   }
 
   if (debugMode) {
-    console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is unknown/untrusted user ${executor.tag}. Allowing check.`);
+    console.log(`[JoinGuard Debug] [Guild ${guild.id}] Executor is unknown/untrusted user ${executor.username}. Allowing check.`);
   }
   return 'ALLOW_CHECK';
 }

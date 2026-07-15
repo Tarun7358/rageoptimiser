@@ -1,12 +1,138 @@
 import { Client, GatewayIntentBits, REST, Routes, PermissionFlagsBits, ChannelType, Events } from 'discord.js';
 import { joinVoiceChannel, getVoiceConnection, VoiceConnectionStatus } from '@discordjs/voice';
 import { DiscordResourceRegistry, ModuleManifest, ModuleState } from './types.js';
-import { IGuildApproval } from '../models/index.js';
 import { Database } from './Database.js';
-import { calculateRiskScore } from '../utils/riskScoring.js';
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import type { PublicFeedManager } from './PublicFeedManager.js';
 import { AnalyticsService } from './AnalyticsService.js';
+import { protections } from '../utils/whitelistCheck.js';
+
+export function wrapInteraction(interaction: any) {
+  if (!interaction) return interaction;
+  if (interaction._antigravity_wrapped) return interaction;
+  interaction._antigravity_wrapped = true;
+
+  const originalReply = interaction.reply ? interaction.reply.bind(interaction) : null;
+  const originalDeferReply = interaction.deferReply ? interaction.deferReply.bind(interaction) : null;
+  const originalEditReply = interaction.editReply ? interaction.editReply.bind(interaction) : null;
+  const originalFollowUp = interaction.followUp ? interaction.followUp.bind(interaction) : null;
+  const originalUpdate = interaction.update ? interaction.update.bind(interaction) : null;
+
+  if (originalDeferReply) {
+    interaction.deferReply = async function(options?: any) {
+      if (interaction.deferred || interaction.replied) return;
+      try {
+        return await originalDeferReply(options);
+      } catch (err: any) {
+        console.warn('[wrapInteraction] deferReply failed:', err.message);
+      }
+    };
+  }
+
+  if (originalReply) {
+    interaction.reply = async function(options?: any) {
+      if (interaction.deferred && originalEditReply) {
+        try {
+          return await originalEditReply(options);
+        } catch (err: any) {
+          if (originalFollowUp) {
+            try {
+              return await originalFollowUp(options);
+            } catch (e: any) {
+              console.warn('[wrapInteraction] reply (as followUp) failed:', e.message);
+            }
+          }
+        }
+      } else if (interaction.replied && originalFollowUp) {
+        try {
+          return await originalFollowUp(options);
+        } catch (err: any) {
+          console.warn('[wrapInteraction] reply (as followUp) failed:', err.message);
+        }
+      } else {
+        try {
+          return await originalReply(options);
+        } catch (err: any) {
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              console.warn('[wrapInteraction] reply fallback to editReply failed:', e.message);
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+  }
+
+  if (originalEditReply) {
+    interaction.editReply = async function(options?: any) {
+      if (!interaction.deferred && !interaction.replied && originalReply) {
+        try {
+          return await originalReply(options);
+        } catch (err: any) {
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              console.warn('[wrapInteraction] editReply fallback to originalEditReply failed:', e.message);
+            }
+          } else {
+            console.warn('[wrapInteraction] editReply (as reply) failed:', err.message);
+          }
+        }
+      } else {
+        try {
+          return await originalEditReply(options);
+        } catch (err: any) {
+          console.warn('[wrapInteraction] editReply failed:', err.message);
+        }
+      }
+    };
+  }
+
+  if (originalFollowUp) {
+    interaction.followUp = async function(options?: any) {
+      try {
+        return await originalFollowUp(options);
+      } catch (err: any) {
+        console.warn('[wrapInteraction] followUp failed:', err.message);
+      }
+    };
+  }
+
+  if (originalUpdate) {
+    interaction.update = async function(options?: any) {
+      if (interaction.deferred || interaction.replied) {
+        if (originalEditReply) {
+          try {
+            return await originalEditReply(options);
+          } catch (err: any) {
+            console.warn('[wrapInteraction] update (as editReply) failed:', err.message);
+          }
+        }
+      } else {
+        try {
+          return await originalUpdate(options);
+        } catch (err: any) {
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              console.warn('[wrapInteraction] update fallback to editReply failed:', e.message);
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+  }
+
+  return interaction;
+}
 
 export class Gateway {
   public client: Client;
@@ -71,7 +197,10 @@ export class Gateway {
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildPresences
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildBans,
+        GatewayIntentBits.GuildInvites,
+        GatewayIntentBits.GuildIntegrations
       ]
     });
 
@@ -130,11 +259,10 @@ export class Gateway {
 
   private setupListeners() {
     this.client.once(Events.ClientReady, async () => {
-      console.log(`Discord client connected as ${this.client.user?.tag}`);
-      this.logSyncEvent(`Discord gateway connected as ${this.client.user?.tag}`, 'success');
+      console.log(`Discord client connected as ${this.client.user?.username}`);
+      this.logSyncEvent(`Discord gateway connected as ${this.client.user?.username}`, 'success');
       await this.client.application?.fetch().catch(() => null);
       this.syncRegistry();
-      this.syncApprovals();
       
       // Deploy commands to all guilds the bot is currently in on startup.
       // Staggered with a 2-second delay between each guild to avoid burst rate limits
@@ -165,140 +293,45 @@ export class Gateway {
     });
 
     this.client.on('guildCreate', async (guild) => {
-      this.logSyncEvent(`Discord Event: Bot joined new guild "${guild.name}" (${guild.id}). Entering Pending Mode.`, 'warn');
-      
+      this.logSyncEvent(`Discord Event: Bot joined new guild "${guild.name}" (${guild.id}).`, 'success');
+
       // Deploy slash commands to the newly joined guild instantly
       await this.forceDeployCommands(guild.id).catch((err) => {
         console.error(`[Gateway] Failed to deploy commands for new guild ${guild.id}:`, err);
       });
 
+      // Send a welcome DM to the server owner
       try {
-        // OP 8 FIX: Do NOT call guild.members.fetch() here.
-        // It sends a REQUEST_GUILD_MEMBERS op 8 to Discord and causes rate limits.
-        // guild.memberCount is already populated from the guildCreate payload.
         const owner = await guild.fetchOwner().catch(() => null);
-        // Approximate bot count from cache (partial — only cached members)
-        const cachedBots = guild.members.cache.filter(m => m.user.bot).size;
-        const humanCount = guild.memberCount - cachedBots;
-
-        const { riskScore, riskLevel } = calculateRiskScore(guild);
-        
-        // Adjust risk score based on bot ratio
-        let finalRiskScore = riskScore;
-        if (guild.memberCount > 0) {
-          // Use cached bot count for ratio — close enough without a full members fetch
-          const botRatio = cachedBots / guild.memberCount;
-          if (botRatio > 0.5) finalRiskScore = Math.min(100, finalRiskScore + 30);
-          else if (botRatio > 0.3) finalRiskScore = Math.min(100, finalRiskScore + 15);
-        }
-
-        let finalRiskLevel = riskLevel;
-        if (finalRiskScore >= 75) finalRiskLevel = 'Critical';
-        else if (finalRiskScore >= 50) finalRiskLevel = 'High';
-        else if (finalRiskScore >= 25) finalRiskLevel = 'Medium';
-
-        const db = Database.getDb();
-        let isBlacklisted = false;
-
-        if (db) {
-          const docSnap = await db.collection('approvals').doc(guild.id).get();
-          if (docSnap.exists) {
-            const existing = docSnap.data() as IGuildApproval;
-            if (existing.status === 'Blacklisted') {
-              isBlacklisted = true;
-            }
-          }
-        }
-
-        if (isBlacklisted) {
-          await guild.leave();
-          this.logSyncEvent(`Left blacklisted guild "${guild.name}".`, 'warn');
-          return;
-        }
-
-        const approvalData = {
-          guildId: guild.id,
-          guildName: guild.name,
-          ownerId: owner?.id || 'Unknown',
-          ownerUsername: owner?.user?.tag || 'Unknown',
-          ownerAvatar: owner?.user?.displayAvatarURL() || '',
-          memberCount: guild.memberCount,
-          botCount: cachedBots,
-          humanCount,
-          verificationLevel: guild.verificationLevel,
-          premiumTier: guild.premiumTier,
-          premiumSubscriptionCount: guild.premiumSubscriptionCount || 0,
-          joinedAt: Date.now(),
-          riskScore: finalRiskScore,
-          riskLevel: finalRiskLevel,
-          status: 'Approved',
-          lastUpdated: Date.now()
-        };
-
-        if (db) {
-          await db.collection('approvals').doc(guild.id).set(approvalData, { merge: true });
-        }
-
-        // Notify Bot Owner (platform admin)
-        const ownerId = process.env.OWNER_ID || this.client.application?.owner?.id;
-        if (ownerId && ownerId !== '1508399161798819840') {
-          try {
-            const botOwner = await this.client.users.fetch(ownerId);
-            if (botOwner) {
-              const embed = new EmbedBuilder()
-                .setTitle('🛡️ New Server Registered')
-                .setDescription(`Rage Optimiser joined **${guild.name}**. The server has been auto-approved.`)
-                .addFields(
-                  { name: 'Guild ID', value: guild.id, inline: true },
-                  { name: 'Owner', value: `${owner?.user?.tag ?? 'Unknown'} (${owner?.id ?? 'Unknown'})`, inline: true },
-                  { name: 'Members', value: `${guild.memberCount} (${humanCount} Humans, ${cachedBots} Bots)`, inline: true },
-                  { name: 'Created At', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:R>`, inline: true },
-                  { name: 'Risk Level', value: `${finalRiskLevel} (Score: ${finalRiskScore})`, inline: true }
-                )
-                .setThumbnail(guild.iconURL() || null)
-                .setColor('#22C55E')
-                .setFooter({ text: 'Auto-Approved' });
-
-              await botOwner.send({ embeds: [embed] }).catch(() => {});
-            }
-          } catch (e) {
-            console.error('[Gateway] Failed to notify bot owner of new guild:', e);
-          }
-        }
-
         if (owner) {
-          try {
-            const musicClientId = process.env.MUSIC_CLIENT_ID || '1520323151928623125';
-            const musicPerms = process.env.MUSIC_BOT_PERMISSIONS || '36700160';
-            const musicInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${musicClientId}&permissions=${musicPerms}&scope=bot%20applications.commands&guild_id=${guild.id}`;
+          const musicClientId = process.env.MUSIC_CLIENT_ID || '1520323151928623125';
+          const musicPerms = process.env.MUSIC_BOT_PERMISSIONS || '36700160';
+          const musicInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${musicClientId}&permissions=${musicPerms}&scope=bot%20applications.commands&guild_id=${guild.id}`;
 
-            await owner.user.send({
-              embeds: [{
-                title: '👋 Thanks for inviting Rage Optimiser!',
-                description: `Your server **${guild.name}** has been registered and is now **Approved**.\nYou can configure all features immediately through your real-time dashboard.`,
-                fields: [
-                  {
-                    name: '⚙️ Configure the Bot',
-                    value: 'Use our real-time dashboard to set up security settings, verification, moderation, logging, levels, backups, and more!',
-                    inline: false
-                  },
-                  {
-                    name: '🎵 Add Rage Music Bot (Optional)',
-                    value: `Music features run on a **separate dedicated bot** for best performance.\nYou can invite it to your server using the link below:\n[Invite Rage Music to ${guild.name}](${musicInviteUrl})`,
-                    inline: false
-                  }
-                ],
-                color: 0x22c55e,
-                footer: { text: 'Rage Optimiser Enterprise Platform' },
-                timestamp: new Date().toISOString()
-              }]
-            }).catch(() => {});
-          } catch (e) {
-            console.error('[Gateway] Failed to DM guild owner about pending approval:', e);
-          }
+          await owner.user.send({
+            embeds: [{
+              title: '👋 Thanks for inviting Rage Optimiser!',
+              description: `Your server **${guild.name}** is now ready.\nYou can configure all features immediately through your real-time dashboard.`,
+              fields: [
+                {
+                  name: '⚙️ Configure the Bot',
+                  value: 'Use the real-time dashboard to set up security, moderation, logging, levels, backups, and more!',
+                  inline: false
+                },
+                {
+                  name: '🎵 Add Rage Music Bot (Optional)',
+                  value: `Music features run on a **separate dedicated bot** for best performance.\n[Invite Rage Music to ${guild.name}](${musicInviteUrl})`,
+                  inline: false
+                }
+              ],
+              color: 0x22c55e,
+              footer: { text: 'Rage Optimiser' },
+              timestamp: new Date().toISOString()
+            }]
+          }).catch(() => {});
         }
       } catch (e) {
-        console.error('[Gateway] Error handling guildCreate:', e);
+        console.error('[Gateway] Error handling guildCreate welcome DM:', e);
       }
     });
 
@@ -370,7 +403,7 @@ export class Gateway {
 
     this.client.on('guildMemberAdd', (member) => {
       const guildId = member.guild.id;
-      this.logSyncEvent(guildId, `Discord Event: User "${member.user.tag}" joined guild.`, 'info');
+      this.logSyncEvent(guildId, `Discord Event: User "${member.user.username}" joined guild.`, 'info');
       this.syncRegistry(guildId);
       this.dispatchEvent('guildMemberAdd', member);
       this.publicFeed?.addEvent('Members', `**${member.user.username}** joined the server`);
@@ -379,7 +412,7 @@ export class Gateway {
 
     this.client.on('guildMemberRemove', (member) => {
       const guildId = member.guild.id;
-      this.logSyncEvent(guildId, `Discord Event: User "${member.user.tag}" left guild.`, 'info');
+      this.logSyncEvent(guildId, `Discord Event: User "${member.user.username}" left guild.`, 'info');
       this.syncRegistry(guildId);
       this.dispatchEvent('guildMemberRemove', member);
       this.publicFeed?.addEvent('Members', `**${member.user.username}** left the server`);
@@ -395,6 +428,9 @@ export class Gateway {
     });
 
     this.client.on('messageCreate', (message) => {
+      if (process.env.DEBUG === 'true') {
+        console.log(`[Gateway] messageCreate received message from ${message.author?.username} (${message.author?.id}) in guild ${message.guildId}, channel ${message.channelId}. Content length: ${message.content?.length || 0}. Mentions count: ${message.mentions?.users?.size || 0}`);
+      }
       this.dispatchEvent('messageCreate', message);
       if (message.guildId && !message.author?.bot) {
         AnalyticsService.incrementMetric(message.guildId, 'messages').catch(() => {});
@@ -403,20 +439,24 @@ export class Gateway {
         if (message.mentions.users.size > 0 && message.guild) {
           message.mentions.users.forEach(async (user) => {
             // Do not notify self or other bots
-            if (user.id === message.author.id || user.bot) return;
+            if (user.id === message.author.id || user.bot) {
+              console.log(`[Gateway] Skipping mention notification for user ${user.username} (self-mention or bot)`);
+              return;
+            }
 
+            console.log(`[Gateway] Processing mention DM for ${user.username} (${user.id})`);
             try {
               const guildIcon = message.guild?.iconURL({ size: 256 }) || null;
               
               const dmEmbed = new EmbedBuilder()
                 .setTitle('🔔 New Mention Alert')
-                .setDescription(`You have been mentioned by **${message.author.tag}** in **${message.guild?.name}**!`)
+                .setDescription(`You have been mentioned by **${message.author.username}** in **${message.guild?.name}**!`)
                 .setColor('#7C5CFC')
                 .setThumbnail(guildIcon)
                 .addFields(
                   { name: '📍 Server', value: `\`${message.guild?.name}\``, inline: true },
                   { name: '💬 Channel', value: `${message.channel.toString()}`, inline: true },
-                  { name: '👤 Mentioned By', value: `${message.author.toString()} (\`${message.author.tag}\`)`, inline: false },
+                  { name: '👤 Mentioned By', value: `${message.author.toString()} (\`${message.author.username}\`)`, inline: false },
                   { name: '📝 Message Context', value: message.content ? (message.content.length > 800 ? message.content.substring(0, 800) + '...' : message.content) : '*(No text content)*', inline: false }
                 )
                 .setFooter({ text: 'Rage Optimiser Premium • Real-time Alerts', iconURL: this.client.user?.displayAvatarURL() })
@@ -430,8 +470,9 @@ export class Gateway {
               const row = new ActionRowBuilder<ButtonBuilder>().addComponents(jumpButton);
 
               await user.send({ embeds: [dmEmbed], components: [row] });
+              console.log(`[Gateway] Successfully sent mention DM to ${user.username}`);
             } catch (err) {
-              // Silently catch errors if user has DMs closed or blocked the bot
+              console.error(`[Gateway] Failed to send mention DM to ${user.username}:`, err);
             }
           });
         }
@@ -499,6 +540,18 @@ export class Gateway {
       this.dispatchEvent('guildBanRemove', ban);
     });
 
+    this.client.on('inviteCreate', (invite) => {
+      this.dispatchEvent('inviteCreate', invite);
+    });
+
+    this.client.on('inviteDelete', (invite) => {
+      this.dispatchEvent('inviteDelete', invite);
+    });
+
+    this.client.on('guildIntegrationsUpdate', (guild) => {
+      this.dispatchEvent('guildIntegrationsUpdate', guild);
+    });
+
     this.client.on('roleCreate', (role) => {
       // BUG #7 FIX: Pass the guild ID so only this guild's registry is refreshed,
       // not ALL guilds the bot is in (which was very expensive).
@@ -547,12 +600,26 @@ export class Gateway {
     });
 
     // Slash Command & Component Button routing
-    this.client.on('interactionCreate', async (interaction) => {
+    this.client.on('interactionCreate', async (rawInteraction) => {
+      const interaction = wrapInteraction(rawInteraction);
+
+      if (interaction.isAutocomplete()) {
+        const focusedValue = interaction.options.getFocused();
+        const filtered = protections.filter(p => 
+          p.label.toLowerCase().includes(focusedValue.toLowerCase()) || 
+          p.key.toLowerCase().includes(focusedValue.toLowerCase())
+        );
+        await interaction.respond(
+          filtered.slice(0, 25).map(choice => ({ name: choice.label, value: choice.key }))
+        ).catch(console.error);
+        return;
+      }
 
       if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
         // SYSTEM MAINTENANCE MODE CHECK — per-guild owner bypass (no global OWNER_ID)
-        const settings = this.getGlobalSettings();
+        // H-2 FIX: pass guildId so each guild's settings are checked, not always 'default_guild'
+        const settings = this.getGlobalSettings(interaction.guildId || undefined);
         if (settings.maintenanceMode) {
           const isOwner = interaction.user.id === interaction.guild?.ownerId || 
                           interaction.user.id === this.client.application?.owner?.id ||
@@ -563,7 +630,7 @@ export class Gateway {
              isAdmin = (member.permissions as any).has(PermissionFlagsBits.Administrator);
           }
           if (!isAdmin) {
-             this.logSyncEvent(`Blocked command /${commandName} from ${interaction.user.tag} due to active Maintenance Mode.`, 'warn');
+             this.logSyncEvent(`Blocked command /${commandName} from ${interaction.user.username} due to active Maintenance Mode.`, 'warn');
              if (interaction.isRepliable()) {
                await interaction.reply({
                  content: '🚧 **System Maintenance Mode Active**\nThe server is currently in lockdown mode. All public bot commands are temporarily disabled. Please check back later.',
@@ -589,26 +656,44 @@ export class Gateway {
               const eventObj = manifest.events?.find(e => e.name === `command_${commandName}`);
               if (eventObj) {
                 try {
+                  const cmdGuildId = interaction.guildId || undefined;
                   await eventObj.handler(this.client, interaction, { 
+                    guildId: cmdGuildId,
+                    client: this.client,
                     logSyncEvent: (msgOrGuildId: string | undefined, msgOrType?: string, type?: 'info' | 'warn' | 'success') => {
                       if (type !== undefined) {
                         this.logSyncEvent(msgOrGuildId, msgOrType, type);
                       } else {
-                        this.logSyncEvent(interaction.guildId || undefined, msgOrGuildId, msgOrType as any);
+                        this.logSyncEvent(cmdGuildId, msgOrGuildId, msgOrType as any);
                       }
                     },
-                    getModulesState: () => this.getModulesState(interaction.guildId || undefined),
-                    getRegistry: () => this.getRegistry(interaction.guildId || undefined),
-                    handleApprovalAction: (g: string, a: string, r?: string) => this.handleApprovalAction(g, a, r),
-                    updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(interaction.guildId || undefined, id, config)
+                    getModulesState: () => this.getModulesState(cmdGuildId),
+                    getRegistry: () => this.getRegistry(cmdGuildId),
+                    updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(cmdGuildId, id, config),
+                    registry: {
+                      logWhitelistAudit: (guildId: string | undefined, audit: any) => {
+                        // Forward to the real registry via the internal logSyncEvent broadcast
+                        const gId = guildId || cmdGuildId || process.env.GUILD_ID;
+                        this.logSyncEvent(gId, `[Audit] ${audit.action || 'whitelist change'}`, 'info');
+                      },
+                      logWhitelistActivity: (guildId: string | undefined, activity: any) => {
+                        const gId = guildId || cmdGuildId || process.env.GUILD_ID;
+                        this.logSyncEvent(gId, `[Activity] ${activity.action || ''} ${activity.target || ''}`.trim(), 'info');
+                      }
+                    }
                   });
                   return;
                 } catch (err) {
                   console.error(`Error executing command ${commandName} handler:`, err);
-                  await interaction.reply({
+                  const replyPayload = {
                     content: '❌ An internal error occurred while executing this command.',
                     flags: 64
-                  });
+                  };
+                  if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp(replyPayload).catch(() => {});
+                  } else {
+                    await interaction.reply(replyPayload).catch(() => {});
+                  }
                   return;
                 }
               }
@@ -616,10 +701,15 @@ export class Gateway {
           }
         }
 
-        await interaction.reply({
+        const replyPayload = {
           content: `❌ Command /${commandName} is registered but no module handler is currently active.`,
           flags: 64
-        });
+        };
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(replyPayload).catch(() => {});
+        } else {
+          await interaction.reply(replyPayload).catch(() => {});
+        }
       } else if (interaction.isButton()) {
         this.dispatchEvent(`button_${interaction.customId}`, interaction);
       } else if (interaction.isAnySelectMenu()) {
@@ -707,20 +797,26 @@ export class Gateway {
       const quarantineRoleId = secMod.config.quarantineRoleId;
       let currentQueue = secMod.config.quarantinedUsers || [];
 
-      // OP 8 FIX: Use guild.members.cache for the quarantine role check.
-      // guild.members.fetch() (no args) fetches ALL members via op 8, causing rate limits.
-      // Since the bot has GuildMembers intent, the cache is continuously updated.
-      const members = guild.members.cache;
-      const membersWithRole = members.filter(m => m.roles.cache.has(quarantineRoleId));
+      // Fetch only the tracked quarantined members to ensure their role cache is fresh.
+      // This is extremely efficient and avoids gateway rate limits.
+      const trackedIds = currentQueue.map((u: any) => u.userId).filter(Boolean);
+      if (trackedIds.length > 0) {
+        await guild.members.fetch({ user: trackedIds }).catch(() => null);
+      }
 
-      let newQueue = currentQueue.filter((u: any) => members.has(u.userId) ? members.get(u.userId)!.roles.cache.has(quarantineRoleId) : true);
+      const membersWithRole = guild.members.cache.filter(m => m.roles.cache.has(quarantineRoleId));
+
+      let newQueue = currentQueue.filter((u: any) => {
+        const member = guild.members.cache.get(u.userId);
+        return member ? member.roles.cache.has(quarantineRoleId) : true;
+      });
 
       let changed = false;
       for (const [memberId, member] of membersWithRole) {
         if (!newQueue.find((u: any) => u.userId === memberId)) {
           newQueue.push({
             id: `q-${Date.now()}-${memberId}`,
-            tag: member.user.tag,
+            tag: member.user.username,
             userId: memberId,
             reason: 'Auto-Synced from Discord',
             time: new Date().toISOString(),
@@ -852,7 +948,16 @@ export class Gateway {
             getModulesState: () => this.getModulesState(guildId),
             getRegistry: () => this.getRegistry(guildId),
             updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(guildId, id, config),
-            client: this.client
+            triggerEmergencyLock: (gId?: string) => this.triggerEmergencyLock(gId || guildId),
+            client: this.client,
+            registry: {
+              logWhitelistAudit: (gId: string | undefined, audit: any) => {
+                this.logSyncEvent(gId || guildId, `[Audit] ${audit.action || 'whitelist change'}`, 'info');
+              },
+              logWhitelistActivity: (gId: string | undefined, activity: any) => {
+                this.logSyncEvent(gId || guildId, `[Activity] ${activity.action || ''} ${activity.target || ''}`.trim(), 'info');
+              }
+            }
           };
 
           const handlerArgs = [this.client, ...args];
@@ -1101,92 +1206,5 @@ export class Gateway {
     };
   }
 
-  private async syncApprovals() {
-    const db = Database.getDb();
-    if (!db) return;
-
-    for (const guild of this.client.guilds.cache.values()) {
-      if (guild.id === process.env.GUILD_ID) continue; // Skip main server
-
-      try {
-        const docRef = db.collection('approvals').doc(guild.id);
-        const docSnap = await docRef.get();
-        
-        if (!docSnap.exists) {
-          await guild.members.fetch().catch(() => {});
-          const owner = await guild.fetchOwner().catch(() => null);
-          const botCount = guild.members.cache.filter(m => m.user.bot).size;
-          const humanCount = guild.memberCount - botCount;
-          const { riskScore, riskLevel } = calculateRiskScore(guild);
-
-          let finalRiskScore = riskScore;
-          if (guild.memberCount > 0) {
-            const botRatio = botCount / guild.memberCount;
-            if (botRatio > 0.5) finalRiskScore = Math.min(100, finalRiskScore + 30);
-            else if (botRatio > 0.3) finalRiskScore = Math.min(100, finalRiskScore + 15);
-          }
-
-          let finalRiskLevel = riskLevel;
-          if (finalRiskScore >= 75) finalRiskLevel = 'Critical';
-          else if (finalRiskScore >= 50) finalRiskLevel = 'High';
-          else if (finalRiskScore >= 25) finalRiskLevel = 'Medium';
-
-          await docRef.set({
-            guildId: guild.id,
-            guildName: guild.name,
-            ownerId: owner?.id || 'Unknown',
-            ownerUsername: owner?.user?.tag || 'Unknown',
-            ownerAvatar: owner?.user?.displayAvatarURL() || '',
-            memberCount: guild.memberCount,
-            botCount,
-            humanCount,
-            verificationLevel: guild.verificationLevel,
-            premiumTier: guild.premiumTier,
-            premiumSubscriptionCount: guild.premiumSubscriptionCount || 0,
-            joinedAt: Date.now(),
-            riskScore: finalRiskScore,
-            riskLevel: finalRiskLevel,
-            status: 'Approved',
-            lastUpdated: Date.now()
-          });
-          this.logSyncEvent(`Synced previously untracked guild "${guild.name}" to Approval System (Approved).`, 'success');
-        }
-      } catch (e) {
-        console.error(`[Gateway] Failed to sync approval for guild ${guild.id}`, e);
-      }
-    }
-  }
-
-  public async handleApprovalAction(guildId: string, action: string, reason?: string) {
-    const guild = this.client.guilds.cache.get(guildId);
-    if (!guild) return;
-
-    try {
-      const owner = await guild.fetchOwner().catch(() => null);
-
-      if (action === 'approve') {
-        if (owner) {
-          await owner.send(`✅ Your server **${guild.name}** has been approved for Rage Optimiser! Message me for having the dashboard.`).catch(() => {});
-        }
-        await this.forceDeployCommands(guildId).catch((err) => {
-          console.error(`[Gateway] Failed to deploy commands for approved guild ${guildId}:`, err);
-        });
-      } else if (action === 'reject' || action === 'blacklist') {
-        const textChannel = guild.channels.cache.find((c: any) => c.isTextBased() && c.permissionsFor(guild.members.me!)?.has('SendMessages'));
-        const rejectMessage = `⚠️ The bot owner has deauthorized access for this server. Reason: ${reason || 'No reason provided'}. Leaving now...`;
-        
-        if (textChannel) {
-          await (textChannel as any).send(rejectMessage).catch(() => {});
-        }
-        
-        if (owner) {
-          await owner.send(`❌ Your server **${guild.name}** was rejected from using Rage Optimiser. Reason: ${reason || 'No reason provided'}. The bot has left your server.`).catch(() => {});
-        }
-        
-        await guild.leave();
-      }
-    } catch (e) {
-      console.error(`[Gateway] Error handling approval action for guild ${guildId}`, e);
-    }
-  }
+  // syncApprovals and handleApprovalAction removed — approval system decommissioned.
 }

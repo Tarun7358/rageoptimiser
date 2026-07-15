@@ -1,19 +1,35 @@
 import { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
-import fs from 'fs';
-import path from 'path';
+import { Database } from '../../core/Database.js';
 
-const VERIFICATION_DB_FILE = path.join(process.cwd(), 'src', 'verifications.json');
-
-function loadVerifications(): Record<string, string> {
-  try {
-    if (fs.existsSync(VERIFICATION_DB_FILE)) return JSON.parse(fs.readFileSync(VERIFICATION_DB_FILE, 'utf-8'));
-  } catch {}
-  return {};
+// Safe display name helper
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
 }
 
-function saveVerifications(data: Record<string, string>) {
-  try { fs.writeFileSync(VERIFICATION_DB_FILE, JSON.stringify(data, null, 2)); } catch {}
+async function isUserVerified(guildId: string, userId: string): Promise<boolean> {
+  try {
+    const db = Database.getDb();
+    if (!db) return false;
+    const row = await db.get('SELECT 1 FROM guild_verifications WHERE guildId = ? AND userId = ?', [guildId, userId]);
+    return !!row;
+  } catch (err) {
+    console.error('Failed to check user verification:', err);
+    return false;
+  }
+}
+
+async function markUserVerified(guildId: string, userId: string): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      'INSERT OR REPLACE INTO guild_verifications (guildId, userId, verifiedAt) VALUES (?, ?, ?)',
+      [guildId, userId, new Date().toISOString()]
+    );
+  } catch (err) {
+    console.error('Failed to mark user as verified:', err);
+  }
 }
 
 export const VerificationManifest: ModuleManifest = {
@@ -63,7 +79,7 @@ export const VerificationManifest: ModuleManifest = {
         if (unverifiedRole) {
           try {
             await member.roles.add(unverifiedRole);
-            context.logSyncEvent(`Verification Service: Quarantined new join "${member.user.tag}" (Applied Unverified Role).`, 'info');
+            context.logSyncEvent(`Verification Service: Quarantined new join "${userTag(member.user)}" (Applied Unverified Role).`, 'info');
           } catch (err) {
             console.error('Failed to apply unverified role on join:', err);
           }
@@ -130,8 +146,8 @@ export const VerificationManifest: ModuleManifest = {
           const member = interaction.member;
           if (!member) return;
 
-          const verifications = loadVerifications();
-          const isVerifiedInDb = !!verifications[member.user.id];
+          const guildId = interaction.guildId;
+          const isVerifiedInDb = await isUserVerified(guildId, member.user.id);
           const hasVerifiedRole = member.roles.cache.has(verifiedRoleId);
 
           if (preventDuplicates && isVerifiedInDb) {
@@ -140,7 +156,7 @@ export const VerificationManifest: ModuleManifest = {
               await member.roles.add(verifiedRoleId);
               if (member.roles.cache.has(unverifiedRoleId)) await member.roles.remove(unverifiedRoleId);
               
-              context.logSyncEvent(`Verification Service: Restored missing verified role for returning user "${member.user.tag}".`, 'info');
+              context.logSyncEvent(`Verification Service: Restored missing verified role for returning user "${userTag(member.user)}".`, 'info');
               
               if (showAlreadyVerifiedMessage) {
                 return interaction.reply({ 
@@ -154,7 +170,7 @@ export const VerificationManifest: ModuleManifest = {
 
             // User is in DB and already has the role
             if (logDuplicates) {
-              context.logSyncEvent(`Verification Service: Duplicate verification attempt by already verified user "${member.user.tag}".`, 'warn');
+              context.logSyncEvent(`Verification Service: Duplicate verification attempt by already verified user "${userTag(member.user)}".`, 'warn');
             }
 
             if (showAlreadyVerifiedMessage) {
@@ -173,11 +189,10 @@ export const VerificationManifest: ModuleManifest = {
           }
           await member.roles.add(verifiedRoleId);
 
-          verifications[member.user.id] = new Date().toISOString();
-          saveVerifications(verifications);
+          await markUserVerified(guildId, member.user.id);
 
           await interaction.reply({ content: '✅ **Verification Succeeded!** Welcome to the server.', flags: 64 });
-          context.logSyncEvent(`Verification Service: Verified member "${member.user.tag}" successfully.`, 'success');
+          context.logSyncEvent(`Verification Service: Verified member "${userTag(member.user)}" successfully.`, 'success');
         } catch (err) {
           console.error(err);
           await interaction.reply({ content: '❌ Failed to update your roles. Verify bot roles hierarchy.', flags: 64 });

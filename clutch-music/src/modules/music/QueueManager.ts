@@ -124,10 +124,12 @@ export class GuildQueue {
   public voiceChannel: any = null;
   private queueLock = false;
   private retryCount = 0;
+  private retryInProgress = false;
 
   private disconnectTimeout: NodeJS.Timeout | null = null;
   private currentProcess: ChildProcess | null = null;
   private ffmpegProcess: ChildProcess | null = null;
+  private playDlStream: any = null;
 
   constructor(guildId: string) {
     this.guildId = guildId;
@@ -166,48 +168,99 @@ export class GuildQueue {
     this.queueLock = false;
   }
 
-  private setupConnection(voiceChannel: any) {
-    this.voiceChannel = voiceChannel;
-    if (!this.connection) {
-      this.connection = joinVoiceChannel({
-        channelId: voiceChannel.id,
-        guildId: voiceChannel.guild.id,
-        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-      });
+  public bindConnectionEvents(connection: VoiceConnection) {
+    // Prevent duplicate or stale listeners by removing old Disconnected listeners first
+    connection.removeAllListeners(VoiceConnectionStatus.Disconnected);
 
-      this.connection.subscribe(this.player);
+    connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      try {
+        console.log(`[Music Debug] Voice disconnected in guild ${this.guildId}. Attempting auto-reconnection...`);
+        await Promise.race([
+          entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 5000),
+        ]);
+        console.log(`[Music Debug] Voice successfully reconnected in guild ${this.guildId}`);
+      } catch (error) {
+        console.log(`[Music Debug] Auto-reconnect failed. Checking routing fallback...`);
+        
+        // Active playback path
+        if (this.currentTrack && this.voiceChannel) {
+          try {
+            console.log(`[Music Debug] Actively playing. Rejoining user voice channel: ${this.voiceChannel.name}`);
+            const newConn = joinVoiceChannel({
+              channelId: this.voiceChannel.id,
+              guildId: this.voiceChannel.guild.id,
+              adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+            });
+            this.connection = newConn;
+            this.bindConnectionEvents(newConn);
+            newConn.subscribe(this.player);
+            await this.startStream(this.currentTrack);
+          } catch (rejoinErr) {
+            console.error(`[Music Debug] Failed to rejoin user voice channel:`, rejoinErr);
+            this.destroy();
+          }
+        } else {
+          // Idle 24/7 path
+          const registry = (this.client as any)?.registry;
+          const modulesState = registry ? registry.getModulesState() : [];
+          const musicMod = modulesState.find((m: any) => m.id === 'music');
+          const config = musicMod?.config || {};
+          const is247 = config.twentyFourSevenMode;
+          const channelId = config.defaultMusicChannelId;
 
-      this.connection.on(VoiceConnectionStatus.Disconnected, async () => {
-        try {
-          console.log(`[Music Debug] Voice disconnected in guild ${this.guildId}. Attempting auto-reconnection...`);
-          await Promise.race([
-            entersState(this.connection!, VoiceConnectionStatus.Signalling, 5000),
-            entersState(this.connection!, VoiceConnectionStatus.Connecting, 5000),
-          ]);
-          console.log(`[Music Debug] Voice successfully reconnected in guild ${this.guildId}`);
-        } catch (error) {
-          console.log(`[Music Debug] Auto-reconnect failed. Trying to rejoin voice channel...`);
-          if (this.voiceChannel) {
-            try {
-              this.connection = joinVoiceChannel({
-                channelId: this.voiceChannel.id,
-                guildId: this.voiceChannel.guild.id,
-                adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
-              });
-              this.connection.subscribe(this.player);
-              console.log(`[Music Debug] Rejoined voice channel: ${this.voiceChannel.name}`);
-              if (this.currentTrack) {
-                await this.startStream(this.currentTrack);
-              }
-            } catch (rejoinErr) {
-              console.error(`[Music Debug] Failed to rejoin voice channel:`, rejoinErr);
+          if (is247 && channelId) {
+            const gatewayInstance = (this.client as any)?.gatewayInstance;
+            if (gatewayInstance && typeof gatewayInstance.connect247 === 'function') {
+              console.log(`[Music Debug] Idle 24/7 active. Rejoining 24/7 channel: ${channelId}`);
+              setTimeout(() => {
+                gatewayInstance.connect247(this.guildId, channelId).catch((err: any) => {
+                  console.error('[Music Debug] Failed to auto-reconnect to 24/7 channel:', err);
+                });
+              }, 3000);
+            } else {
               this.destroy();
             }
           } else {
             this.destroy();
           }
         }
+      }
+    });
+  }
+
+  private async setupConnection(voiceChannel: any) {
+    this.voiceChannel = voiceChannel;
+    
+    const needsConnection = !this.connection;
+    const needsMove = this.connection && this.connection.joinConfig.channelId !== voiceChannel.id && !this.currentTrack;
+
+    if (needsConnection || needsMove) {
+      if (needsMove) {
+        console.log(`[Music Smart Routing] Moving bot from channel ${this.connection?.joinConfig.channelId} to user's channel ${voiceChannel.id}`);
+      }
+
+      const newConn = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: voiceChannel.guild.id,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
       });
+
+      this.connection = newConn;
+      this.bindConnectionEvents(newConn);
+
+      try {
+        console.log(`[Music Debug] Waiting for voice connection to be Ready...`);
+        await entersState(this.connection, VoiceConnectionStatus.Ready, 5000);
+        console.log(`[Music Debug] Voice connection is Ready.`);
+      } catch (err) {
+        console.error('[Music Debug] Voice connection failed to become Ready within 5s:', err);
+      }
+    }
+
+    // ALWAYS subscribe the player to the connection to guarantee audio is transmitted
+    if (this.connection) {
+      this.connection.subscribe(this.player);
     }
   }
 
@@ -245,7 +298,7 @@ export class GuildQueue {
       this.textChannelId = this.textChannelId || voiceChannel.id;
       this.voiceChannel = voiceChannel;
 
-      this.setupConnection(voiceChannel);
+      await this.setupConnection(voiceChannel);
 
       if (this.disconnectTimeout) {
         clearTimeout(this.disconnectTimeout);
@@ -276,7 +329,7 @@ export class GuildQueue {
       this.textChannelId = this.textChannelId || voiceChannel.id;
       this.voiceChannel = voiceChannel;
 
-      this.setupConnection(voiceChannel);
+      await this.setupConnection(voiceChannel);
 
       if (this.disconnectTimeout) {
         clearTimeout(this.disconnectTimeout);
@@ -303,6 +356,12 @@ export class GuildQueue {
   public async playNext() {
     await this.lockQueue();
     try {
+      // Bug 3/5 Fix: Always re-subscribe the player to the connection before streaming.
+      // This prevents silent playback after a voice channel move.
+      if (this.connection) {
+        this.connection.subscribe(this.player);
+      }
+
       if (this.loopMode === 'track' && this.currentTrack) {
         await this.startStream(this.currentTrack);
         return;
@@ -356,13 +415,36 @@ export class GuildQueue {
         this.idleSince = Date.now();
         await this.updatePanel(this.client);
 
-        // Disconnect after 2 minutes of inactivity
-        if (this.disconnectTimeout) clearTimeout(this.disconnectTimeout);
-        this.disconnectTimeout = setTimeout(() => {
-          if (!this.currentTrack && this.connection) {
-            this.destroy();
-          }
-        }, 120000);
+        // Check if 24/7 mode is enabled
+        const registry = (this.client as any)?.registry;
+        const modulesState = registry ? registry.getModulesState() : [];
+        const musicMod = modulesState.find((m: any) => m.id === 'music');
+        const config = musicMod?.config || {};
+        const is247 = config.twentyFourSevenMode;
+        const channelId = config.defaultMusicChannelId;
+
+        if (is247 && channelId) {
+          if (this.disconnectTimeout) clearTimeout(this.disconnectTimeout);
+          this.disconnectTimeout = setTimeout(async () => {
+            if (!this.currentTrack && this.connection) {
+              const gatewayInstance = (this.client as any)?.gatewayInstance;
+              if (gatewayInstance && typeof gatewayInstance.connect247 === 'function') {
+                console.log(`[Music Smart Routing] Playback finished. Returning bot to 24/7 channel ${channelId}`);
+                await gatewayInstance.connect247(this.guildId, channelId).catch((err: any) => {
+                  console.error('[Music Smart Routing] Failed to return to 24/7 channel:', err);
+                });
+              }
+            }
+          }, 5000); // 5 seconds return delay
+        } else {
+          // Disconnect after 2 minutes of inactivity
+          if (this.disconnectTimeout) clearTimeout(this.disconnectTimeout);
+          this.disconnectTimeout = setTimeout(() => {
+            if (!this.currentTrack && this.connection) {
+              this.destroy();
+            }
+          }, 120000);
+        }
       }
     } finally {
       this.unlockQueue();
@@ -371,13 +453,17 @@ export class GuildQueue {
 
   private async handleTrackError(track: Track, error: any) {
     console.error(`[Music Debug] Error playing track "${track.title}":`, error);
+    // Bug 6 Fix: Guard against duplicate playNext() calls when retries stack.
+    if (this.retryInProgress) return;
     if (this.retryCount < 1) {
       this.retryCount++;
+      this.retryInProgress = true;
       console.log(`[Music Debug] Retrying failed track: "${track.title}" (Attempt 1/1)`);
       if (track.url.includes('youtube.com') || track.url.includes('youtu.be')) {
         track.url = `search:${track.title} ${track.artist || ''}`;
       }
       setTimeout(async () => {
+        this.retryInProgress = false;
         try {
           await this.startStream(track);
         } catch (retryErr) {
@@ -386,12 +472,19 @@ export class GuildQueue {
       }, 1500);
     } else {
       this.retryCount = 0;
+      this.retryInProgress = false;
       console.log(`[Music Debug] Track failed twice, skipping: "${track.title}"`);
       await this.playNext();
     }
   }
 
   private async startStream(nextTrack: Track) {
+    if (this.playDlStream) {
+      try {
+        this.playDlStream.destroy();
+      } catch (e) {}
+      this.playDlStream = null;
+    }
     if (this.currentProcess) {
       try {
         if (this.currentProcess.stdout) {
@@ -433,28 +526,47 @@ export class GuildQueue {
         }
       }
 
-      // Stream via yt-dlp binary
-      const ytDlpPath = path.join(process.cwd(), 'bin', 'yt-dlp.exe');
-      const hasLocalYtDlp = fs.existsSync(ytDlpPath);
-      const command = hasLocalYtDlp ? ytDlpPath : 'yt-dlp';
+      let useYtDlp = true;
+      if (audioUrl.includes('youtube.com') || audioUrl.includes('youtu.be') || audioUrl.includes('soundcloud.com')) {
+        try {
+          console.log(`[Music] Attempting to stream via play-dl: ${audioUrl}`);
+          const streamData = await play.stream(audioUrl, {
+            quality: 2,
+            seek: 0
+          });
+          this.playDlStream = streamData.stream;
+          useYtDlp = false;
+          console.log(`[Music] Successfully created play-dl stream`);
+        } catch (playDlErr: any) {
+          console.warn(`[Music Warning] play-dl streaming failed, falling back to yt-dlp:`, playDlErr.message || playDlErr);
+        }
+      }
 
-      this.currentProcess = spawn(command, [
-        '-o', '-',
-        '-f', 'bestaudio',
-        '--no-playlist',
-        audioUrl
-      ]);
+      if (useYtDlp) {
+        // Stream via yt-dlp binary
+        console.log(`[Music] Spawning yt-dlp process for: ${audioUrl}`);
+        const ytDlpPath = path.join(process.cwd(), 'bin', 'yt-dlp.exe');
+        const hasLocalYtDlp = fs.existsSync(ytDlpPath);
+        const command = hasLocalYtDlp ? ytDlpPath : 'yt-dlp';
 
-      this.currentProcess.on('error', (err) => {
-        console.error('[Music] yt-dlp process spawn error:', err);
-      });
+        this.currentProcess = spawn(command, [
+          '-o', '-',
+          '-f', 'bestaudio',
+          '--no-playlist',
+          audioUrl
+        ]);
 
-      if (!this.currentProcess.stdout) throw new Error('Failed to create yt-dlp stdout');
+        this.currentProcess.on('error', (err) => {
+          console.error('[Music] yt-dlp process spawn error:', err);
+        });
 
-      // Prevent EPIPE crash on yt-dlp stdout
-      this.currentProcess.stdout.on('error', (err) => {
-        console.warn('[Music Debug] yt-dlp stdout stream error (expected during skip):', err.message);
-      });
+        if (!this.currentProcess.stdout) throw new Error('Failed to create yt-dlp stdout');
+
+        // Prevent EPIPE crash on yt-dlp stdout
+        this.currentProcess.stdout.on('error', (err) => {
+          console.warn('[Music Debug] yt-dlp stdout stream error (expected during skip):', err.message);
+        });
+      }
 
       // Build FFmpeg filters
       const afFilters: string[] = [];
@@ -518,7 +630,9 @@ export class GuildQueue {
         console.error('[Music] ffmpeg process spawn error:', err);
       });
 
-      if (this.currentProcess && this.currentProcess.stdout && this.ffmpegProcess && this.ffmpegProcess.stdin) {
+      const inputStream = this.playDlStream || (this.currentProcess ? this.currentProcess.stdout : null);
+
+      if (inputStream && this.ffmpegProcess && this.ffmpegProcess.stdin) {
         // Prevent EPIPE crash on ffmpeg streams
         this.ffmpegProcess.stdin.on('error', (err) => {
           console.warn('[Music Debug] ffmpeg stdin stream error (expected during skip):', err.message);
@@ -529,9 +643,9 @@ export class GuildQueue {
           });
         }
 
-        this.currentProcess.stdout.pipe(this.ffmpegProcess.stdin as any);
+        inputStream.pipe(this.ffmpegProcess.stdin as any);
       } else {
-        throw new Error('Failed to pipe stdout of yt-dlp to stdin of ffmpeg');
+        throw new Error('Failed to pipe stdout of source stream to stdin of ffmpeg');
       }
 
       if (!this.ffmpegProcess || !this.ffmpegProcess.stdout) throw new Error('Failed to create ffmpeg stdout');
@@ -581,6 +695,12 @@ export class GuildQueue {
     this.queue = [];
     this.loopMode = 'off';
     this.player.stop();
+    if (this.playDlStream) {
+      try {
+        this.playDlStream.destroy();
+      } catch (e) {}
+      this.playDlStream = null;
+    }
     if (this.currentProcess) {
       try {
         if (this.currentProcess.stdout) {
@@ -629,6 +749,12 @@ export class GuildQueue {
       } catch (e) {}
     }
     this.connection = null;
+    if (this.playDlStream) {
+      try {
+        this.playDlStream.destroy();
+      } catch (e) {}
+      this.playDlStream = null;
+    }
     if (this.currentProcess) {
       try {
         if (this.currentProcess.stdout) {

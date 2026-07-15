@@ -17,7 +17,7 @@ export async function sendVoiceProtectionLog(
   const { user, channel, avgLoudness, peakLoudness, action, duration } = details;
 
   // 1. Log to the central Security Timeline
-  const timelineMessage = `[Voice Protection] Punished user ${user.tag} (${action}${duration ? ` for ${duration}s` : ''}) in channel #${channel.name}. Avg Loudness: ${avgLoudness}%, Peak: ${peakLoudness}%`;
+  const timelineMessage = `[Voice Protection] Punished user ${user.username} (${action}${duration ? ` for ${duration}s` : ''}) in channel #${channel.name}. Avg Loudness: ${avgLoudness}%, Peak: ${peakLoudness}%`;
   if (context.logSyncEvent) {
     context.logSyncEvent(timelineMessage, action === 'warn' ? 'warn' : 'success');
   }
@@ -32,7 +32,7 @@ export async function sendVoiceProtectionLog(
         .setDescription(`An audio disturbance (excessive volume/ear-rape) was detected and punished.`)
         .setColor(action === 'warn' ? 0xe67e22 : 0xe74c3c)
         .addFields(
-          { name: '👤 User', value: `${user} (${user.tag})`, inline: true },
+          { name: '👤 User', value: `${user} (${user.username})`, inline: true },
           { name: '🔊 Channel', value: `${channel.name} (<#${channel.id}>)`, inline: true },
           { name: '⚡ Action Taken', value: `**${action.toUpperCase()}**`, inline: true },
           { name: '📊 Avg Loudness', value: `\`${avgLoudness}%\``, inline: true },

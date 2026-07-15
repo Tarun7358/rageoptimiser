@@ -1,8 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
-import fs from 'fs';
-import path from 'path';
-
 // Helper to get stats
 function getServerStats(guild: any) {
   return {
@@ -154,7 +151,7 @@ export const DiscordDashboardManifest: ModuleManifest = {
         dashModule._lastRefresh = now;
 
         try {
-          const guildId = process.env.GUILD_ID;
+          const guildId = context.guildId || process.env.GUILD_ID;
           if (!guildId) return;
           const guild = client.guilds.cache.get(guildId);
           if (!guild) return;

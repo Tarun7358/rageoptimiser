@@ -23,12 +23,20 @@ function checkRateLimit(guildId: string, userId: string, ruleId: string, limit: 
     userActions.set(guildId, new Map());
   }
   const guildTracker = userActions.get(guildId)!;
+  const now = Date.now();
+
+  // Active memory cleanup for this guild
+  for (const [k, tracker] of guildTracker.entries()) {
+    tracker.timestamps = tracker.timestamps.filter(ts => now - ts < windowSeconds * 1000);
+    if (tracker.timestamps.length === 0) {
+      guildTracker.delete(k);
+    }
+  }
+
   if (!guildTracker.has(key)) {
     guildTracker.set(key, { count: 0, timestamps: [] });
   }
   const tracker = guildTracker.get(key)!;
-  const now = Date.now();
-  tracker.timestamps = tracker.timestamps.filter(ts => now - ts < windowSeconds * 1000);
   tracker.timestamps.push(now);
   tracker.count = tracker.timestamps.length;
   return tracker.count >= limit;
@@ -286,13 +294,13 @@ async function isExecutorBypassed(guild: any, executorId: string, config: any, c
   return checkBypassImmunity(executorId, guild, context, ruleId);
 }
 
-async function punishViolator(client: any, guild: any, executorId: string, executorTag: string, reason: string, ruleAction: string, config: any, context: any, ruleId?: string) {
+async function punishViolator(client: any, guild: any, executorId: string, executorUsername: string, reason: string, ruleAction: string, config: any, context: any, ruleId?: string) {
   let bypassed = await isExecutorBypassed(guild, executorId, config, context, ruleId);
   if (ruleId === 'anti_role_grant') {
     bypassed = bypassed || await isExecutorBypassed(guild, executorId, config, context, 'anti_member_update');
   }
   if (bypassed) {
-    context.logSyncEvent(guild.id, `🛡️ [Anti-Nuke Safety]: Prevented punishment of bypassed/whitelisted user ${executorTag} for rule: ${ruleId || 'general'}.`, 'info');
+    context.logSyncEvent(guild.id, `🛡️ [Anti-Nuke Safety]: Prevented punishment of bypassed/whitelisted user ${executorUsername} for rule: ${ruleId || 'general'}.`, 'info');
     return;
   }
 
@@ -324,7 +332,7 @@ async function punishViolator(client: any, guild: any, executorId: string, execu
       if (!quarantinedUsers.some((u: any) => u.userId === executorId)) {
         quarantinedUsers.push({
           id: `q-${Date.now()}`,
-          tag: executorTag,
+          tag: executorUsername,
           userId: executorId,
           reason: reason,
           time: new Date().toISOString(),
@@ -334,13 +342,13 @@ async function punishViolator(client: any, guild: any, executorId: string, execu
         });
         context.updateModuleConfig('security', { quarantinedUsers });
       }
-      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Quarantined ${executorTag} and stripped all Administrative roles. Reason: ${reason}`, 'warn');
+      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Quarantined ${executorUsername} and stripped all Administrative roles. Reason: ${reason}`, 'warn');
     } else if (ruleAction === 'ban') {
       await guild.members.ban(executorId, { reason }).catch(console.error);
-      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Banned ${executorTag}. Reason: ${reason}`, 'warn');
+      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Banned ${executorUsername}. Reason: ${reason}`, 'warn');
     } else if (ruleAction === 'kick') {
       await member.kick(reason).catch(console.error);
-      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Kicked ${executorTag}. Reason: ${reason}`, 'warn');
+      context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Action]: Kicked ${executorUsername}. Reason: ${reason}`, 'warn');
     }
   } catch (err) {
     console.error('Error punishing violator:', err);
@@ -504,7 +512,7 @@ export const SecurityManifest: ModuleManifest = {
           const quarantinedUsers = config.quarantinedUsers || [];
           quarantinedUsers.push({
             id: `q-${Date.now()}`,
-            tag: member.user.tag,
+            tag: member.user.username,
             userId: member.user.id,
             reason: 'Manual Quarantine via Slash Command',
             time: new Date().toISOString(),
@@ -513,12 +521,12 @@ export const SecurityManifest: ModuleManifest = {
             originalRoles: originalRoleIds
           });
           context.updateModuleConfig('security', { quarantinedUsers });
-          context.logSyncEvent(interaction.guildId, `Manual Quarantine: ${member.user.tag} isolated.`, 'warn');
+          context.logSyncEvent(interaction.guildId, `Manual Quarantine: ${member.user.username} isolated.`, 'warn');
           
           const embed = new EmbedBuilder()
             .setTitle('🚨 Security Action: Member Quarantined')
             .setColor('#e74c3c')
-            .setDescription(`Successfully quarantined **${member.user.tag}** and stripped all administrative/privileged roles to secure the guild.`)
+            .setDescription(`Successfully quarantined **${member.user.username}** and stripped all administrative/privileged roles to secure the guild.`)
             .addFields(
               { name: 'Target Member', value: `<@${member.user.id}>`, inline: true },
               { name: 'Enforcing Admin', value: `<@${interaction.user.id}>`, inline: true },
@@ -575,7 +583,10 @@ export const SecurityManifest: ModuleManifest = {
     {
       name: 'command_security',
       handler: async (client: any, interaction: any, context: any) => {
-        const sub = interaction.options.getSubcommand();
+        const sub = interaction.options.getSubcommand(false);
+        if (!sub) {
+          return interaction.reply({ content: '❌ Please specify a valid subcommand.', flags: 64 });
+        }
 
         if (sub.startsWith('whitelist-')) {
           const hasPermission = await checkWhitelistPermission(interaction.user.id, interaction.guild, context);
@@ -666,25 +677,25 @@ export const SecurityManifest: ModuleManifest = {
             const embed = new EmbedBuilder()
               .setTitle('❌ Security Center Error')
               .setColor('#e74c3c')
-              .setDescription(`User **${user.tag}** is already whitelisted.`);
+              .setDescription(`User **${user.username}** is already whitelisted.`);
             return interaction.reply({ embeds: [embed], flags: 64 });
           }
           whitelist.push({
             id: `wl-${Date.now()}`,
             type: 'user',
             targetId: user.id,
-            name: user.tag,
+            name: user.username,
             expiration: null,
             notes: 'Added via Discord slash command',
-            createdBy: interaction.user.tag,
+            createdBy: interaction.user.username,
             scope: 'all'
           });
           saveConfig({ whitelist });
-          context.logSyncEvent(`[Security] Added user ${user.tag} to anti-nuke whitelist.`, 'success');
+          context.logSyncEvent(`[Security] Added user ${user.username} to anti-nuke whitelist.`, 'success');
           const embed = new EmbedBuilder()
             .setTitle('🛡️ Security Whitelist: Member Added')
             .setColor('#7C5CFC')
-            .setDescription(`Successfully whitelisted **${user.tag}** from Anti-Nuke restrictions. Standard security limitations will not apply to this user.`)
+            .setDescription(`Successfully whitelisted **${user.username}** from Anti-Nuke restrictions. Standard security limitations will not apply to this user.`)
             .addFields(
               { name: 'Whitelisted User', value: `<@${user.id}>`, inline: true },
               { name: 'Authorized By', value: `<@${interaction.user.id}>`, inline: true }
@@ -700,7 +711,7 @@ export const SecurityManifest: ModuleManifest = {
             const embed = new EmbedBuilder()
               .setTitle('❌ Security Center Error')
               .setColor('#e74c3c')
-              .setDescription(`User **${user.tag}** is not currently whitelisted.`);
+              .setDescription(`User **${user.username}** is not currently whitelisted.`);
             return interaction.reply({ embeds: [embed], flags: 64 });
           }
           whitelist = whitelist.filter((w: any) => {
@@ -708,11 +719,11 @@ export const SecurityManifest: ModuleManifest = {
             return w.targetId !== user.id;
           });
           saveConfig({ whitelist });
-          context.logSyncEvent(`[Security] Removed user ${user.tag} from anti-nuke whitelist.`, 'info');
+          context.logSyncEvent(`[Security] Removed user ${user.username} from anti-nuke whitelist.`, 'info');
           const embed = new EmbedBuilder()
             .setTitle('🗑️ Security Whitelist: Member Removed')
             .setColor('#7C5CFC')
-            .setDescription(`Successfully removed **${user.tag}** from Anti-Nuke bypass whitelist.`)
+            .setDescription(`Successfully removed **${user.username}** from Anti-Nuke bypass whitelist.`)
             .addFields(
               { name: 'Removed User', value: `<@${user.id}>`, inline: true },
               { name: 'Authorized By', value: `<@${interaction.user.id}>`, inline: true }
@@ -827,14 +838,14 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_delete');
-          console.log(`[Anti-Nuke Debug] [channelDelete] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [channelDelete] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_delete', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [channelDelete] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel deletion of #${channel.name} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel deletion of #${channel.name} by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [channelDelete] Executing recovery (re-creating deleted channel)`);
@@ -852,8 +863,8 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted channel #${channel.name}.`, 'success');
           }
 
-          console.log(`[Anti-Nuke Debug] [channelDelete] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Deletion (#${channel.name})`, rule.action, config, context, 'anti_channel_delete');
+          console.log(`[Anti-Nuke Debug] [channelDelete] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Channel Deletion (#${channel.name})`, rule.action, config, context, 'anti_channel_delete');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [channelDelete] Error in handler:', err);
         }
@@ -915,22 +926,22 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_create');
-          console.log(`[Anti-Nuke Debug] [channelCreate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [channelCreate] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_create', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [channelCreate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel creation #${channel.name} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel creation #${channel.name} by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [channelCreate] Executing recovery (deleting created channel)`);
             await channel.delete('Anti-Nuke Recovery: Deleting unauthorized channel.').catch(console.error);
           }
 
-          console.log(`[Anti-Nuke Debug] [channelCreate] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Creation (#${channel.name})`, rule.action, config, context, 'anti_channel_create');
+          console.log(`[Anti-Nuke Debug] [channelCreate] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Channel Creation (#${channel.name})`, rule.action, config, context, 'anti_channel_create');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [channelCreate] Error in handler:', err);
         }
@@ -992,14 +1003,14 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_channel_update');
-          console.log(`[Anti-Nuke Debug] [channelUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_channel_update', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [channelUpdate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel update #${newChannel.name} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized channel update #${newChannel.name} by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [channelUpdate] Executing recovery (restoring channel properties)`);
@@ -1019,8 +1030,8 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
-          console.log(`[Anti-Nuke Debug] [channelUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Channel Update (#${newChannel.name})`, rule.action, config, context, 'anti_channel_update');
+          console.log(`[Anti-Nuke Debug] [channelUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Channel Update (#${newChannel.name})`, rule.action, config, context, 'anti_channel_update');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [channelUpdate] Error in handler:', err);
         }
@@ -1082,22 +1093,22 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_create');
-          console.log(`[Anti-Nuke Debug] [roleCreate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [roleCreate] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_create', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [roleCreate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role creation "${role.name}" by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role creation "${role.name}" by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [roleCreate] Executing recovery (deleting role)`);
             await role.delete('Anti-Nuke Recovery: Deleting unauthorized role.').catch(console.error);
           }
 
-          console.log(`[Anti-Nuke Debug] [roleCreate] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Creation (${role.name})`, rule.action, config, context, 'anti_role_create');
+          console.log(`[Anti-Nuke Debug] [roleCreate] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Creation (${role.name})`, rule.action, config, context, 'anti_role_create');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [roleCreate] Error in handler:', err);
         }
@@ -1159,14 +1170,14 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_delete');
-          console.log(`[Anti-Nuke Debug] [roleDelete] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [roleDelete] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_delete', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [roleDelete] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role deletion of "${role.name}" by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role deletion of "${role.name}" by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [roleDelete] Executing recovery (restoring deleted role)`);
@@ -1182,8 +1193,8 @@ export const SecurityManifest: ModuleManifest = {
             context.logSyncEvent(guild.id, `Re-created deleted role "${role.name}".`, 'success');
           }
 
-          console.log(`[Anti-Nuke Debug] [roleDelete] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Deletion (${role.name})`, rule.action, config, context, 'anti_role_delete');
+          console.log(`[Anti-Nuke Debug] [roleDelete] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Deletion (${role.name})`, rule.action, config, context, 'anti_role_delete');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [roleDelete] Error in handler:', err);
         }
@@ -1245,14 +1256,14 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_update');
-          console.log(`[Anti-Nuke Debug] [roleUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
           if (isBypassed) return;
 
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_update', rule.limit, rule.window);
           console.log(`[Anti-Nuke Debug] [roleUpdate] Rate limit check triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role update for "${newRole.name}" by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role update for "${newRole.name}" by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             console.log(`[Anti-Nuke Debug] [roleUpdate] Executing recovery (editing role back to old values)`);
@@ -1266,8 +1277,8 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
-          console.log(`[Anti-Nuke Debug] [roleUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Update (${newRole.name})`, rule.action, config, context, 'anti_role_update');
+          console.log(`[Anti-Nuke Debug] [roleUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Update (${newRole.name})`, rule.action, config, context, 'anti_role_update');
         } catch (err) {
           console.error('[Anti-Nuke Debug] [roleUpdate] Error in handler:', err);
         }
@@ -1276,7 +1287,7 @@ export const SecurityManifest: ModuleManifest = {
     {
       name: 'guildMemberUpdate',
       handler: async (client: any, oldMember: any, newMember: any, context: any) => {
-        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Member updated: "${newMember.user.tag}" (${newMember.id}) in guild "${newMember.guild.name}" (${newMember.guild.id})`);
+        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Member updated: "${newMember.user.username}" (${newMember.id}) in guild "${newMember.guild.name}" (${newMember.guild.id})`);
         const modules = context.getModulesState ? context.getModulesState() : [];
         const secModule = modules.find((m: any) => m.id === 'security');
         if (!secModule) {
@@ -1314,7 +1325,7 @@ export const SecurityManifest: ModuleManifest = {
               return 'ALLOW_CHECK' as const;
             });
             if (guardResult === 'IGNORE_EVENT') {
-              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Join Role Guard returned IGNORE_EVENT for ${newMember.user.tag}. Skipping anti-nuke role checks.`);
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Join Role Guard returned IGNORE_EVENT for ${newMember.user.username}. Skipping anti-nuke role checks.`);
               return;
             }
 
@@ -1322,7 +1333,7 @@ export const SecurityManifest: ModuleManifest = {
             const isMonitored = addedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
             const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
 
-            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role grant detected for ${newMember.user.tag}: added ${addedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role grant detected for ${newMember.user.username}: added ${addedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
 
 
             if (hasAdmin || isMonitored || monitorAll) {
@@ -1341,7 +1352,7 @@ export const SecurityManifest: ModuleManifest = {
                 const executor = logEntry.executor;
                 if (executor && executor.id !== client.user.id) {
                   const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant');
-                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
                   if (!isBypassed) {
                     if (config.roleMonitorMode !== 'Custom Selection' || isMonitored) {
                       const rules = config.rules || {};
@@ -1351,15 +1362,15 @@ export const SecurityManifest: ModuleManifest = {
                         const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
                         console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
                         if (triggered) {
-                          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.username} by ${executor.username}.`, 'warn');
                           if (rule.recovery) {
                             console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing granted roles)`);
                             for (const [roleId] of addedRoles) {
                               await newMember.roles.remove(roleId).catch(console.error);
                             }
                           }
-                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
-                          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.tag}`, rule.action, config, context, 'anti_role_grant');
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+                          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.username}`, rule.action, config, context, 'anti_role_grant');
                           return;
                         }
                       }
@@ -1379,7 +1390,7 @@ export const SecurityManifest: ModuleManifest = {
             const isMonitored = removedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
             const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
 
-            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role removal detected for ${newMember.user.tag}: removed ${removedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role removal detected for ${newMember.user.username}: removed ${removedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
 
             if (hasAdmin || isMonitored || monitorAll) {
               const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
@@ -1397,7 +1408,7 @@ export const SecurityManifest: ModuleManifest = {
                 const executor = logEntry.executor;
                 if (executor && executor.id !== client.user.id) {
                   const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_remove');
-                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
                   if (!isBypassed) {
                     const rules = config.rules || {};
                     const rule = rules.anti_role_remove || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
@@ -1406,13 +1417,13 @@ export const SecurityManifest: ModuleManifest = {
                       const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_remove', rule.limit, rule.window);
                       console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
                       if (triggered) {
-                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role removal from ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role removal from ${newMember.user.username} by ${executor.username}.`, 'warn');
                         if (rule.recovery) {
                           console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (adding back removed roles)`);
                           await newMember.roles.add(Array.from(removedRoles.keys())).catch(console.error);
                         }
-                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
-                        await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Role Removal from ${newMember.user.tag}`, rule.action, config, context, 'anti_role_remove');
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+                        await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Removal from ${newMember.user.username}`, rule.action, config, context, 'anti_role_remove');
                         return;
                       }
                     }
@@ -1427,7 +1438,7 @@ export const SecurityManifest: ModuleManifest = {
           // 3. Timeout Checks
           if (newMember.communicationDisabledUntil !== oldMember.communicationDisabledUntil) {
             const isTimedOut = newMember.communicationDisabledUntil && newMember.communicationDisabledUntil.getTime() > Date.now();
-            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Timeout status change for ${newMember.user.tag}: isTimedOut=${isTimedOut}`);
+            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Timeout status change for ${newMember.user.username}: isTimedOut=${isTimedOut}`);
             if (isTimedOut) {
               const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberUpdate }).catch((err: any) => {
                 console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberUpdate logs:`, err);
@@ -1444,7 +1455,7 @@ export const SecurityManifest: ModuleManifest = {
                 const executor = logEntry.executor;
                 if (executor && executor.id !== client.user.id) {
                   const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_timeout');
-                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.tag} bypassed status: ${isBypassed}`);
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
                   if (!isBypassed) {
                     const rules = config.rules || {};
                     const rule = rules.anti_timeout || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
@@ -1453,13 +1464,13 @@ export const SecurityManifest: ModuleManifest = {
                       const triggered = checkRateLimit(guild.id, executor.id, 'anti_timeout', rule.limit, rule.window);
                       console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
                       if (triggered) {
-                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized member timeout on ${newMember.user.tag} by ${executor.tag}.`, 'warn');
+                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized member timeout on ${newMember.user.username} by ${executor.username}.`, 'warn');
                         if (rule.recovery) {
                           console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing timeout)`);
                           await newMember.timeout(null, 'Anti-Nuke Recovery: Removing unauthorized timeout').catch(console.error);
                         }
-                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.tag} with action ${rule.action}`);
-                        await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Timeout on ${newMember.user.tag}`, rule.action, config, context, 'anti_timeout');
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+                        await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Timeout on ${newMember.user.username}`, rule.action, config, context, 'anti_timeout');
                         return;
                       }
                     }
@@ -1503,13 +1514,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_ban', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized ban of ${ban.user.tag} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized ban of ${ban.user.username} by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await guild.members.unban(ban.user.id, 'Anti-Nuke Recovery: Revoking unauthorized ban').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Ban of ${ban.user.tag}`, rule.action, config, context, 'anti_ban');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Ban of ${ban.user.username}`, rule.action, config, context, 'anti_ban');
         } catch (err) {
           console.error(err);
         }
@@ -1543,9 +1554,9 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_kick', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized kick of ${member.user.tag} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized kick of ${member.user.username} by ${executor.username}.`, 'warn');
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Kick of ${member.user.tag}`, rule.action, config, context, 'anti_kick');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Kick of ${member.user.username}`, rule.action, config, context, 'anti_kick');
         } catch (err) {
           console.error(err);
         }
@@ -1580,13 +1591,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_bot_add', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized bot add of ${member.user.tag} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized bot add of ${member.user.username} by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await member.kick('Anti-Nuke Recovery: Kicking unauthorized bot').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Bot Addition (${member.user.tag})`, rule.action, config, context, 'anti_bot_add');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Bot Addition (${member.user.username})`, rule.action, config, context, 'anti_bot_add');
         } catch (err) {
           console.error(err);
         }
@@ -1636,7 +1647,7 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, ruleName, rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized webhook activity (${ruleName.replace('anti_', '')}) in #${channel.name} by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized webhook activity (${ruleName.replace('anti_', '')}) in #${channel.name} by ${executor.username}.`, 'warn');
 
           if (rule.recovery && logEntry.action === AuditLogEvent.WebhookCreate) {
             const webhooks = await channel.fetchWebhooks().catch(() => null);
@@ -1648,7 +1659,7 @@ export const SecurityManifest: ModuleManifest = {
             }
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Webhook Activity (${ruleName})`, rule.action, config, context, ruleName);
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Webhook Activity (${ruleName})`, rule.action, config, context, ruleName);
         } catch (err) {
           console.error(err);
         }
@@ -1682,13 +1693,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_create', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji creation by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji creation by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await emoji.delete('Anti-Nuke Recovery: Deleting unauthorized emoji').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Creation`, rule.action, config, context, 'anti_emoji_create');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Emoji Creation`, rule.action, config, context, 'anti_emoji_create');
         } catch (err) {
           console.error(err);
         }
@@ -1722,13 +1733,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_delete', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji deletion by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji deletion by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await guild.emojis.create({ attachment: emoji.url, name: emoji.name, reason: 'Anti-Nuke Recovery: Restoring deleted emoji' }).catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Deletion`, rule.action, config, context, 'anti_emoji_delete');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Emoji Deletion`, rule.action, config, context, 'anti_emoji_delete');
         } catch (err) {
           console.error(err);
         }
@@ -1762,13 +1773,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_update', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji update by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized emoji update by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await newEmoji.edit({ name: oldEmoji.name, reason: 'Anti-Nuke Recovery: Restoring original emoji state' }).catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Emoji Update`, rule.action, config, context, 'anti_emoji_update');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Emoji Update`, rule.action, config, context, 'anti_emoji_update');
         } catch (err) {
           console.error(err);
         }
@@ -1802,13 +1813,13 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_create', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker creation by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker creation by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await sticker.delete('Anti-Nuke Recovery: Deleting unauthorized sticker').catch(console.error);
           }
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Creation`, rule.action, config, context, 'anti_emoji_create');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Sticker Creation`, rule.action, config, context, 'anti_emoji_create');
         } catch (err) {
           console.error(err);
         }
@@ -1842,9 +1853,9 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_delete', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker deletion by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker deletion by ${executor.username}.`, 'warn');
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Deletion`, rule.action, config, context, 'anti_emoji_delete');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Sticker Deletion`, rule.action, config, context, 'anti_emoji_delete');
         } catch (err) {
           console.error(err);
         }
@@ -1878,9 +1889,9 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(guild.id, executor.id, 'anti_emoji_update', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker update by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized sticker update by ${executor.username}.`, 'warn');
 
-          await punishViolator(client, guild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Sticker Update`, rule.action, config, context, 'anti_emoji_update');
+          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Sticker Update`, rule.action, config, context, 'anti_emoji_update');
         } catch (err) {
           console.error(err);
         }
@@ -1911,7 +1922,7 @@ export const SecurityManifest: ModuleManifest = {
           const triggered = checkRateLimit(newGuild.id, executor.id, 'anti_guild_update', rule.limit, rule.window);
           if (!triggered) return;
 
-          context.logSyncEvent(newGuild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized guild update by ${executor.tag}.`, 'warn');
+          context.logSyncEvent(newGuild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized guild update by ${executor.username}.`, 'warn');
 
           if (rule.recovery) {
             await newGuild.edit({
@@ -1925,7 +1936,7 @@ export const SecurityManifest: ModuleManifest = {
             }).catch(console.error);
           }
 
-          await punishViolator(client, newGuild, executor.id, executor.tag, `Anti-Nuke: Unauthorized Guild Update`, rule.action, config, context, 'anti_guild_update');
+          await punishViolator(client, newGuild, executor.id, executor.username, `Anti-Nuke: Unauthorized Guild Update`, rule.action, config, context, 'anti_guild_update');
         } catch (err) {
           console.error(err);
         }
@@ -2059,9 +2070,9 @@ export const SecurityManifest: ModuleManifest = {
                 if (userEntry.originalRoles && userEntry.originalRoles.length > 0) {
                   await member.roles.add(userEntry.originalRoles).catch(() => null);
                 }
-                context.logSyncEvent(guild.id, `Quarantine Release: Restored original roles for "${userEntry.tag}".`, 'success');
+                context.logSyncEvent(guild.id, `Quarantine Release: Restored original roles for "${userEntry.username}".`, 'success');
               } else if (action === 'confirm' && member) {
-                context.logSyncEvent(guild.id, `Quarantine Confirmed: Action finalized for "${userEntry.tag}".`, 'warn');
+                context.logSyncEvent(guild.id, `Quarantine Confirmed: Action finalized for "${userEntry.username}".`, 'warn');
               }
             }
           }

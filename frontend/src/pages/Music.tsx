@@ -6,6 +6,7 @@ import {
   Volume2, Disc, User, Calendar, ExternalLink, RefreshCw, Layers, Radio
 } from 'lucide-react';
 import type { ModuleState, DiscordResourceRegistry } from '../hooks/useDiscordSync';
+import { API_BASE } from '../config';
 
 interface MusicProps {
   onSaveConfig: (msg: string) => void;
@@ -27,37 +28,19 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // H-3 FIX: Start with empty arrays instead of fake/hardcoded user data.
+  // Real data is loaded from the API in the useEffect below.
   const [stats, setStats] = useState<any>({
-    totalStreams: 184,
-    avgListeningTime: '42 mins',
+    totalStreams: 0,
+    avgListeningTime: 'N/A',
     activeListeners: 0,
-    mostPlayed: [
-      { title: 'Chill Lofi Beats to Study/Relax', artist: 'Lofi Girl', playCount: 84, duration: '2:45' },
-      { title: 'Synthwave Neon Drive Mix', artist: 'RetroSynth', playCount: 52, duration: '3:15' },
-      { title: 'Cyberpunk Tokyo Drift Theme', artist: 'Synthwave Collective', playCount: 39, duration: '4:10' }
-    ],
-    activeUsers: [
-      { username: 'rdxyz', actionCount: 64 },
-      { username: 'tarun', actionCount: 42 },
-      { username: 'moderator', actionCount: 18 }
-    ]
+    mostPlayed: [],
+    activeUsers: []
   });
 
-  const [history, setHistory] = useState<any[]>([
-    { title: 'Chill Lofi Beats to Study/Relax', artist: 'Lofi Girl', duration: '2:45', requester: 'rdxyz', platform: 'YouTube', time: '10 mins ago' },
-    { title: 'Synthwave Neon Drive Mix', artist: 'RetroSynth', duration: '3:15', requester: 'tarun', platform: 'Spotify', time: '45 mins ago' },
-    { title: 'Cyberpunk Tokyo Drift Theme', artist: 'Synthwave Collective', duration: '4:10', requester: 'rdxyz', platform: 'YouTube', time: '1 hour ago' }
-  ]);
-
-  const [playlists, setPlaylists] = useState<any[]>([
-    { name: 'Late Night Chill Study', trackCount: 24, creator: 'rdxyz', platform: 'Spotify' },
-    { name: 'Guild Party Beats 2026', trackCount: 15, creator: 'Server Admin', platform: 'YouTube' }
-  ]);
-
-  const [favorites, setFavorites] = useState<any[]>([
-    { title: 'Acoustic Guitar Melodies', artist: 'Guitar Chill', duration: '3:05', platform: 'Spotify' },
-    { title: 'Ambient Rain Beats', artist: 'Lofi World', duration: '4:20', platform: 'YouTube' }
-  ]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<any[]>([]);
 
   // Apply default fallbacks
   const musicPrefix = config.musicPrefix ?? 'r!';
@@ -73,7 +56,9 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
     }
   }, [musicPlayerState]);
 
-  // Load real data from backend
+  // L-3 FIX: Removed [modules] from dependency array — modules updates on every
+  // STATE_UPDATE WebSocket event (every ~30s), causing continuous re-fetching.
+  // Music data only needs to load once on mount.
   useEffect(() => {
     const fetchMusicData = async () => {
       const token = localStorage.getItem('cn_token');
@@ -82,22 +67,17 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
 
       setLoading(true);
       try {
-        const headers: Record<string, string> = {
-          'Authorization': `Bearer ${token}`
-        };
-        if (currentGuild) {
-          headers['X-Guild-Id'] = currentGuild;
-        }
+        const headers: Record<string, string> = { 'Authorization': `Bearer ${token}` };
+        if (currentGuild) headers['X-Guild-Id'] = currentGuild;
 
-        // Fetch stats
-        const statsRes = await fetch('http://localhost:5000/api/modules/music/stats', { headers });
+        // M-1: Use VITE_API_URL env var
+        const statsRes = await fetch(`${API_BASE}/api/modules/music/stats`, { headers });
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           if (statsData && statsData.mostPlayed) setStats(statsData);
         }
 
-        // Fetch history
-        const historyRes = await fetch('http://localhost:5000/api/modules/music/history', { headers });
+        const historyRes = await fetch(`${API_BASE}/api/modules/music/history`, { headers });
         if (historyRes.ok) {
           const historyData = await historyRes.json();
           if (historyData && historyData.length > 0) {
@@ -112,8 +92,7 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
           }
         }
 
-        // Fetch playlists
-        const playlistsRes = await fetch('http://localhost:5000/api/modules/music/playlists', { headers });
+        const playlistsRes = await fetch(`${API_BASE}/api/modules/music/playlists`, { headers });
         if (playlistsRes.ok) {
           const playlistsData = await playlistsRes.json();
           if (playlistsData && playlistsData.length > 0) {
@@ -133,7 +112,7 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
     };
 
     fetchMusicData();
-  }, [modules]);
+  }, []); // L-3: Empty deps — fetch once on mount only
 
   const handleToggleEnable = () => {
     onUpdateConfig('music', {}, !isEnabled);
@@ -226,9 +205,8 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
   const currentPitch = musicPlayerState?.pitch || 1.0;
   const voiceChannelName = musicPlayerState?.voiceChannelName || 'Disconnected';
   const listenersCount = musicPlayerState?.listeners || 0;
-  const progressPercent = musicPlayerState ? (
-    currentTrack ? 50 : 0
-  ) : 0; // fallback calculation or indicator
+  // H-4 FIX: progressPercent was always 50% and was never actually used in rendering.
+  // Removed the dead variable. The progress bar renders from musicPlayerState.bar directly.
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

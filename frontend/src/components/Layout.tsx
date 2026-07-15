@@ -4,7 +4,7 @@ import {
   LineChart, Settings, ShieldAlert, Bell, Search, Play, Pause, 
   Terminal, Server, Activity, ChevronDown, Menu, X, AlertTriangle,
   Volume2, ShieldCheck, LogOut, LayoutTemplate, Music, RefreshCw,
-  Gift, Send, Sparkles, Award
+  Gift, Send, Sparkles, Award, Radio
 } from 'lucide-react';
 import type { NotificationItem } from '../hooks/useActivityFeed';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -81,6 +81,9 @@ export function Layout({
   const automationItems = [
     { id: 'incidents', label: 'Incident Center', icon: <AlertTriangle size={18} /> },
     { id: 'automation', label: 'Automation', icon: <Zap size={18} /> },
+    // H-1 FIX: ID must match the module manifest ID ('social_updates' with underscore)
+    // The sidebar nav uses this id both for active-state highlighting AND for getModuleBadge() lookup.
+    { id: 'social_updates', label: 'Social Updates', icon: <Radio size={18} /> },
     { id: 'logs', label: 'Logs Timeline', icon: <FileText size={18} /> },
     { id: 'analytics', label: 'Analytics', icon: <LineChart size={18} /> },
   ];
@@ -90,9 +93,6 @@ export function Layout({
     { id: 'voice-protection', label: 'Voice Protection', icon: <ShieldAlert size={18} /> },
     { id: 'music', label: 'Music System', icon: <Music size={18} /> },
     { id: 'settings', label: 'Global Settings', icon: <Settings size={18} /> },
-    ...(user?.role === 'owner' ? [
-      { id: 'owner', label: 'Owner Panel', icon: <ShieldAlert size={18} /> },
-    ] : []),
   ];
 
   const handleNavClick = (pageId: string) => {
@@ -229,8 +229,10 @@ export function Layout({
         <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 16px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)' }}>
           {/* Switch server button for guild managers */}
           {isGuildManager && (
+            // M-8 FIX: Use proper state management — setActiveGuildId(null) causes
+            // App.tsx to re-render the guild selector screen without a hard reload.
             <button
-              onClick={() => { setActiveGuildId(null); window.location.reload(); }}
+              onClick={() => { setActiveGuildId(null); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '7px 10px', borderRadius: 8, width: '100%',
@@ -372,8 +374,11 @@ export function Layout({
             <div className="status-indicator">
               <Server size={12} />
               <span>Gateway:</span>
-              <span className="status-dot pulse" />
-              <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>ONLINE</span>
+              {/* M-2 FIX: Show real connection status from isLive prop */}
+              <span className={`status-dot ${isLive ? 'pulse' : ''}`} style={{ backgroundColor: isLive ? undefined : 'var(--color-danger)' }} />
+              <span style={{ color: isLive ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }}>
+                {isLive ? 'ONLINE' : 'OFFLINE'}
+              </span>
             </div>
 
             <div style={{ color: 'var(--text-muted)' }}>

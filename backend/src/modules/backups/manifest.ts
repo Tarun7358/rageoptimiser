@@ -1,27 +1,86 @@
 import { EmbedBuilder, ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
-import fs from 'fs';
-import path from 'path';
+import { Database } from '../../core/Database.js';
 
-const BACKUPS_FILE = path.join(process.cwd(), 'src', 'backups.json');
 const pendingBackupLoads = new Map<string, string>(); // Format: "guildId:userId" -> backupId
 
-function loadBackups(): any[] {
-  try {
-    if (fs.existsSync(BACKUPS_FILE)) {
-      return JSON.parse(fs.readFileSync(BACKUPS_FILE, 'utf-8'));
-    }
-  } catch (err) {
-    console.error('Failed to load backups:', err);
-  }
-  return [];
+// Safe display name helper — user.username is deprecated
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
 }
 
-function saveBackups(backups: any[]) {
+async function getGuildBackups(guildId?: string): Promise<any[]> {
   try {
-    fs.writeFileSync(BACKUPS_FILE, JSON.stringify(backups, null, 2), 'utf-8');
+    const db = Database.getDb();
+    if (!db) return [];
+    let rows: any[];
+    if (guildId) {
+      rows = await db.all<any[]>('SELECT * FROM guild_backups WHERE guildId = ?', [guildId]);
+    } else {
+      rows = await db.all<any[]>('SELECT * FROM guild_backups');
+    }
+    return rows.map(row => ({
+      ...row,
+      data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data
+    }));
   } catch (err) {
-    console.error('Failed to save backups:', err);
+    console.error('Failed to get backups from SQLite:', err);
+    return [];
+  }
+}
+
+async function getBackupById(backupId: string): Promise<any | null> {
+  try {
+    const db = Database.getDb();
+    if (!db) return null;
+    const row = await db.get<any>('SELECT * FROM guild_backups WHERE id = ?', [backupId]);
+    if (row) {
+      return {
+        ...row,
+        data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('Failed to get backup by ID from SQLite:', err);
+    return null;
+  }
+}
+
+async function saveBackup(snapshot: any): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      `INSERT OR REPLACE INTO guild_backups (
+        id, timestamp, guildId, guildName, createdByName, channelsCount, rolesCount, emojisCount, data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        snapshot.id,
+        snapshot.timestamp,
+        snapshot.guildId,
+        snapshot.guildName,
+        snapshot.createdByName,
+        snapshot.channelsCount,
+        snapshot.rolesCount,
+        snapshot.emojisCount,
+        JSON.stringify(snapshot.data)
+      ]
+    );
+  } catch (err) {
+    console.error('Failed to save backup to SQLite:', err);
+  }
+}
+
+async function deleteBackup(backupId: string): Promise<boolean> {
+  try {
+    const db = Database.getDb();
+    if (!db) return false;
+    await db.run('DELETE FROM guild_backups WHERE id = ?', [backupId]);
+    return true;
+  } catch (err) {
+    console.error('Failed to delete backup from SQLite:', err);
+    return false;
   }
 }
 
@@ -56,7 +115,7 @@ async function createBackupData(guild: any, creatorTag: string): Promise<any> {
           name = role ? role.name : '';
         } else {
           const member = guild.members.cache.get(o.id);
-          name = member ? member.user.tag : '';
+          name = member ? userTag(member.user) : '';
         }
         return {
           name,
@@ -257,7 +316,7 @@ async function executeRestoration(guild: any, snapshot: any, scope: any, context
               if (roleObj) targetId = roleObj.id;
             }
           } else {
-            const memberObj = guild.members.cache.find((m: any) => m.user.tag === ov.name);
+            const memberObj = guild.members.cache.find((m: any) => userTag(m.user) === ov.name);
             if (memberObj) targetId = memberObj.id;
           }
 
@@ -407,16 +466,17 @@ export const BackupsManifest: ModuleManifest = {
         const guild = interaction.guild;
         if (!guild) return;
 
-        const sub = interaction.options.getSubcommand();
+        const sub = interaction.options.getSubcommand(false);
+        if (!sub) {
+          return interaction.reply({ content: '❌ Please specify a subcommand: `create`, `list`, `info`, `load`, or `delete`.', flags: 64 });
+        }
 
         // 1. CREATE SUBCOMMAND
         if (sub === 'create') {
           try {
             await interaction.deferReply({ flags: 64 });
-            const snapshot = await createBackupData(guild, interaction.user.tag);
-            const backups = loadBackups();
-            backups.push(snapshot);
-            saveBackups(backups);
+            const snapshot = await createBackupData(guild, userTag(interaction.user));
+            await saveBackup(snapshot);
 
             const embed = new EmbedBuilder()
               .setTitle('💾 Backup Snapshot Created')
@@ -439,8 +499,7 @@ export const BackupsManifest: ModuleManifest = {
 
         // 2. LIST SUBCOMMAND
         else if (sub === 'list') {
-          const backups = loadBackups();
-          const guildBackups = backups.filter(b => b.guildId === guild.id);
+          const guildBackups = await getGuildBackups(guild.id);
 
           const embed = new EmbedBuilder()
             .setTitle('📁 Server Backups')
@@ -460,9 +519,8 @@ export const BackupsManifest: ModuleManifest = {
 
         // 3. INFO SUBCOMMAND
         else if (sub === 'info') {
-          const backupId = interaction.options.getString('backup-id');
-          const backups = loadBackups();
-          const snapshot = backups.find(b => b.id === backupId);
+          const backupId = interaction.options.getString('backup-id') || '';
+          const snapshot = await getBackupById(backupId);
 
           if (!snapshot) {
             return interaction.reply({ content: `❌ Backup with ID \`${backupId}\` was not found.`, flags: 64 });
@@ -492,15 +550,14 @@ export const BackupsManifest: ModuleManifest = {
             return interaction.reply({ content: '🔒 Administrator permissions required to delete backups.', flags: 64 });
           }
 
-          const backupId = interaction.options.getString('backup-id');
-          const backups = loadBackups();
-          const filtered = backups.filter(b => b.id !== backupId);
+          const backupId = interaction.options.getString('backup-id') || '';
+          const snapshot = await getBackupById(backupId);
 
-          if (backups.length === filtered.length) {
+          if (!snapshot) {
             return interaction.reply({ content: `❌ Backup with ID \`${backupId}\` was not found.`, flags: 64 });
           }
 
-          saveBackups(filtered);
+          await deleteBackup(backupId);
           context.logSyncEvent(`Backup Recovery: Deleted backup snapshot "${backupId}".`, 'warn');
           await interaction.reply({ content: `✅ Backup snapshot \`${backupId}\` was deleted successfully.`, flags: 64 });
         }
@@ -511,9 +568,8 @@ export const BackupsManifest: ModuleManifest = {
             return interaction.reply({ content: '🔒 Administrator permissions required to load backups.', flags: 64 });
           }
 
-          const backupId = interaction.options.getString('backup-id');
-          const backups = loadBackups();
-          const snapshot = backups.find(b => b.id === backupId);
+          const backupId = interaction.options.getString('backup-id') || '';
+          const snapshot = await getBackupById(backupId);
 
           if (!snapshot) {
             return interaction.reply({ content: `❌ Backup with ID \`${backupId}\` was not found.`, flags: 64 });
@@ -563,9 +619,7 @@ export const BackupsManifest: ModuleManifest = {
 
         pendingBackupLoads.delete(key);
 
-        const backups = loadBackups();
-        const snapshot = backups.find(b => b.id === backupId);
-
+        const snapshot = await getBackupById(backupId);
         if (!snapshot) {
           return interaction.reply({ content: '❌ Backup snapshot data not found.', flags: 64 });
         }
@@ -595,8 +649,7 @@ export const BackupsManifest: ModuleManifest = {
       path: '/list',
       method: 'get',
       handler: async (req: any, res: any, context: any) => {
-        const backups = loadBackups();
-        // Return backups relevant to current guild or all to allow cloning!
+        const backups = await getGuildBackups(context.guildId);
         res.json(backups);
       }
     },
@@ -604,8 +657,7 @@ export const BackupsManifest: ModuleManifest = {
       path: '/info/:id',
       method: 'get',
       handler: async (req: any, res: any, context: any) => {
-        const backups = loadBackups();
-        const backup = backups.find(b => b.id === req.params.id);
+        const backup = await getBackupById(req.params.id);
         if (!backup) return res.status(404).json({ error: 'Backup not found' });
         res.json(backup);
       }
@@ -618,9 +670,7 @@ export const BackupsManifest: ModuleManifest = {
         if (!guild) return res.status(400).json({ error: 'Discord guild not connected or available' });
         try {
           const snapshot = await createBackupData(guild, req.user?.username || 'Dashboard Admin');
-          const backups = loadBackups();
-          backups.push(snapshot);
-          saveBackups(backups);
+          await saveBackup(snapshot);
           context.logSyncEvent(`Backup Recovery: Created configuration backup snapshot "${snapshot.id}".`, 'success');
           res.json({ success: true, backup: snapshot });
         } catch (e: any) {
@@ -634,8 +684,7 @@ export const BackupsManifest: ModuleManifest = {
       method: 'post',
       handler: async (req: any, res: any, context: any) => {
         const { backupId, scope } = req.body;
-        const backups = loadBackups();
-        const snapshot = backups.find(b => b.id === backupId);
+        const snapshot = await getBackupById(backupId);
         if (!snapshot) return res.status(404).json({ error: 'Backup snapshot not found' });
 
         const guild = context.client?.guilds.cache.get(context.guildId);
@@ -649,10 +698,8 @@ export const BackupsManifest: ModuleManifest = {
       path: '/delete/:id',
       method: 'post',
       handler: async (req: any, res: any, context: any) => {
-        const backups = loadBackups();
-        const filtered = backups.filter(b => b.id !== req.params.id);
-        if (backups.length === filtered.length) return res.status(404).json({ error: 'Backup not found' });
-        saveBackups(filtered);
+        const success = await deleteBackup(req.params.id);
+        if (!success) return res.status(404).json({ error: 'Backup not found or delete failed' });
         res.json({ success: true });
       }
     }

@@ -1,20 +1,60 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder } from 'discord.js';
-import fs from 'fs';
-import path from 'path';
+import { Database } from '../../core/Database.js';
 
-const XP_FILE = path.join(process.cwd(), 'src', 'xp.json');
-const ECO_FILE = path.join(process.cwd(), 'src', 'economy.json');
-
-function loadXP(): Record<string, number> {
-  try {
-    if (fs.existsSync(XP_FILE)) return JSON.parse(fs.readFileSync(XP_FILE, 'utf-8'));
-  } catch {}
-  return {};
+// Safe display name helper
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
 }
 
-function saveXP(data: Record<string, number>) {
-  try { fs.writeFileSync(XP_FILE, JSON.stringify(data, null, 2)); } catch {}
+async function getUserXP(guildId: string, userId: string): Promise<number> {
+  try {
+    const db = Database.getDb();
+    if (!db) return 0;
+    const row = await db.get<any>('SELECT xp FROM guild_xp WHERE guildId = ? AND userId = ?', [guildId, userId]);
+    return row ? (row.xp || 0) : 0;
+  } catch (err) {
+    console.error('Failed to get user XP:', err);
+    return 0;
+  }
+}
+
+async function saveUserXP(guildId: string, userId: string, xp: number): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      'INSERT OR REPLACE INTO guild_xp (guildId, userId, xp, updatedAt) VALUES (?, ?, ?, ?)',
+      [guildId, userId, xp, new Date().toISOString()]
+    );
+  } catch (err) {
+    console.error('Failed to save user XP:', err);
+  }
+}
+
+async function getTopXP(guildId: string, limit: number = 50): Promise<Array<{userId: string, xp: number}>> {
+  try {
+    const db = Database.getDb();
+    if (!db) return [];
+    const rows = await db.all<any>(
+      'SELECT userId, xp FROM guild_xp WHERE guildId = ? ORDER BY xp DESC LIMIT ?',
+      [guildId, limit]
+    );
+    return rows.map(row => ({ userId: row.userId, xp: row.xp || 0 }));
+  } catch (err) {
+    console.error('Failed to query leaderboard XP:', err);
+    return [];
+  }
+}
+
+async function resetAllXP(guildId: string): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run('DELETE FROM guild_xp WHERE guildId = ?', [guildId]);
+  } catch (err) {
+    console.error('Failed to reset all XP:', err);
+  }
 }
 
 interface EcoUser {
@@ -24,15 +64,45 @@ interface EcoUser {
   inventory?: string[];
 }
 
-function loadEco(): Record<string, EcoUser> {
+async function getUserEco(guildId: string, userId: string): Promise<EcoUser> {
   try {
-    if (fs.existsSync(ECO_FILE)) return JSON.parse(fs.readFileSync(ECO_FILE, 'utf-8'));
-  } catch {}
-  return {};
+    const db = Database.getDb();
+    if (!db) return { balance: 0 };
+    const row = await db.get<any>('SELECT balance, lastDaily, lastWork, inventory FROM guild_economy WHERE guildId = ? AND userId = ?', [guildId, userId]);
+    if (row) {
+      return {
+        balance: row.balance || 0,
+        lastDaily: row.lastDaily || 0,
+        lastWork: row.lastWork || 0,
+        inventory: typeof row.inventory === 'string' ? JSON.parse(row.inventory) : (row.inventory || [])
+      };
+    }
+  } catch (err) {
+    console.error('Failed to get user economy:', err);
+  }
+  return { balance: 0 };
 }
 
-function saveEco(data: Record<string, EcoUser>) {
-  try { fs.writeFileSync(ECO_FILE, JSON.stringify(data, null, 2)); } catch {}
+async function saveUserEco(guildId: string, userId: string, eco: EcoUser): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      `INSERT OR REPLACE INTO guild_economy (guildId, userId, balance, lastDaily, lastWork, inventory, updatedAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        guildId,
+        userId,
+        eco.balance,
+        eco.lastDaily || 0,
+        eco.lastWork || 0,
+        JSON.stringify(eco.inventory || []),
+        new Date().toISOString()
+      ]
+    );
+  } catch (err) {
+    console.error('Failed to save user economy:', err);
+  }
 }
 
 export const LevelingManifest: ModuleManifest = {
@@ -73,8 +143,10 @@ export const LevelingManifest: ModuleManifest = {
         const lvlMod = modules.find((m: any) => m.id === 'leveling');
         if (!lvlMod || lvlMod.status !== 'enabled') return;
 
-        const xpData = loadXP();
-        const currentXp = xpData[message.author.id] || 0;
+        const guildId = message.guildId;
+        if (!guildId) return;
+
+        const currentXp = await getUserXP(guildId, message.author.id);
         const multiplier = parseFloat(lvlMod.config?.multiplier || '1.0');
         const xpGain = Math.floor((Math.floor(Math.random() * 10) + 15) * multiplier);
         
@@ -82,13 +154,12 @@ export const LevelingManifest: ModuleManifest = {
         const newXp = currentXp + xpGain;
         const newLevel = Math.floor(0.1 * Math.sqrt(newXp));
         
-        xpData[message.author.id] = newXp;
-        saveXP(xpData);
+        await saveUserXP(guildId, message.author.id, newXp);
 
         if (newLevel > oldLevel) {
           const channel = message.channel;
           await channel.send(`🎉 **Level Up!** ${message.author} has reached Level **${newLevel}**!`).catch(() => {});
-          context.logSyncEvent(`Leveling: ${message.author.tag} leveled up to Lvl ${newLevel}.`, 'info');
+          context.logSyncEvent(`Leveling: ${userTag(message.author)} leveled up to Lvl ${newLevel}.`, 'info');
 
           // Role Reward assignment
           const roleRewards = lvlMod.config?.roleRewards || {};
@@ -98,7 +169,7 @@ export const LevelingManifest: ModuleManifest = {
               const member = message.member || await message.guild.members.fetch(message.author.id).catch(() => null);
               if (member && !member.roles.cache.has(rewardRoleId)) {
                 await member.roles.add(rewardRoleId);
-                context.logSyncEvent(`Leveling Reward: Assigned role <@&${rewardRoleId}> to ${message.author.tag} for Level ${newLevel}.`, 'success');
+                context.logSyncEvent(`Leveling Reward: Assigned role <@&${rewardRoleId}> to ${userTag(message.author)} for Level ${newLevel}.`, 'success');
               }
             } catch (err) {
               console.error('Failed to assign role reward:', err);
@@ -111,8 +182,10 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_rank',
       handler: async (client: any, interaction: any, context: any) => {
         const target = interaction.options.getUser('user') || interaction.user;
-        const xpData = loadXP();
-        const xp = xpData[target.id] || 0;
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const xp = await getUserXP(guildId, target.id);
         const level = Math.floor(0.1 * Math.sqrt(xp));
         const nextLevelXp = Math.pow((level + 1) / 0.1, 2);
         
@@ -125,8 +198,10 @@ export const LevelingManifest: ModuleManifest = {
     {
       name: 'command_leaderboard',
       handler: async (client: any, interaction: any, context: any) => {
-        const xpData = loadXP();
-        const sorted = Object.entries(xpData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const sorted = await getTopXP(guildId, 10);
         
         if (sorted.length === 0) {
           return interaction.reply({ content: 'No XP data yet.', flags: 64 });
@@ -134,9 +209,9 @@ export const LevelingManifest: ModuleManifest = {
 
         const lines = ['🏆 **Server Leaderboard**'];
         for (let i = 0; i < sorted.length; i++) {
-          const [id, xp] = sorted[i];
-          const level = Math.floor(0.1 * Math.sqrt(xp));
-          lines.push(`**#${i+1}** <@${id}> — Level **${level}** (${xp} XP)`);
+          const item = sorted[i];
+          const level = Math.floor(0.1 * Math.sqrt(item.xp));
+          lines.push(`**#${i+1}** <@${item.userId}> — Level **${level}** (${item.xp} XP)`);
         }
 
         await interaction.reply({ content: lines.join('\n'), ephemeral: false });
@@ -146,19 +221,22 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_balance',
       handler: async (client: any, interaction: any, context: any) => {
         const target = interaction.options.getUser('user') || interaction.user;
-        const eco = loadEco();
-        const bal = eco[target.id]?.balance || 0;
-        await interaction.reply(`💰 **${target.username}** has **${bal}** coins.`);
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const eco = await getUserEco(guildId, target.id);
+        await interaction.reply(`💰 **${target.username}** has **${eco.balance}** coins.`);
       }
     },
     {
       name: 'command_daily',
       handler: async (client: any, interaction: any, context: any) => {
-        const eco = loadEco();
-        if (!eco[interaction.user.id]) eco[interaction.user.id] = { balance: 0 };
-        
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const eco = await getUserEco(guildId, interaction.user.id);
         const now = Date.now();
-        const last = eco[interaction.user.id].lastDaily || 0;
+        const last = eco.lastDaily || 0;
         const diff = now - last;
         const cooldown = 24 * 60 * 60 * 1000;
         
@@ -167,21 +245,22 @@ export const LevelingManifest: ModuleManifest = {
           return interaction.reply({ content: `⏳ You already claimed your daily! Come back in **${remaining} hours**.`, flags: 64 });
         }
         
-        eco[interaction.user.id].balance += 500;
-        eco[interaction.user.id].lastDaily = now;
-        saveEco(eco);
+        eco.balance += 500;
+        eco.lastDaily = now;
+        await saveUserEco(guildId, interaction.user.id, eco);
         
-        await interaction.reply(`🎉 You claimed your daily reward of **500 coins**! Your new balance is **${eco[interaction.user.id].balance}** coins.`);
+        await interaction.reply(`🎉 You claimed your daily reward of **500 coins**! Your new balance is **${eco.balance}** coins.`);
       }
     },
     {
       name: 'command_work',
       handler: async (client: any, interaction: any, context: any) => {
-        const eco = loadEco();
-        if (!eco[interaction.user.id]) eco[interaction.user.id] = { balance: 0 };
-        
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const eco = await getUserEco(guildId, interaction.user.id);
         const now = Date.now();
-        const last = eco[interaction.user.id].lastWork || 0;
+        const last = eco.lastWork || 0;
         const cooldown = 60 * 60 * 1000; // 1 hour
         
         if (now - last < cooldown) {
@@ -190,11 +269,11 @@ export const LevelingManifest: ModuleManifest = {
         }
         
         const earnings = Math.floor(Math.random() * 200) + 100; // 100 to 300
-        eco[interaction.user.id].balance += earnings;
-        eco[interaction.user.id].lastWork = now;
-        saveEco(eco);
+        eco.balance += earnings;
+        eco.lastWork = now;
+        await saveUserEco(guildId, interaction.user.id, eco);
         
-        await interaction.reply(`💼 You worked hard and earned **${earnings} coins**! New balance: **${eco[interaction.user.id].balance}**`);
+        await interaction.reply(`💼 You worked hard and earned **${earnings} coins**! New balance: **${eco.balance}**`);
       }
     },
     {
@@ -202,22 +281,25 @@ export const LevelingManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const target = interaction.options.getUser('user');
         const amount = interaction.options.getInteger('amount');
+        const guildId = interaction.guildId;
+        if (!guildId) return;
         
         if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot pay yourself.', flags: 64 });
         if (amount <= 0) return interaction.reply({ content: '❌ Amount must be greater than 0.', flags: 64 });
         
-        const eco = loadEco();
-        const senderBal = eco[interaction.user.id]?.balance || 0;
+        const senderEco = await getUserEco(guildId, interaction.user.id);
         
-        if (senderBal < amount) {
-          return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${senderBal}**.`, flags: 64 });
+        if (senderEco.balance < amount) {
+          return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${senderEco.balance}**.`, flags: 64 });
         }
         
-        if (!eco[target.id]) eco[target.id] = { balance: 0 };
+        const targetEco = await getUserEco(guildId, target.id);
         
-        eco[interaction.user.id].balance -= amount;
-        eco[target.id].balance += amount;
-        saveEco(eco);
+        senderEco.balance -= amount;
+        targetEco.balance += amount;
+
+        await saveUserEco(guildId, interaction.user.id, senderEco);
+        await saveUserEco(guildId, target.id, targetEco);
         
         await interaction.reply(`💸 You paid **${amount} coins** to ${target.username}.`);
       }
@@ -240,8 +322,11 @@ export const LevelingManifest: ModuleManifest = {
     {
       name: 'command_inventory',
       handler: async (client: any, interaction: any, context: any) => {
-        const eco = loadEco();
-        const inv = eco[interaction.user.id]?.inventory || [];
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        const eco = await getUserEco(guildId, interaction.user.id);
+        const inv = eco.inventory || [];
         
         if (inv.length === 0) {
           return interaction.reply(`🎒 ${interaction.user.username}'s inventory is empty.`);
@@ -254,27 +339,30 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_rob',
       handler: async (client: any, interaction: any, context: any) => {
         const target = interaction.options.getUser('user');
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
         if (target.id === interaction.user.id) return interaction.reply({ content: '❌ You cannot rob yourself.', flags: 64 });
         
-        const eco = loadEco();
-        const myBal = eco[interaction.user.id]?.balance || 0;
-        const targetBal = eco[target.id]?.balance || 0;
+        const myEco = await getUserEco(guildId, interaction.user.id);
+        const targetEco = await getUserEco(guildId, target.id);
         
-        if (myBal < 500) return interaction.reply({ content: '❌ You need at least 500 coins to attempt a robbery.', flags: 64 });
-        if (targetBal < 100) return interaction.reply({ content: `❌ ${target.username} is too poor to rob.`, flags: 64 });
+        if (myEco.balance < 500) return interaction.reply({ content: '❌ You need at least 500 coins to attempt a robbery.', flags: 64 });
+        if (targetEco.balance < 100) return interaction.reply({ content: `❌ ${target.username} is too poor to rob.`, flags: 64 });
         
         const success = Math.random() > 0.6; // 40% chance of success
         
         if (success) {
-          const stolen = Math.floor(targetBal * 0.2); // Steal 20%
-          eco[interaction.user.id].balance += stolen;
-          eco[target.id].balance -= stolen;
-          saveEco(eco);
+          const stolen = Math.floor(targetEco.balance * 0.2); // Steal 20%
+          myEco.balance += stolen;
+          targetEco.balance -= stolen;
+          await saveUserEco(guildId, interaction.user.id, myEco);
+          await saveUserEco(guildId, target.id, targetEco);
           await interaction.reply(`🥷 **Success!** You successfully robbed ${target.username} and got away with **${stolen} coins**!`);
         } else {
           const fine = 500;
-          eco[interaction.user.id].balance -= fine;
-          saveEco(eco);
+          myEco.balance -= fine;
+          await saveUserEco(guildId, interaction.user.id, myEco);
           await interaction.reply(`🚓 **Busted!** You were caught trying to rob ${target.username} and paid a fine of **${fine} coins**.`);
         }
       }
@@ -283,14 +371,16 @@ export const LevelingManifest: ModuleManifest = {
       name: 'command_slots',
       handler: async (client: any, interaction: any, context: any) => {
         const bet = interaction.options.getInteger('bet');
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
         if (bet <= 0) return interaction.reply({ content: '❌ Bet must be greater than 0.', flags: 64 });
         
-        const eco = loadEco();
-        const myBal = eco[interaction.user.id]?.balance || 0;
+        const eco = await getUserEco(guildId, interaction.user.id);
         
-        if (myBal < bet) return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${myBal}**.`, flags: 64 });
+        if (eco.balance < bet) return interaction.reply({ content: `❌ You do not have enough coins. Your balance is **${eco.balance}**.`, flags: 64 });
         
-        eco[interaction.user.id].balance -= bet;
+        eco.balance -= bet;
         
         const symbols = ['🍒', '🍋', '🍇', '💎', '🔔', '7️⃣'];
         const s1 = symbols[Math.floor(Math.random() * symbols.length)];
@@ -309,12 +399,12 @@ export const LevelingManifest: ModuleManifest = {
           msg = `😢 **You lost.** Better luck next time.`;
         }
         
-        eco[interaction.user.id].balance += win;
-        saveEco(eco);
+        eco.balance += win;
+        await saveUserEco(guildId, interaction.user.id, eco);
         
         const embed = new EmbedBuilder()
           .setTitle('🎰 Slots')
-          .setDescription(`**[ ${s1} | ${s2} | ${s3} ]**\n\n${msg}\n\n*New Balance: ${eco[interaction.user.id].balance}*`)
+          .setDescription(`**[ ${s1} | ${s2} | ${s3} ]**\n\n${msg}\n\n*New Balance: ${eco.balance}*`)
           .setColor(win > 0 ? '#2ecc71' : '#e74c3c');
           
         await interaction.reply({ embeds: [embed] });
@@ -326,7 +416,6 @@ export const LevelingManifest: ModuleManifest = {
       path: '/state',
       method: 'get',
       handler: async (req: any, res: any, context: any) => {
-        const xpData = loadXP();
         const modules = context.getModulesState();
         const lvlMod = modules.find((m: any) => m.id === 'leveling');
         const roleRewards = lvlMod?.config?.roleRewards || {};
@@ -334,15 +423,15 @@ export const LevelingManifest: ModuleManifest = {
 
         const client = context.client;
         const leaderboard = [];
-        const sorted = Object.entries(xpData).sort((a, b) => b[1] - a[1]).slice(0, 50);
+        const sorted = await getTopXP(context.guildId, 50);
 
-        for (const [userId, xp] of sorted) {
-          let username = `User_${userId.substring(0, 5)}`;
+        for (const item of sorted) {
+          let username = `User_${item.userId.substring(0, 5)}`;
           let avatar = null;
 
           if (client) {
             try {
-              const user = await client.users.fetch(userId).catch(() => null);
+              const user = await client.users.fetch(item.userId).catch(() => null);
               if (user) {
                 username = user.username;
                 avatar = user.displayAvatarURL ? user.displayAvatarURL() : null;
@@ -350,12 +439,12 @@ export const LevelingManifest: ModuleManifest = {
             } catch {}
           }
 
-          const level = Math.floor(0.1 * Math.sqrt(xp));
+          const level = Math.floor(0.1 * Math.sqrt(item.xp));
           leaderboard.push({
-            userId,
+            userId: item.userId,
             username,
             avatar,
-            xp,
+            xp: item.xp,
             level
           });
         }
@@ -381,7 +470,7 @@ export const LevelingManifest: ModuleManifest = {
       path: '/reset',
       method: 'post',
       handler: async (req: any, res: any, context: any) => {
-        saveXP({});
+        await resetAllXP(context.guildId);
         context.logSyncEvent(`Leveling: Leveling and XP database has been reset.`, 'warn');
         res.json({ success: true, leaderboard: [] });
       }

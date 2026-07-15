@@ -221,7 +221,9 @@ export function Security({
 
   const historyList = useMemo(() => {
     return (syncLogs || []).map((l: any) => ({
-      date: new Date().toISOString().split('T')[0] + 'T' + (l.time || '00:00:00'),
+      // M-7 FIX: Use the log's own time field — don't always inject today's date.
+      // syncLogs entries have a `time` field in HH:MM:SS format from the backend.
+      date: l.time || new Date().toTimeString().split(' ')[0],
       author: l.type === 'warn' ? 'Anti-Nuke' : l.type === 'success' ? 'Recovery' : 'System',
       changes: l.msg
     }));
@@ -283,11 +285,22 @@ export function Security({
   const [lockdownAction, setLockdownAction] = useState<'enable' | 'disable'>('enable');
 
   const handleRunScan = () => {
+    // M-11 FIX: The scan result is computed live from useMemo (scanResult above).
+    // Show a brief visual indicator then surface the issues via toast.
     setIsScanning(true);
     setTimeout(() => {
       setIsScanning(false);
-      onManualTrigger('Security vulnerability scan completed successfully.', 'success', 'Security');
-    }, 2000);
+      const issueCount = scanResult.issues.length;
+      if (issueCount === 0) {
+        onManualTrigger('Security scan complete. No vulnerabilities detected.', 'success', 'Security');
+      } else {
+        onManualTrigger(
+          `Security scan complete. Found ${issueCount} issue(s): ${scanResult.issues.map(i => i.title).join(', ')}.`,
+          issueCount > 2 ? 'danger' : 'warning',
+          'Security'
+        );
+      }
+    }, 800);
   };
 
   const handleApplyPreset = async (presetName: string) => {
@@ -339,7 +352,10 @@ export function Security({
         );
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(`Failed to toggle lockdown: ${data.error || 'Unknown error'}`);
+        // H-9 FIX: Close modal on error — don't leave user stuck inside the modal.
+        setShowLockdownModal(false);
+        // H-5 FIX: Use toast notification instead of blocking native alert().
+        onSaveConfig(`Failed to toggle lockdown: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error(err);

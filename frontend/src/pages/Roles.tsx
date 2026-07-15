@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Save, Check, RefreshCw, Smile, ChevronDown, Users, Shield, Zap, Star, Award } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { API_BASE } from '../config';
+import type { ModuleState, DiscordResourceRegistry } from '../hooks/useDiscordSync';
+
+interface RolesProps {
+  modules?: ModuleState[];
+  registry?: DiscordResourceRegistry;
+  onUpdateConfig?: (moduleId: string, config: Record<string, any>, enabled?: boolean) => void;
+}
 
 interface ReactionRole { messageId: string; channelId: string; emoji: string; roleId: string; description: string; }
 interface ButtonRole { label: string; emoji: string; roleId: string; style: 'primary' | 'secondary' | 'success' | 'danger'; }
@@ -17,17 +25,26 @@ const TABS = [
 
 const BTN_STYLES = { primary: '#5865F2', secondary: '#4f545c', success: '#3ba55d', danger: '#ed4245' };
 
-export function Roles() {
+export function Roles({ registry }: RolesProps) {
   const { token } = useAuth();
   const [tab, setTab] = useState<'reaction'|'button'|'auto'|'rewards'>('reaction');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [roles, setRoles] = useState<{id:string;name:string;color:string}[]>([
-    {id:'1',name:'Member',color:'#6B7280'},{id:'2',name:'Verified',color:'#22C55E'},
-    {id:'3',name:'Booster',color:'#F472B6'},{id:'4',name:'VIP',color:'#FACC15'},
-    {id:'5',name:'Moderator',color:'#60A5FA'},{id:'6',name:'DJ',color:'#F97316'},
-  ]);
-  const [channels] = useState([{id:'1',name:'roles'},{id:'2',name:'general'},{id:'3',name:'welcome'}]);
+  // Use real registry roles if available, otherwise fall back to placeholder list
+  const [roles] = useState<{id:string;name:string;color:string}[]>(
+    (registry?.roles || []).length > 0
+      ? registry!.roles.map(r => ({ id: r.id, name: r.name, color: r.color || '#6B7280' }))
+      : [
+          {id:'1',name:'Member',color:'#6B7280'},{id:'2',name:'Verified',color:'#22C55E'},
+          {id:'3',name:'Booster',color:'#F472B6'},{id:'4',name:'VIP',color:'#FACC15'},
+          {id:'5',name:'Moderator',color:'#60A5FA'},{id:'6',name:'DJ',color:'#F97316'},
+        ]
+  );
+  const [channels] = useState(
+    (registry?.channels || []).filter(c => c.type === 'text').length > 0
+      ? registry!.channels.filter(c => c.type === 'text').map(c => ({ id: c.id, name: c.name }))
+      : [{id:'1',name:'roles'},{id:'2',name:'general'},{id:'3',name:'welcome'}]
+  );
   const [reactionRoles, setReactionRoles] = useState<ReactionRole[]>([
     { messageId: '', channelId: '1', emoji: '✅', roleId: '2', description: 'Get the Verified role' }
   ]);
@@ -44,7 +61,8 @@ export function Roles() {
   const save = async () => {
     setSaving(true);
     try {
-      await fetch('http://localhost:5000/api/modules/roles/config', {
+      // M-1: Use VITE_API_URL env var instead of hardcoded localhost
+      await fetch(`${API_BASE}/api/modules/roles/config`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ reactionRoles, buttonRoles, autoRoles, roleRewards })
       });

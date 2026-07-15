@@ -11,15 +11,13 @@ import { BackupsManifest } from '../modules/backups/manifest.js';
 import { CommunityManifest } from '../modules/community/manifest.js';
 import { AutomationManifest } from '../modules/automation/manifest.js';
 import { VoiceManifest } from '../modules/voice/manifest.js';
-import { BotWhitelistManifest } from '../modules/bot_whitelist/manifest.js';
 import { MemberWhitelistManifest } from '../modules/member_whitelist/manifest.js';
-import { RoleWhitelistManifest } from '../modules/role_whitelist/manifest.js';
 import { ReactionRolesManifest } from '../modules/reaction-roles/manifest.js';
 import { LevelingManifest } from '../modules/leveling/manifest.js';
 import { AutomodManifest } from '../modules/automod/manifest.js';
-import { ApprovalManifest } from '../modules/approval/manifest.js';
 import { DiscordDashboardManifest } from '../modules/discord-dashboard/manifest.js';
 import { MusicManifest } from '../modules/music/manifest.js';
+
 import { BlacklistManifest } from '../modules/blacklist/manifest.js';
 import { GiveawayManifest } from '../modules/giveaway/manifest.js';
 import { RemindersManifest } from '../modules/reminders/manifest.js';
@@ -27,9 +25,9 @@ import { AnnouncementsManifest } from '../modules/announcements/manifest.js';
 import { JoinToCreateManifest } from '../modules/joinToCreate/manifest.js';
 import { VoiceManagerManifest } from '../modules/voice_manager/manifest.js';
 import { BulkOpsManifest } from '../modules/bulk_ops/manifest.js';
-import { OwnerManifest } from '../modules/owner/manifest.js';
 import { DiagnosticsManifest } from '../modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from '../modules/voice-protection/index.js';
+
 
 dotenv.config();
 
@@ -55,13 +53,10 @@ const manifests = [
   CommunityManifest,
   AutomationManifest,
   VoiceManifest,
-  BotWhitelistManifest,
   MemberWhitelistManifest,
-  RoleWhitelistManifest,
   ReactionRolesManifest,
   LevelingManifest,
   AutomodManifest,
-  ApprovalManifest,
   DiscordDashboardManifest,
   MusicManifest,
   BlacklistManifest,
@@ -71,10 +66,10 @@ const manifests = [
   JoinToCreateManifest,
   VoiceManagerManifest,
   BulkOpsManifest,
-  OwnerManifest,
   DiagnosticsManifest,
   VoiceProtectionManifest
 ];
+
 
 // Recursively serialize options, preserving channel_types, autocomplete, min/max
 const serializeOption = (opt: any): any => {
@@ -96,7 +91,7 @@ const serializeOption = (opt: any): any => {
 const commands: any[] = [];
 manifests.forEach(m => {
   if (m.commands) {
-    m.commands.forEach(c => {
+    m.commands.forEach((c: { name: string; description: string; options?: any[] }) => {
       commands.push({
         name: c.name,
         description: c.description,
@@ -105,6 +100,7 @@ manifests.forEach(m => {
     });
   }
 });
+
 
 const rest = new REST({ version: '10' }).setToken(token);
 

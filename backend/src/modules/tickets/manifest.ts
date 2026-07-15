@@ -146,7 +146,7 @@ export const TicketsManifest: ModuleManifest = {
 
           await ticketChannel.send({ content: `${interaction.user} | Staff Notification`, embeds: [welcomeEmbed], components: [row] });
           await interaction.editReply({ content: `✅ Ticket opened successfully: ${ticketChannel}` });
-          context.logSyncEvent(`Ticket Support: Opened ticket channel #${ticketChannel.name} for user "${interaction.user.tag}".`, 'success');
+          context.logSyncEvent(`Ticket Support: Opened ticket channel #${ticketChannel.name} for user "${interaction.user.username}".`, 'success');
         } catch (err) {
           console.error(err);
           await interaction.editReply({ content: '❌ Failed to create support ticket channel. Verify bot permissions.' });
@@ -168,7 +168,7 @@ export const TicketsManifest: ModuleManifest = {
         try {
           await interaction.reply({ content: '🔒 **Closing ticket...** Channel will be removed in 5 seconds.', ephemeral: false });
           
-          context.logSyncEvent(`Ticket Support: User "${interaction.user.tag}" closed ticket channel #${channel.name}.`, 'info');
+          context.logSyncEvent(`Ticket Support: User "${interaction.user.username}" closed ticket channel #${channel.name}.`, 'info');
           
           setTimeout(async () => {
             try {

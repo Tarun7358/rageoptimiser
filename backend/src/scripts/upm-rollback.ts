@@ -18,36 +18,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 async function updateSecurityConfigInDb(guildId: string, updates: Record<string, any>) {
   const db = Database.getDb();
   if (!db) return;
-  const docRef = db.collection('guild_configs').doc(guildId);
-  const doc = await docRef.get();
-  let state: any = { modules: [] };
-  if (doc.exists) {
-    state = doc.data();
+  try {
+    const row = await db.get<any>('SELECT modules, globalSettings FROM guild_configs WHERE guildId = ?', [guildId]);
+    let modules = [];
+    let globalSettings = {};
+    if (row) {
+      modules = typeof row.modules === 'string' ? JSON.parse(row.modules) : (row.modules || []);
+      globalSettings = typeof row.globalSettings === 'string' ? JSON.parse(row.globalSettings) : (row.globalSettings || {});
+    }
+    let secModule = modules.find((m: any) => m.id === 'security');
+    if (!secModule) {
+      secModule = { id: 'security', name: 'Security Hardening', status: 'enabled', config: {} };
+      modules.push(secModule);
+    }
+    secModule.config = { ...(secModule.config || {}), ...updates };
+    await db.run(
+      'INSERT OR REPLACE INTO guild_configs (guildId, modules, globalSettings) VALUES (?, ?, ?)',
+      [guildId, JSON.stringify(modules), JSON.stringify(globalSettings)]
+    );
+  } catch (err) {
+    console.error('Failed to update security config in SQLite:', err);
   }
-  let secModule = state.modules?.find((m: any) => m.id === 'security');
-  if (!secModule) {
-    secModule = { id: 'security', name: 'Security Hardening', status: 'enabled', config: {} };
-    if (!state.modules) state.modules = [];
-    state.modules.push(secModule);
-  }
-  secModule.config = { ...(secModule.config || {}), ...updates };
-  await docRef.set(state);
 }
 
 async function logSyncEventInDb(guildId: string, msg: string, type: 'info' | 'warn' | 'success') {
-  const db = Database.getDb();
-  if (!db) return;
-  const docRef = db.collection('guild_configs').doc(guildId);
-  const doc = await docRef.get();
-  let state: any = {};
-  if (doc.exists) {
-    state = doc.data();
-  }
-  if (!state.syncLogs) state.syncLogs = [];
-  const time = new Date().toTimeString().split(' ')[0];
-  state.syncLogs.unshift({ time, msg, type });
-  if (state.syncLogs.length > 100) state.syncLogs.pop();
-  await docRef.set(state);
+  console.log(`[Sync Event] [${type.toUpperCase()}] ${msg}`);
 }
 
 async function run() {
@@ -91,20 +86,19 @@ async function run() {
   }
 
   // Fetch rollback document
-  const rollbackDoc = await db.collection('upm_rollbacks').doc(`${guildId}_${userId}`).get().catch(() => null);
-  if (!rollbackDoc || !rollbackDoc.exists) {
-    console.error(`❌ Error: No rollback data found in Firestore for user ${userId}.`);
+  const rollbackRow = await db.get<any>('SELECT roles FROM upm_rollbacks WHERE id = ?', [`${guildId}_${userId}`]).catch(() => null);
+  if (!rollbackRow) {
+    console.error(`❌ Error: No rollback data found in SQLite for user ${userId}.`);
     process.exit(1);
   }
 
-  const rollbackData = rollbackDoc.data() || {};
+  const rollbackRoles = typeof rollbackRow.roles === 'string' ? JSON.parse(rollbackRow.roles) : (rollbackRow.roles || []);
 
   console.log(`[UPM CLI] Connecting to Discord Gateway...`);
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.GuildModeration
+      GatewayIntentBits.GuildMembers
     ]
   });
 
@@ -126,31 +120,34 @@ async function run() {
       process.exit(1);
     }
 
-    const doc = await db.collection('guild_configs').doc(guildId).get();
-    const state = (doc.exists ? doc.data() : null) || { modules: [] };
-    const secModule = state.modules?.find((m: any) => m.id === 'security') || { config: {} };
+    const row = await db.get<any>('SELECT modules FROM guild_configs WHERE guildId = ?', [guildId]).catch(() => null);
+    let modules = [];
+    if (row) {
+      modules = typeof row.modules === 'string' ? JSON.parse(row.modules) : (row.modules || []);
+    }
+    const secModule = modules.find((m: any) => m.id === 'security') || { config: {} };
     const config = secModule.config || {};
     const upm = config.upm || {};
 
-    console.log(`[UPM CLI] Executing rollback for ${member.user.tag}...`);
+    console.log(`[UPM CLI] Executing rollback for ${member.user.username}...`);
 
     if (upm.quarantineRole && member.roles.cache.has(upm.quarantineRole)) {
       await member.roles.remove(upm.quarantineRole).catch(() => {});
     }
 
-    for (const rId of (rollbackData.roles || [])) {
+    for (const rId of rollbackRoles) {
       await member.roles.add(rId).catch(() => {});
     }
 
-    await db.collection('upm_rollbacks').doc(`${guildId}_${userId}`).delete().catch(() => {});
+    await db.run('DELETE FROM upm_rollbacks WHERE id = ?', [`${guildId}_${userId}`]).catch(() => {});
 
     let quarantinedUsers = config.quarantinedUsers || [];
     quarantinedUsers = quarantinedUsers.filter((u: any) => u.userId !== userId);
     await updateSecurityConfigInDb(guildId, { quarantinedUsers });
 
-    await logSyncEventInDb(guildId, `Rollback executed via CLI script: Restored original roles to ${member.user.tag}.`, 'success');
+    await logSyncEventInDb(guildId, `Rollback executed via CLI script: Restored original roles to ${member.user.username}.`, 'success');
 
-    console.log(`✅ Success (standalone): Rollback executed for ${member.user.tag}.`);
+    console.log(`✅ Success (standalone): Rollback executed for ${member.user.username}.`);
   } catch (e: any) {
     console.error(`❌ Standalone Execution Failed:`, e.message || e);
   } finally {

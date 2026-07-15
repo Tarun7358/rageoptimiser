@@ -126,7 +126,7 @@ export const AnnouncementsManifest: ModuleManifest = {
               .setColor(color as any)
               .setDescription(message)
               .setTimestamp()
-              .setFooter({ text: `Announced by ${interaction.user.tag}` });
+              .setFooter({ text: `Announced by ${interaction.user.username}` });
             if (title) embed.setTitle(title);
             payload.embeds = [embed];
           } else {
@@ -146,14 +146,14 @@ export const AnnouncementsManifest: ModuleManifest = {
               sentAt: new Date(),
               status: 'sent',
               authorId: interaction.user.id,
-              authorTag: interaction.user.tag,
+              authorTag: interaction.user.username,
               pingEveryone,
               pingRoleId: pingRole?.id,
               createdAt: new Date()
             };
             history.push(ann);
             saveHistory(history);
-            context.logSyncEvent(`[Announcements] Sent announcement to #${targetChannel.name} by ${interaction.user.tag}.`, 'success');
+            context.logSyncEvent(`[Announcements] Sent announcement to #${targetChannel.name} by ${interaction.user.username}.`, 'success');
             await interaction.editReply({ content: `✅ Announcement sent to ${targetChannel}!` });
           } catch (err) {
             await interaction.editReply({ content: '❌ Failed to send announcement. Check bot permissions.' });
@@ -178,7 +178,7 @@ export const AnnouncementsManifest: ModuleManifest = {
             .setDescription(description)
             .setColor(color as any)
             .setTimestamp()
-            .setFooter({ text: footer || `Announced by ${interaction.user.tag}` });
+            .setFooter({ text: footer || `Announced by ${interaction.user.username}` });
 
           if (image) embed.setImage(image);
           if (thumbnail) embed.setThumbnail(thumbnail);
@@ -187,7 +187,7 @@ export const AnnouncementsManifest: ModuleManifest = {
 
           try {
             await targetChannel.send({ content: pingEveryone ? '@everyone' : undefined, embeds: [embed] });
-            context.logSyncEvent(`[Announcements] Sent rich embed to #${targetChannel.name} by ${interaction.user.tag}.`, 'success');
+            context.logSyncEvent(`[Announcements] Sent rich embed to #${targetChannel.name} by ${interaction.user.username}.`, 'success');
             await interaction.editReply({ content: `✅ Rich embed announcement sent to ${targetChannel}!` });
           } catch (err) {
             await interaction.editReply({ content: '❌ Failed to send embed. Check bot permissions.' });
@@ -218,7 +218,7 @@ export const AnnouncementsManifest: ModuleManifest = {
               await new Promise(r => setTimeout(r, 300)); // rate limit protection
             }
 
-            context.logSyncEvent(`[Announcements] DM blast: sent ${sent}, failed ${failed} by ${interaction.user.tag}.`, 'info');
+            context.logSyncEvent(`[Announcements] DM blast: sent ${sent}, failed ${failed} by ${interaction.user.username}.`, 'info');
             await interaction.editReply({ content: `✅ DM sent to **${sent}** members. Failed: **${failed}** (DMs closed).` });
           } catch (err) {
             await interaction.editReply({ content: '❌ Failed to send DMs.' });

@@ -8,6 +8,154 @@ import { EmbedBuilder } from 'discord.js';
 import type { PublicFeedManager } from './PublicFeedManager.js';
 import { QueueManager } from '../modules/music/QueueManager.js';
 
+export function wrapInteraction(interaction: any) {
+  if (!interaction) return interaction;
+  if (interaction._antigravity_wrapped) return interaction;
+  interaction._antigravity_wrapped = true;
+
+  const originalReply = interaction.reply ? interaction.reply.bind(interaction) : null;
+  const originalDeferReply = interaction.deferReply ? interaction.deferReply.bind(interaction) : null;
+  const originalEditReply = interaction.editReply ? interaction.editReply.bind(interaction) : null;
+  const originalFollowUp = interaction.followUp ? interaction.followUp.bind(interaction) : null;
+  const originalUpdate = interaction.update ? interaction.update.bind(interaction) : null;
+
+  const handlePermError = (err: any) => {
+    if (err && (err.code === 50013 || err.message?.includes('Missing Permissions') || err.message?.includes('50013'))) {
+      console.warn(`[Music Warning] Cannot send reply in channel ${interaction.channelId || 'unknown'}: Missing Permissions (50013)`);
+      return true;
+    }
+    return false;
+  };
+
+  if (originalDeferReply) {
+    interaction.deferReply = async function(options?: any) {
+      if (interaction.deferred || interaction.replied) return;
+      try {
+        return await originalDeferReply(options);
+      } catch (err: any) {
+        if (handlePermError(err)) return;
+        console.warn('[wrapInteraction] deferReply failed:', err.message);
+      }
+    };
+  }
+
+  if (originalReply) {
+    interaction.reply = async function(options?: any) {
+      if (interaction.deferred && originalEditReply) {
+        try {
+          return await originalEditReply(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          if (originalFollowUp) {
+            try {
+              return await originalFollowUp(options);
+            } catch (e: any) {
+              if (handlePermError(e)) return;
+              console.warn('[wrapInteraction] reply (as followUp) failed:', e.message);
+            }
+          }
+        }
+      } else if (interaction.replied && originalFollowUp) {
+        try {
+          return await originalFollowUp(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          console.warn('[wrapInteraction] reply (as followUp) failed:', err.message);
+        }
+      } else {
+        try {
+          return await originalReply(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              if (handlePermError(e)) return;
+              console.warn('[wrapInteraction] reply fallback to editReply failed:', e.message);
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+  }
+
+  if (originalEditReply) {
+    interaction.editReply = async function(options?: any) {
+      if (!interaction.deferred && !interaction.replied && originalReply) {
+        try {
+          return await originalReply(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              if (handlePermError(e)) return;
+              console.warn('[wrapInteraction] editReply fallback to originalEditReply failed:', e.message);
+            }
+          } else {
+            console.warn('[wrapInteraction] editReply (as reply) failed:', err.message);
+          }
+        }
+      } else {
+        try {
+          return await originalEditReply(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          console.warn('[wrapInteraction] editReply failed:', err.message);
+        }
+      }
+    };
+  }
+
+  if (originalFollowUp) {
+    interaction.followUp = async function(options?: any) {
+      try {
+        return await originalFollowUp(options);
+      } catch (err: any) {
+        if (handlePermError(err)) return;
+        console.warn('[wrapInteraction] followUp failed:', err.message);
+      }
+    };
+  }
+
+  if (originalUpdate) {
+    interaction.update = async function(options?: any) {
+      if (interaction.deferred || interaction.replied) {
+        if (originalEditReply) {
+          try {
+            return await originalEditReply(options);
+          } catch (err: any) {
+            if (handlePermError(err)) return;
+            console.warn('[wrapInteraction] update (as editReply) failed:', err.message);
+          }
+        }
+      } else {
+        try {
+          return await originalUpdate(options);
+        } catch (err: any) {
+          if (handlePermError(err)) return;
+          if ((err.code === 40060 || err.message?.includes('already acknowledged')) && originalEditReply) {
+            try {
+              return await originalEditReply(options);
+            } catch (e: any) {
+              if (handlePermError(e)) return;
+              console.warn('[wrapInteraction] update fallback to editReply failed:', e.message);
+            }
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+  }
+
+  return interaction;
+}
+
 export class Gateway {
   public client: Client;
   private manifests: ModuleManifest[] = [];
@@ -176,12 +324,9 @@ export class Gateway {
         let isBlacklisted = false;
 
         if (db) {
-          const docSnap = await db.collection('approvals').doc(guild.id).get();
-          if (docSnap.exists) {
-            const existing = docSnap.data() as IGuildApproval;
-            if (existing.status === 'Blacklisted') {
-              isBlacklisted = true;
-            }
+          const existing = await db.get<any>('SELECT status FROM approvals WHERE guildId = ?', [guild.id]);
+          if (existing && existing.status === 'Blacklisted') {
+            isBlacklisted = true;
           }
         }
 
@@ -191,27 +336,46 @@ export class Gateway {
           return;
         }
 
-        const approvalData = {
-          guildId: guild.id,
-          guildName: guild.name,
-          ownerId: owner.id,
-          ownerUsername: owner.user.tag,
-          ownerAvatar: owner.user.displayAvatarURL(),
-          memberCount: guild.memberCount,
-          botCount,
-          humanCount,
-          verificationLevel: guild.verificationLevel,
-          premiumTier: guild.premiumTier,
-          premiumSubscriptionCount: guild.premiumSubscriptionCount || 0,
-          joinedAt: Date.now(),
-          riskScore: finalRiskScore,
-          riskLevel: finalRiskLevel,
-          status: 'Pending',
-          lastUpdated: Date.now()
-        };
-
         if (db) {
-          await db.collection('approvals').doc(guild.id).set(approvalData, { merge: true });
+          const existing = await db.get<any>('SELECT status FROM approvals WHERE guildId = ?', [guild.id]);
+          const status = existing ? existing.status : 'Pending';
+          await db.run(
+            `INSERT INTO approvals (
+              guildId, guildName, ownerId, ownerUsername, memberCount, botCount, humanCount,
+              verificationLevel, premiumTier, premiumSubscriptionCount, riskScore, riskLevel,
+              status, joinedAt, lastUpdated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(guildId) DO UPDATE SET
+              guildName=excluded.guildName,
+              ownerId=excluded.ownerId,
+              ownerUsername=excluded.ownerUsername,
+              memberCount=excluded.memberCount,
+              botCount=excluded.botCount,
+              humanCount=excluded.humanCount,
+              verificationLevel=excluded.verificationLevel,
+              premiumTier=excluded.premiumTier,
+              premiumSubscriptionCount=excluded.premiumSubscriptionCount,
+              riskScore=excluded.riskScore,
+              riskLevel=excluded.riskLevel,
+              lastUpdated=excluded.lastUpdated`,
+            [
+              guild.id,
+              guild.name,
+              owner.id,
+              owner.user.username ?? owner.user.tag,
+              guild.memberCount,
+              botCount,
+              humanCount,
+              guild.verificationLevel,
+              guild.premiumTier,
+              guild.premiumSubscriptionCount || 0,
+              finalRiskScore,
+              finalRiskLevel,
+              status,
+              Date.now(),
+              Date.now()
+            ]
+          );
         }
 
         // BUG #3 FIX: Removed duplicate owner DM — the main Core Bot already handles this notification.
@@ -281,14 +445,14 @@ export class Gateway {
     });
 
     this.client.on('guildMemberAdd', (member) => {
-      this.logSyncEvent(member.guild.id, `Discord Event: User "${member.user.tag}" joined guild.`, 'info');
+      this.logSyncEvent(member.guild.id, `Discord Event: User "${member.user.username}" joined guild.`, 'info');
       this.syncRegistry();
       this.dispatchEvent('guildMemberAdd', member);
       this.publicFeed?.addEvent('Members', `**${member.user.username}** joined the server`);
     });
 
     this.client.on('guildMemberRemove', (member) => {
-      this.logSyncEvent(member.guild.id, `Discord Event: User "${member.user.tag}" left guild.`, 'info');
+      this.logSyncEvent(member.guild.id, `Discord Event: User "${member.user.username}" left guild.`, 'info');
       this.syncRegistry();
       this.dispatchEvent('guildMemberRemove', member);
       this.publicFeed?.addEvent('Members', `**${member.user.username}** left the server`);
@@ -356,7 +520,8 @@ export class Gateway {
     });
 
     // Slash Command & Component Button routing
-    this.client.on('interactionCreate', async (interaction) => {
+    this.client.on('interactionCreate', async (rawInteraction) => {
+      const interaction = wrapInteraction(rawInteraction);
 
       if (interaction.isChatInputCommand()) {
         const { commandName } = interaction;
@@ -406,9 +571,11 @@ export class Gateway {
               if (eventObj) {
                 try {
                   await eventObj.handler(this.client, interaction, { 
-                    logSyncEvent: this.logSyncEvent,
+                    logSyncEvent: (guildId: string | undefined, msg: string, type: 'info' | 'warn' | 'success') => this.logSyncEvent(guildId, msg, type),
                     getModulesState: this.getModulesState,
                     getRegistry: this.getRegistry,
+                    updateModuleConfig: this.updateModuleConfig,
+                    connect247: (guildId: string, channelId: string) => this.connect247(guildId, channelId),
                     handleApprovalAction: (g: string, a: string, r?: string) => this.handleApprovalAction(g, a, r)
                   });
                   return;
@@ -628,6 +795,118 @@ export class Gateway {
     });
   }
 
+  private async disable247OnFailure(guildId: string, reason: string) {
+    const modules = this.getModulesState ? this.getModulesState() : [];
+    const musicModule = modules.find((m: any) => m.id === 'music');
+    if (musicModule) {
+      const config = { ...musicModule.config };
+      config.twentyFourSevenMode = false;
+      config.defaultMusicChannelId = '';
+      this.updateModuleConfig('music', config);
+
+      // Bug 10 Fix: Destroy the active queue/connection so the bot disconnects immediately.
+      if (guildId) {
+        try {
+          QueueManager.deleteQueue(guildId);
+        } catch (e) {
+          console.error('[24/7] Failed to destroy queue on disable:', e);
+        }
+      }
+      
+      try {
+        // Bug 4 Fix: Use the actual guildId — never fall back to 'GLOBAL' which breaks state recovery.
+        const safeGuildId = guildId || 'UNKNOWN';
+        await Database.run(
+          `INSERT INTO music_247 (guildId, enabled, disabledBy, disabledAt) 
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(guildId) DO UPDATE SET enabled = 0, disabledBy = ?, disabledAt = ?`,
+          [safeGuildId, 0, 'SYSTEM_AUTO_DISABLE', Date.now(), 'SYSTEM_AUTO_DISABLE', Date.now()]
+        );
+      } catch (err) {
+        console.error('Error logging system auto disable 24/7 to SQLite:', err);
+      }
+    }
+  }
+
+  /**
+   * Immediately join a voice channel for 24/7 mode.
+   * Called directly by the /24-7-music command handler after enabling.
+   */
+  public async connect247(guildId: string, channelId: string, isRetry: boolean = false): Promise<void> {
+    try {
+      const guild = this.client.guilds.cache.get(guildId)
+                  ?? await this.client.guilds.fetch(guildId).catch(() => null);
+      if (!guild) {
+        this.logSyncEvent(guildId, `[24/7] Guild ${guildId} not found in cache — cannot connect.`, 'warn');
+        return;
+      }
+
+      const channel = guild.channels.cache.get(channelId)
+                    ?? await this.client.channels.fetch(channelId).catch(() => null) as any;
+      if (!channel) {
+        this.logSyncEvent(guildId, `[24/7] Voice channel ${channelId} not found/deleted.`, 'warn');
+        if (!isRetry) {
+          this.logSyncEvent(guildId, `[24/7] Retrying channel lookup once...`, 'warn');
+          setTimeout(() => this.connect247(guildId, channelId, true), 5000);
+        } else {
+          this.logSyncEvent(guildId, `[24/7] Voice channel ${channelId} not found (Retry failed). Disabling 24/7.`, 'warn');
+          await this.disable247OnFailure(guildId, `Voice channel ${channelId} was deleted.`);
+        }
+        return;
+      }
+
+      const me = guild.members.me || await guild.members.fetch(this.client.user!.id).catch(() => null);
+      if (me) {
+        const perms = channel.permissionsFor(me);
+        if (!perms || !perms.has(PermissionFlagsBits.ViewChannel) || !perms.has(PermissionFlagsBits.Connect)) {
+          if (!isRetry) {
+            this.logSyncEvent(guildId, `[24/7] Lacks permissions to connect to #${channel.name}. Retrying once...`, 'warn');
+            setTimeout(() => this.connect247(guildId, channelId, true), 5000);
+          } else {
+            this.logSyncEvent(guildId, `[24/7] Lacks permissions to connect to #${channel.name} (Retry failed). Disabling 24/7.`, 'warn');
+            await this.disable247OnFailure(guildId, `Lacks ViewChannel/Connect permission on channel ${channelId}.`);
+          }
+          return;
+        }
+      }
+
+      const existing = getVoiceConnection(guildId);
+      if (existing && existing.joinConfig.channelId === channelId) {
+        // Already in the right channel
+        this.logSyncEvent(guildId, `[24/7] Already connected to #${channel.name}. No action needed.`, 'info');
+        return;
+      }
+
+      this.logSyncEvent(guildId, `[24/7] Connecting to #${channel.name} in guild ${guild.name}...`, 'info');
+
+      const queue = QueueManager.getQueue(guildId);
+      // Bug 9 Fix: Always set queue.client so a re-created queue after destroy() has a valid reference.
+      queue.client = this.client;
+
+      const newConn = joinVoiceChannel({
+        channelId: channel.id,
+        guildId: guild.id,
+        adapterCreator: guild.voiceAdapterCreator as any,
+        selfDeaf: true,
+        selfMute: false
+      });
+
+      queue.connection = newConn;
+      queue.bindConnectionEvents(newConn);
+      // Bug 8 Fix: Subscribe the audio player to the 24/7 connection so idle music can be heard.
+      newConn.subscribe(queue.player);
+      this.logSyncEvent(guildId, `[24/7] Successfully connected to #${channel.name} in guild ${guild.name}.`, 'success');
+    } catch (err) {
+      if (!isRetry) {
+        this.logSyncEvent(guildId, `[24/7] Connection error: ${String(err)}. Retrying once...`, 'warn');
+        setTimeout(() => this.connect247(guildId, channelId, true), 5000);
+      } else {
+        this.logSyncEvent(guildId, `[24/7] Connection error: ${String(err)} (Retry failed). Disabling 24/7.`, 'warn');
+        await this.disable247OnFailure(guildId, `Connection error: ${String(err)}`);
+      }
+    }
+  }
+
   private async checkMusicVoicePresence() {
     const modules = this.getModulesState ? this.getModulesState() : [];
     const musicModule = modules.find((m: any) => m.id === 'music');
@@ -637,59 +916,52 @@ export class Gateway {
     const channelId = config.defaultMusicChannelId;
     const is247 = config.twentyFourSevenMode;
 
-    const guildId = process.env.GUILD_ID;
-    if (!guildId) return;
+    if (!is247 || !channelId) return;
 
-    const guild = this.client.guilds.cache.get(guildId);
+    const channel = this.client.channels.cache.get(channelId)
+                  ?? await this.client.channels.fetch(channelId).catch(() => null) as any;
+    if (!channel) {
+      const guild = this.client.guilds.cache.find((g: any) => 
+        g.channels.cache.has(channelId)
+      );
+      const resolvedGuildId = guild?.id || '';
+      this.logSyncEvent(resolvedGuildId || undefined, `[24/7] Configured voice channel ${channelId} was deleted or inaccessible. Disabling 24/7.`, 'warn');
+      // Bug 4 Fix: Pass a real guildId instead of empty string so SQLite record uses correct key.
+      await this.disable247OnFailure(resolvedGuildId, `Voice channel ${channelId} was deleted or inaccessible.`);
+      return;
+    }
+
+    const guild = channel.guild;
     if (!guild) return;
 
+    const guildId = guild.id;
     const currentConnection = getVoiceConnection(guildId);
-
-    // BUG #1 FIX: QueueManager.getQueue always returns a queue (creates one if absent),
-    // but we must guard against operating on it if 24/7 mode is off and no real queue exists.
     const queue = QueueManager.getQueue(guildId);
     if (!queue) return;
 
     const isPlaying = queue.currentTrack !== null;
 
-    if (is247 && channelId) {
-      const channel = guild.channels.cache.get(channelId);
-      if (!channel) return;
+    // Check permissions
+    const me = guild.members.me || await guild.members.fetch(this.client.user!.id).catch(() => null);
+    if (me) {
+      const perms = channel.permissionsFor(me);
+      if (!perms || !perms.has(PermissionFlagsBits.ViewChannel) || !perms.has(PermissionFlagsBits.Connect)) {
+        this.logSyncEvent(guildId, `[24/7] Bot lacks permissions (ViewChannel/Connect) for voice channel #${channel.name}. Disabling 24/7.`, 'warn');
+        await this.disable247OnFailure(guildId, `Bot lacks ViewChannel/Connect permission for channel #${channel.name}.`);
+        return;
+      }
+    }
 
-      // Connect if not connected anywhere
-      if (!currentConnection) {
-        this.logSyncEvent(`Music 24/7: Connecting to default voice channel #${channel.name}...`, 'info');
-        const newConn = joinVoiceChannel({
-          channelId: channel.id,
-          guildId: guild.id,
-          adapterCreator: guild.voiceAdapterCreator as any,
-          selfDeaf: true,
-          selfMute: false
-        });
-        newConn.on(VoiceConnectionStatus.Disconnected, () => {
-          queue.destroy();
-        });
-        queue.connection = newConn;
-      } else if (!isPlaying && currentConnection.joinConfig.channelId !== channelId) {
-        // Return to default channel if idle and past the auto-disconnect timeout
-        const timeoutMins = config.autoDisconnectTimer || 5;
-        if (!queue.idleSince) queue.idleSince = Date.now();
-        
-        if (Date.now() - queue.idleSince >= timeoutMins * 60 * 1000) {
-          this.logSyncEvent(`Music 24/7: Returning to default voice channel #${channel.name}...`, 'info');
-          const newConn = joinVoiceChannel({
-            channelId: channel.id,
-            guildId: guild.id,
-            adapterCreator: guild.voiceAdapterCreator as any,
-            selfDeaf: true,
-            selfMute: false
-          });
-          newConn.on(VoiceConnectionStatus.Disconnected, () => {
-            queue.destroy();
-          });
-          queue.connection = newConn;
-          queue.idleSince = null;
-        }
+    // Connect if not connected anywhere in this guild
+    if (!currentConnection) {
+      await this.connect247(guildId, channelId);
+    } else if (!isPlaying && currentConnection.joinConfig.channelId !== channelId) {
+      // Return to default channel if idle past timeout
+      const timeoutMins = config.autoDisconnectTimer || 5;
+      if (!queue.idleSince) queue.idleSince = Date.now();
+      if (Date.now() - queue.idleSince >= timeoutMins * 60 * 1000) {
+        await this.connect247(guildId, channelId);
+        queue.idleSince = null;
       }
     }
   }
@@ -727,10 +999,9 @@ export class Gateway {
       if (guild.id === process.env.GUILD_ID) continue; // Skip main server
 
       try {
-        const docRef = db.collection('approvals').doc(guild.id);
-        const docSnap = await docRef.get();
+        const docSnap = await db.get<any>('SELECT status FROM approvals WHERE guildId = ?', [guild.id]);
         
-        if (!docSnap.exists) {
+        if (!docSnap) {
           // await guild.members.fetch().catch(() => {});
           const owner = await guild.fetchOwner().catch(() => null);
           const botCount = guild.members.cache.filter(m => m.user.bot).size;
@@ -749,24 +1020,29 @@ export class Gateway {
           else if (finalRiskScore >= 50) finalRiskLevel = 'High';
           else if (finalRiskScore >= 25) finalRiskLevel = 'Medium';
 
-          await docRef.set({
-            guildId: guild.id,
-            guildName: guild.name,
-            ownerId: owner?.id || 'Unknown',
-            ownerUsername: owner?.user?.tag || 'Unknown',
-            ownerAvatar: owner?.user?.displayAvatarURL() || '',
-            memberCount: guild.memberCount,
-            botCount,
-            humanCount,
-            verificationLevel: guild.verificationLevel,
-            premiumTier: guild.premiumTier,
-            premiumSubscriptionCount: guild.premiumSubscriptionCount || 0,
-            joinedAt: Date.now(),
-            riskScore: finalRiskScore,
-            riskLevel: finalRiskLevel,
-            status: 'Pending',
-            lastUpdated: Date.now()
-          });
+          await db.run(
+            `INSERT INTO approvals (
+              guildId, guildName, ownerId, ownerUsername, memberCount, botCount, humanCount,
+              verificationLevel, premiumTier, premiumSubscriptionCount, riskScore, riskLevel,
+              status, joinedAt, lastUpdated
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)`,
+            [
+              guild.id,
+              guild.name,
+              owner?.id || 'Unknown',
+              owner?.user?.tag || 'Unknown',
+              guild.memberCount,
+              botCount,
+              humanCount,
+              guild.verificationLevel,
+              guild.premiumTier,
+              guild.premiumSubscriptionCount || 0,
+              finalRiskScore,
+              finalRiskLevel,
+              Date.now(),
+              Date.now()
+            ]
+          );
           this.logSyncEvent(`Synced previously untracked guild "${guild.name}" to Approval System (Pending).`, 'warn');
         }
       } catch (e) {

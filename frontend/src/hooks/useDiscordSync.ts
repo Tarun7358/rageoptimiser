@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
+import { WS_BASE, API_BASE } from '../config';
 
 // Interfaces for synchronized resources
 export interface DiscordRole {
@@ -32,7 +33,7 @@ export interface DiscordResourceRegistry {
 export interface ModuleState {
   id: string;
   name: string;
-  status: 'not_configured' | 'config_required' | 'validation_failed' | 'ready' | 'enabled' | 'error';
+  status: 'not_configured' | 'config_required' | 'validation_failed' | 'ready' | 'enabled' | 'disabled' | 'error';
   progress: number; // 0 - 100
   errors: string[];
   config: Record<string, any>;
@@ -64,7 +65,8 @@ export const INITIAL_MODULES: ModuleState[] = [
   { id: 'music', name: 'Music System', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'voice-protection', name: 'Voice Protection', status: 'not_configured', progress: 100, errors: [], config: {} },
   { id: 'discord-dashboard', name: 'Discord Dashboard', status: 'config_required', progress: 0, errors: ['No target channel configured'], config: {} },
-  { id: 'join_role_guard', name: 'Join Role Guard', status: 'enabled', progress: 100, errors: [], config: {} }
+  { id: 'join_role_guard', name: 'Join Role Guard', status: 'enabled', progress: 100, errors: [], config: {} },
+  { id: 'social_updates', name: 'Social Updates', status: 'not_configured', progress: 100, errors: [], config: {} }
 ];
 
 export function useDiscordSync() {
@@ -149,13 +151,19 @@ export function useDiscordSync() {
 
     fetchInitialState();
 
+    // H-8 / L-6 FIX: Track cleanup state and reconnect timer to prevent
+    // stale-closure duplicate WebSocket connections.
+    let cleanedUp = false;
+    const reconnectTimer = { current: null as ReturnType<typeof setTimeout> | null };
+
     // Setup live WebSocket channel
     const connectWS = () => {
       const currentToken = localStorage.getItem('cn_token');
       const currentGuild = localStorage.getItem('cn_active_guild');
-      if (!currentToken) return;
+      if (!currentToken || cleanedUp) return;
 
-      const wsUrl = `ws://localhost:5001?token=${currentToken}${currentGuild ? `&guildId=${currentGuild}` : ''}`;
+      // M-1: Use VITE_WS_URL env var instead of hardcoded localhost
+      const wsUrl = `${WS_BASE}?token=${currentToken}${currentGuild ? `&guildId=${currentGuild}` : ''}`;
       const socket = new WebSocket(wsUrl);
       wsRef.current = socket;
 
@@ -187,10 +195,11 @@ export function useDiscordSync() {
         }
       };
 
+      // H-8 FIX: Use a cleanup flag and reconnect timer ref to prevent stale closure
+      // duplicate connections when the effect re-runs due to token/guildId changes.
       socket.onclose = () => {
-        // Only auto-reconnect if we still have a valid token
-        if (localStorage.getItem('cn_token')) {
-          setTimeout(connectWS, 3000);
+        if (!cleanedUp && localStorage.getItem('cn_token')) {
+          reconnectTimer.current = window.setTimeout(connectWS, 3000);
         }
       };
 
@@ -202,6 +211,13 @@ export function useDiscordSync() {
     connectWS();
 
     return () => {
+      // L-6 FIX: Cancel pending reconnect timer before closing socket
+      // to prevent the onclose handler scheduling another reconnect after cleanup.
+      cleanedUp = true;
+      if (reconnectTimer.current !== null) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
+      }
       if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
     };
   }, [token, guildId]);
@@ -223,7 +239,8 @@ export function useDiscordSync() {
       if (currentGuild) {
         headers['X-Guild-Id'] = currentGuild;
       }
-      await fetch('http://localhost:5000/api/sync/refresh', { 
+      // M-1: Use VITE_API_URL env var
+      await fetch(`${API_BASE}/api/sync/refresh`, { 
         method: 'POST',
         headers
       });
@@ -242,7 +259,8 @@ export function useDiscordSync() {
         if (enabledOverride !== undefined) {
           return {
             ...m,
-            status: enabledOverride ? 'enabled' : 'not_configured'
+            // M-6 FIX: Disabled modules should show 'disabled', not 'not_configured'
+            status: enabledOverride ? 'enabled' : 'disabled'
           };
         } else {
           return {
@@ -266,14 +284,15 @@ export function useDiscordSync() {
       let res;
       // If toggling active status
       if (enabledOverride !== undefined) {
-        res = await fetch(`http://localhost:5000/api/modules/${moduleId}/toggle`, {
+        // M-1: Use VITE_API_URL env var
+        res = await fetch(`${API_BASE}/api/modules/${moduleId}/toggle`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ enabledOverride })
         });
       } else {
         // Just save config fields
-        res = await fetch(`http://localhost:5000/api/modules/${moduleId}`, {
+        res = await fetch(`${API_BASE}/api/modules/${moduleId}`, {
           method: 'POST',
           headers,
           body: JSON.stringify(newConfig)
@@ -291,25 +310,12 @@ export function useDiscordSync() {
     }
   };
 
-  const simulateDiscordAction = async (actionType: 'delete_role' | 'delete_channel' | 'rename_channel' | 'create_role') => {
-    try {
-      const token = localStorage.getItem('cn_token');
-      const currentGuild = localStorage.getItem('cn_active_guild');
-      const headers: Record<string, string> = { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      };
-      if (currentGuild) headers['X-Guild-Id'] = currentGuild;
-
-      await fetch('http://localhost:5000/api/simulate', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ actionType })
-      });
-    } catch (err) {
-      console.error('Simulation request failed:', err);
-      addSyncLog('Simulation failed: API server offline.', 'warn');
-    }
+  // C-4 FIX: simulateDiscordAction removed — the backend /api/simulate endpoint
+  // was deleted (it was a dev tool using fake IDs). The function is preserved as
+  // a no-op stub so any lingering call sites don't throw a runtime error.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const simulateDiscordAction = async (_actionType: string): Promise<void> => {
+    console.warn('[simulateDiscordAction] This endpoint has been removed. No action taken.');
   };
 
   // Listen for desktop media keys from Electron launcher

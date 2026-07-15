@@ -83,7 +83,7 @@ export const ReactionRolesManifest: ModuleManifest = {
             const member = await reaction.message.guild.members.fetch(user.id);
             if (member && !member.roles.cache.has(roleId)) {
               await member.roles.add(roleId);
-              context.logSyncEvent(`Reaction Roles: ${user.tag} assigned themselves <@&${roleId}> via ${emojiName}.`, 'info');
+              context.logSyncEvent(`Reaction Roles: ${user.username} assigned themselves <@&${roleId}> via ${emojiName}.`, 'info');
             }
           } catch (e) {
             console.error(e);
@@ -109,7 +109,7 @@ export const ReactionRolesManifest: ModuleManifest = {
             const member = await reaction.message.guild.members.fetch(user.id);
             if (member && member.roles.cache.has(roleId)) {
               await member.roles.remove(roleId);
-              context.logSyncEvent(`Reaction Roles: ${user.tag} removed their <@&${roleId}> via ${emojiName}.`, 'info');
+              context.logSyncEvent(`Reaction Roles: ${user.username} removed their <@&${roleId}> via ${emojiName}.`, 'info');
             }
           } catch (e) {
             console.error(e);

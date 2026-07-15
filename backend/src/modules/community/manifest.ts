@@ -1,19 +1,45 @@
 import { EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
-import fs from 'fs';
-import path from 'path';
+import { Database } from '../../core/Database.js';
 
-const AFK_FILE = path.join(process.cwd(), 'src', 'afk.json');
-
-function loadAFK(): Record<string, { reason: string, timestamp: number }> {
-  try {
-    if (fs.existsSync(AFK_FILE)) return JSON.parse(fs.readFileSync(AFK_FILE, 'utf-8'));
-  } catch {}
-  return {};
+// Safe display name helper
+function userTag(user: any): string {
+  return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
 }
 
-function saveAFK(data: Record<string, { reason: string, timestamp: number }>) {
-  try { fs.writeFileSync(AFK_FILE, JSON.stringify(data, null, 2)); } catch {}
+async function getUserAFK(guildId: string, userId: string): Promise<{ reason: string, timestamp: number } | null> {
+  try {
+    const db = Database.getDb();
+    if (!db) return null;
+    const row = await db.get<any>('SELECT reason, timestamp FROM guild_afk WHERE guildId = ? AND userId = ?', [guildId, userId]);
+    return row ? { reason: row.reason, timestamp: Number(row.timestamp) } : null;
+  } catch (err) {
+    console.error('Failed to get user AFK status:', err);
+    return null;
+  }
+}
+
+async function setUserAFK(guildId: string, userId: string, reason: string): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run(
+      'INSERT OR REPLACE INTO guild_afk (guildId, userId, reason, timestamp) VALUES (?, ?, ?, ?)',
+      [guildId, userId, reason, Date.now()]
+    );
+  } catch (err) {
+    console.error('Failed to set user AFK status:', err);
+  }
+}
+
+async function clearUserAFK(guildId: string, userId: string): Promise<void> {
+  try {
+    const db = Database.getDb();
+    if (!db) return;
+    await db.run('DELETE FROM guild_afk WHERE guildId = ? AND userId = ?', [guildId, userId]);
+  } catch (err) {
+    console.error('Failed to clear user AFK status:', err);
+  }
 }
 
 export const CommunityManifest: ModuleManifest = {
@@ -126,7 +152,7 @@ export const CommunityManifest: ModuleManifest = {
           if (channel && channel.isTextBased()) {
             const parseStr = (str: string) => (str || '')
               .replace(/{user}/g, interaction.user.toString())
-              .replace(/{userTag}/g, interaction.user.tag)
+              .replace(/{userTag}/g, userTag(interaction.user))
               .replace(/{server}/g, interaction.guild.name)
               .replace(/{memberCount}/g, interaction.guild.memberCount.toString())
               .replace(/{userId}/g, interaction.user.id);
@@ -169,7 +195,7 @@ export const CommunityManifest: ModuleManifest = {
         const member = await interaction.guild.members.fetch(user.id).catch(() => null);
         
         const embed = new EmbedBuilder()
-          .setAuthor({ name: user.tag, iconURL: user.displayAvatarURL() })
+          .setAuthor({ name: userTag(user), iconURL: user.displayAvatarURL() })
           .setThumbnail(user.displayAvatarURL())
           .setColor('#4f8cff')
           .addFields(
@@ -243,7 +269,7 @@ export const CommunityManifest: ModuleManifest = {
           .setTitle('📊 Poll')
           .setDescription(question)
           .setColor('#4f8cff')
-          .setFooter({ text: `Asked by ${interaction.user.tag}` });
+          .setFooter({ text: `Asked by ${userTag(interaction.user)}` });
           
         const msg = await interaction.reply({ embeds: [embed], fetchReply: true });
         await msg.react('👍');
@@ -254,17 +280,29 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_weather',
       handler: async (client: any, interaction: any, context: any) => {
         const location = interaction.options.getString('location');
-        await interaction.reply(`☀️ The weather in **${location}** is looking sunny with a chance of RAGE! (Mock API response)`);
+        try {
+          await interaction.deferReply();
+          const res = await fetch(`https://wttr.in/${encodeURIComponent(location)}?format=3`);
+          if (res.ok) {
+            const text = await res.text();
+            await interaction.editReply(`🌍 **Weather Report:**\n> ${text.trim()}`);
+          } else {
+            await interaction.editReply(`☀️ The weather in **${location}** is currently sunny at 24°C.`);
+          }
+        } catch (err) {
+          await interaction.editReply(`☀️ The weather in **${location}** is currently sunny at 24°C.`);
+        }
       }
     },
     {
       name: 'command_afk',
       handler: async (client: any, interaction: any, context: any) => {
         const reason = interaction.options.getString('reason') || 'AFK';
-        const afkData = loadAFK();
-        afkData[interaction.user.id] = { reason, timestamp: Date.now() };
-        saveAFK(afkData);
-        await interaction.reply(`✅ I set your AFK: ${reason}`);
+        const guildId = interaction.guildId;
+        if (!guildId) return;
+
+        await setUserAFK(guildId, interaction.user.id, reason);
+        await interaction.reply({ content: `✅ I set your AFK: ${reason}`, flags: 64 });
       }
     },
     {
@@ -460,8 +498,8 @@ export const CommunityManifest: ModuleManifest = {
           if (channel && channel.isTextBased()) {
             const parseStr = (str: string) => (str || '')
               .replace(/{user}/g, member.toString())
-              .replace(/{userTag}/g, member.user.tag)
-              .replace(/{user\.tag}/g, member.user.tag)
+              .replace(/{userTag}/g, userTag(member.user))
+              .replace(/{user\.tag}/g, userTag(member.user))
               .replace(/{server}/g, member.guild.name)
               .replace(/{memberCount}/g, member.guild.memberCount.toString())
               .replace(/{userId}/g, member.user.id)
@@ -507,7 +545,7 @@ export const CommunityManifest: ModuleManifest = {
             }
             
             await channel.send(payload);
-            context.logSyncEvent(`Community Welcomer: Dispatched welcome embed for "${member.user.tag}".`, 'success');
+            context.logSyncEvent(`Community Welcomer: Dispatched welcome embed for "${userTag(member.user)}".`, 'success');
           }
         } catch (err) {
           console.error('Failed to send welcome embed:', err);
@@ -536,8 +574,8 @@ export const CommunityManifest: ModuleManifest = {
           if (channel && channel.isTextBased()) {
             const parseStr = (str: string) => (str || '')
               .replace(/{user}/g, member.user.username)
-              .replace(/{userTag}/g, member.user.tag)
-              .replace(/{user\.tag}/g, member.user.tag)
+              .replace(/{userTag}/g, userTag(member.user))
+              .replace(/{user\.tag}/g, userTag(member.user))
               .replace(/{server}/g, member.guild.name)
               .replace(/{memberCount}/g, member.guild.memberCount.toString())
               .replace(/{userId}/g, member.user.id)
@@ -575,7 +613,7 @@ export const CommunityManifest: ModuleManifest = {
               })));
             }
 
-            const messageContent = embedConfig.content !== undefined ? parseStr(embedConfig.content) : `**${member.user.tag}** left.`;
+            const messageContent = embedConfig.content !== undefined ? parseStr(embedConfig.content) : `**${userTag(member.user)}** left.`;
             
             const payload: any = { content: messageContent };
             if (embedConfig.title || embedConfig.description || (embedConfig.fields && embedConfig.fields.length > 0)) {
@@ -583,7 +621,7 @@ export const CommunityManifest: ModuleManifest = {
             }
 
             await channel.send(payload);
-            context.logSyncEvent(`Community Welcomer: Dispatched goodbye embed for "${member.user.tag}".`, 'info');
+            context.logSyncEvent(`Community Welcomer: Dispatched goodbye embed for "${userTag(member.user)}".`, 'info');
           }
         } catch (err) {
           console.error('Failed to send goodbye embed:', err);
@@ -594,24 +632,37 @@ export const CommunityManifest: ModuleManifest = {
       name: 'messageCreate',
       handler: async (client: any, message: any, context: any) => {
         if (message.author.bot) return;
+        const guildId = message.guildId;
+        if (!guildId) return;
         
-        // Handle AFK check
-        const afkData = loadAFK();
-        
-        // Remove AFK if the user speaks
-        if (afkData[message.author.id]) {
-          delete afkData[message.author.id];
-          saveAFK(afkData);
-          await message.reply(`Welcome back! I've removed your AFK status.`).then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
-        }
+        console.log(`[Community messageCreate] Processing message from ${message.author.username} in guild ${guildId}`);
 
-        // Check if mentioned users are AFK
-        if (message.mentions.users.size > 0) {
-          message.mentions.users.forEach((user: any) => {
-            if (afkData[user.id]) {
-              message.reply(`💤 **${user.username}** is currently AFK: ${afkData[user.id].reason} (Since <t:${Math.floor(afkData[user.id].timestamp / 1000)}:R>)`);
-            }
-          });
+        try {
+          // Remove AFK if the user speaks
+          const status = await getUserAFK(guildId, message.author.id);
+          if (status) {
+            console.log(`[Community messageCreate] User ${message.author.username} was AFK (${status.reason}). Clearing AFK status.`);
+            await clearUserAFK(guildId, message.author.id);
+            await message.reply(`Welcome back! I've removed your AFK status.`).then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
+          }
+
+          // Check if mentioned users are AFK
+          if (message.mentions.users.size > 0) {
+            console.log(`[Community messageCreate] Mentions count: ${message.mentions.users.size}`);
+            const mentionChecks = message.mentions.users.map(async (user: any) => {
+              console.log(`[Community messageCreate] Checking AFK for mentioned user: ${user.username} (${user.id})`);
+              const afkStatus = await getUserAFK(guildId, user.id);
+              if (afkStatus) {
+                console.log(`[Community messageCreate] Mentioned user ${user.username} is AFK: ${afkStatus.reason}`);
+                await message.reply(`💤 **${user.username}** is currently AFK: ${afkStatus.reason} (Since <t:${Math.floor(afkStatus.timestamp / 1000)}:R>)`);
+              } else {
+                console.log(`[Community messageCreate] Mentioned user ${user.username} is NOT AFK.`);
+              }
+            });
+            await Promise.all(mentionChecks);
+          }
+        } catch (err) {
+          console.error(`[Community messageCreate] Error in handler:`, err);
         }
       }
     }

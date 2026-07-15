@@ -18,36 +18,31 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 async function updateSecurityConfigInDb(guildId: string, updates: Record<string, any>) {
   const db = Database.getDb();
   if (!db) return;
-  const docRef = db.collection('guild_configs').doc(guildId);
-  const doc = await docRef.get();
-  let state: any = { modules: [] };
-  if (doc.exists) {
-    state = doc.data();
+  try {
+    const row = await db.get<any>('SELECT modules, globalSettings FROM guild_configs WHERE guildId = ?', [guildId]);
+    let modules = [];
+    let globalSettings = {};
+    if (row) {
+      modules = typeof row.modules === 'string' ? JSON.parse(row.modules) : (row.modules || []);
+      globalSettings = typeof row.globalSettings === 'string' ? JSON.parse(row.globalSettings) : (row.globalSettings || {});
+    }
+    let secModule = modules.find((m: any) => m.id === 'security');
+    if (!secModule) {
+      secModule = { id: 'security', name: 'Security Hardening', status: 'enabled', config: {} };
+      modules.push(secModule);
+    }
+    secModule.config = { ...(secModule.config || {}), ...updates };
+    await db.run(
+      'INSERT OR REPLACE INTO guild_configs (guildId, modules, globalSettings) VALUES (?, ?, ?)',
+      [guildId, JSON.stringify(modules), JSON.stringify(globalSettings)]
+    );
+  } catch (err) {
+    console.error('Failed to update security config in SQLite:', err);
   }
-  let secModule = state.modules?.find((m: any) => m.id === 'security');
-  if (!secModule) {
-    secModule = { id: 'security', name: 'Security Hardening', status: 'enabled', config: {} };
-    if (!state.modules) state.modules = [];
-    state.modules.push(secModule);
-  }
-  secModule.config = { ...(secModule.config || {}), ...updates };
-  await docRef.set(state);
 }
 
 async function logSyncEventInDb(guildId: string, msg: string, type: 'info' | 'warn' | 'success') {
-  const db = Database.getDb();
-  if (!db) return;
-  const docRef = db.collection('guild_configs').doc(guildId);
-  const doc = await docRef.get();
-  let state: any = {};
-  if (doc.exists) {
-    state = doc.data();
-  }
-  if (!state.syncLogs) state.syncLogs = [];
-  const time = new Date().toTimeString().split(' ')[0];
-  state.syncLogs.unshift({ time, msg, type });
-  if (state.syncLogs.length > 100) state.syncLogs.pop();
-  await docRef.set(state);
+  console.log(`[Sync Event] [${type.toUpperCase()}] ${msg}`);
 }
 
 async function run() {

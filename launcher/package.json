@@ -57,14 +57,14 @@
         ]
       },
       {
-        "from": "../dist",
+        "from": "../frontend/dist",
         "to": "dashboard",
         "filter": [
           "**/*"
         ]
       },
       {
-        "from": "../public",
+        "from": "../frontend/public",
         "to": "public",
         "filter": [
           "**/*"

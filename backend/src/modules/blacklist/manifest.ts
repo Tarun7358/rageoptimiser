@@ -180,7 +180,7 @@ export const BlacklistManifest: ModuleManifest = {
         // --- ADD ---
         if (sub === 'add') {
           let value = '', label = '', type: BlacklistType = 'word';
-          if (subGroup === 'user') { const u = interaction.options.getUser('target'); value = u.id; label = u.tag; type = 'user'; }
+          if (subGroup === 'user') { const u = interaction.options.getUser('target'); value = u.id; label = u.username; type = 'user'; }
           else if (subGroup === 'role') { const r = interaction.options.getRole('target'); value = r.id; label = r.name; type = 'role'; }
           else if (subGroup === 'channel') { const c = interaction.options.getChannel('target'); value = c.id; label = c.name; type = 'channel'; }
           else if (subGroup === 'word') { value = interaction.options.getString('word'); label = value; type = 'word'; }
@@ -204,12 +204,12 @@ export const BlacklistManifest: ModuleManifest = {
             reason: interaction.options.getString('reason') || undefined,
             action: (interaction.options.getString('action') as any) || 'delete',
             addedBy: interaction.user.id,
-            addedByTag: interaction.user.tag,
+            addedByTag: interaction.user.username,
             createdAt: new Date()
           };
           entries.push(entry);
           saveEntries(entries);
-          context.logSyncEvent(`[Blacklist] Added ${type} blacklist entry: ${label} by ${interaction.user.tag}`, 'info');
+          context.logSyncEvent(`[Blacklist] Added ${type} blacklist entry: ${label} by ${interaction.user.username}`, 'info');
           return interaction.reply({ content: `✅ **${type.toUpperCase()}** \`${label}\` has been blacklisted.`, flags: 64 });
         }
 
@@ -231,7 +231,7 @@ export const BlacklistManifest: ModuleManifest = {
           entries = entries.filter(e => !(e.type === subGroup && e.value === value));
           if (entries.length === before) return interaction.reply({ content: `❌ Entry not found in blacklist.`, flags: 64 });
           saveEntries(entries);
-          context.logSyncEvent(`[Blacklist] Removed ${subGroup} blacklist entry: ${value} by ${interaction.user.tag}`, 'info');
+          context.logSyncEvent(`[Blacklist] Removed ${subGroup} blacklist entry: ${value} by ${interaction.user.username}`, 'info');
           return interaction.reply({ content: `🗑️ Removed \`${value}\` from **${subGroup}** blacklist.`, flags: 64 });
         }
 
@@ -339,7 +339,7 @@ export const BlacklistManifest: ModuleManifest = {
           await message.channel.send(`${message.author} your message was removed. **Reason**: Blacklisted content.`)
             .then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
 
-          context.logSyncEvent(`[Blacklist] Removed ${matched.type} content from ${message.author.tag} in #${message.channel.name}`, 'warn');
+          context.logSyncEvent(`[Blacklist] Removed ${matched.type} content from ${message.author.username} in #${message.channel.name}`, 'warn');
 
           if (matched.action === 'warn') {
             await message.member?.send(`⚠️ Warning from **${message.guild.name}**: Your message was removed for containing blacklisted content.`).catch(() => {});
@@ -365,7 +365,7 @@ export const BlacklistManifest: ModuleManifest = {
         const botEntry = entries.find(e => e.type === 'bot' && e.value === member.user.id);
         if (botEntry) {
           await member.kick('Blacklisted bot').catch(() => {});
-          context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.tag} on join.`, 'warn');
+          context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.username} on join.`, 'warn');
         }
       }
     }

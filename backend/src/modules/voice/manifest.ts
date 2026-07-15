@@ -128,7 +128,10 @@ export const VoiceManifest: ModuleManifest = {
           return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
-        const sub = interaction.options.getSubcommand();
+        const sub = interaction.options.getSubcommand(false);
+        if (!sub) {
+          return interaction.reply({ content: '❌ Please use a subcommand: `join`, `leave`, `status`, or `set`.', flags: 64 });
+        }
         const modules = context.getModulesState();
         const voiceMod = modules.find((m: any) => m.id === 'voice');
         const config = voiceMod?.config || {};
@@ -173,7 +176,7 @@ export const VoiceManifest: ModuleManifest = {
 
             context.logSyncEvent(
               interaction.guildId,
-              `[/247 join] Bot connected to voice channel #${channel.name} by ${interaction.user.tag}.`,
+              `[/247 join] Bot connected to voice channel #${channel.name} by ${interaction.user.globalName ?? interaction.user.username}.`,
               'success'
             );
 
@@ -229,7 +232,7 @@ export const VoiceManifest: ModuleManifest = {
 
           context.logSyncEvent(
             guildId,
-            `[/247 leave] 24/7 Voice Presence disabled by ${interaction.user.tag}.`,
+            `[/247 leave] 24/7 Voice Presence disabled by ${interaction.user.globalName ?? interaction.user.username}.`,
             'info'
           );
 
@@ -299,7 +302,7 @@ export const VoiceManifest: ModuleManifest = {
 
           context.logSyncEvent(
             interaction.guildId,
-            `[/247 set] 24/7 target set to #${channel.name} by ${interaction.user.tag}. Will connect on next cycle.`,
+            `[/247 set] 24/7 target set to #${channel.name} by ${interaction.user.globalName ?? interaction.user.username}. Will connect on next cycle.`,
             'success'
           );
 

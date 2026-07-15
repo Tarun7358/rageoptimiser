@@ -15,7 +15,16 @@ export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhiteli
   const [newRoleId, setNewRoleId] = useState('');
   
   const mod = (modules || []).find(m => m.id === 'role_whitelist');
-  const roles = mod?.config?.roles || [];
+  const roles = (mod?.config?.roles || [])
+    .filter((r: any) => 
+      r && 
+      r.roleId && 
+      r.roleId !== 'undefined' && 
+      r.roleId !== 'null' && 
+      r.name && 
+      r.name !== 'undefined' && 
+      r.name !== 'null'
+    );
 
   const handleToggleModule = async () => {
     if (!mod || !onUpdateConfig) return;
@@ -193,7 +202,7 @@ export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhiteli
                 <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>No roles whitelisted yet.</td>
               </tr>
             ) : roles.map((r: any) => (
-              <tr key={r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <tr key={r.roleId || r.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '16px' }}>
                   <div style={{ fontWeight: 600 }}>{registry.roles?.find(ro => ro.id === r.roleId)?.name || r.name}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{r.roleId}</div>

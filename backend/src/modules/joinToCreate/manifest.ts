@@ -160,7 +160,7 @@ export const JoinToCreateManifest: ModuleManifest = {
             createdAt: new Date()
           });
 
-          context.logSyncEvent(`[JTC] Setup by ${interaction.user.tag}. Trigger: #${channel.name}.`, 'success');
+          context.logSyncEvent(`[JTC] Setup by ${interaction.user.username}. Trigger: #${channel.name}.`, 'success');
           return interaction.reply({ content: `✅ **Join To Create** configured!\n- **Trigger Channel:** ${channel}\n- **Default Name:** \`${defaultName}\`\n- **Privacy:** \`${privacy}\``, flags: 64 });
         }
 
@@ -211,9 +211,9 @@ export const JoinToCreateManifest: ModuleManifest = {
           if (!myChannel) return interaction.reply({ content: '❌ You don\'t own an active JTC channel.', flags: 64 });
           const user = interaction.options.getUser('user');
           myChannel.ownerId = user.id;
-          myChannel.ownerTag = user.tag;
+          myChannel.ownerTag = user.username;
           saveConfig({ activeChannels });
-          context.logSyncEvent(`[JTC] ${interaction.user.tag} transferred channel to ${user.tag}.`, 'info');
+          context.logSyncEvent(`[JTC] ${interaction.user.username} transferred channel to ${user.username}.`, 'info');
           return interaction.reply({ content: `✅ Transferred channel ownership to ${user}.`, flags: 64 });
         }
 
@@ -353,14 +353,14 @@ export const JoinToCreateManifest: ModuleManifest = {
             activeChannels.push({
               channelId: newChannel.id,
               ownerId: member.id,
-              ownerTag: member.user.tag,
+              ownerTag: member.user.username,
               name: channelName,
               locked: config.privacy === 'locked',
               createdAt: new Date()
             });
 
             context.updateModuleConfig('join_to_create', { activeChannels });
-            context.logSyncEvent(`[JTC] Created channel "${channelName}" inside category "${parentId || 'root'}" for ${member.user.tag}.`, 'success');
+            context.logSyncEvent(`[JTC] Created channel "${channelName}" inside category "${parentId || 'root'}" for ${member.user.username}.`, 'success');
           } catch (err) { console.error('[JTC] Create error:', err); }
         }
 

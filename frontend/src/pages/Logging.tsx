@@ -55,8 +55,29 @@ export function Logging({
 
   const handleTestLog = async (categoryId: string) => {
     onSaveConfig(`Sending test log for ${categoryId}...`);
-    onManualTrigger(`Logs: Dispatched simulated test event to ${categoryId} channel.`, 'info', 'System');
+    try {
+      const token = localStorage.getItem('cn_token');
+      const activeGuild = localStorage.getItem('cn_active_guild');
+      const res = await fetch('http://localhost:5000/api/modules/logging/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Guild-Id': activeGuild || ''
+        },
+        body: JSON.stringify({ category: categoryId })
+      });
+      if (res.ok) {
+        onManualTrigger(`Logs: Dispatched real test event to ${categoryId} channel.`, 'success', 'System');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        onManualTrigger(`Logs Error: ${data.error || 'Failed to dispatch test event.'}`, 'danger', 'System');
+      }
+    } catch (err) {
+      onManualTrigger('Logs Error: API server offline.', 'danger', 'System');
+    }
   };
+
 
   const renderCategoryCard = (cat: typeof CATEGORIES[0]) => {
     const catConfig = config[cat.id] || { enabled: false, channelId: '', events: {}, ignoreRoles: [], ignoreUsers: [] };

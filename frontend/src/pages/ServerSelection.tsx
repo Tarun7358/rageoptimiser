@@ -224,7 +224,7 @@ function GuildCard({
 }
 
 export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: string) => void }) {
-  const { user, managedGuilds, guildApprovals, logout, setActiveGuildId } = useAuth();
+  const { user, managedGuilds, guildApprovals, logout, setActiveGuildId, updateDiscordGuilds, token } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleSelect = (guildId: string) => {
@@ -234,12 +234,30 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Re-trigger OAuth to refresh guild list
     try {
-      const res = await fetch('http://localhost:5000/api/auth/discord');
-      const { url } = await res.json();
-      window.location.href = url;
+      const res = await fetch('http://localhost:5000/api/user/guilds', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        updateDiscordGuilds(data.managedGuilds, data.approvals);
+      } else {
+        // Fallback to OAuth redirect if token is expired/invalid
+        const authRes = await fetch('http://localhost:5000/api/auth/discord');
+        const { url } = await authRes.json();
+        window.location.href = url;
+      }
     } catch {
+      try {
+        const authRes = await fetch('http://localhost:5000/api/auth/discord');
+        const { url } = await authRes.json();
+        window.location.href = url;
+      } catch {
+        setRefreshing(false);
+      }
+    } finally {
       setRefreshing(false);
     }
   };

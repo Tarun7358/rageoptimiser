@@ -14,7 +14,19 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
   const [newMemberId, setNewMemberId] = useState('');
   
   const mod = (modules || []).find(m => m.id === 'member_whitelist');
-  const members = mod?.config?.members || [];
+  const members = (mod?.config?.members || [])
+    .filter((m: any) => {
+      if (!m || typeof m !== 'object') return false;
+      // Must not be a role or bot type
+      if (m.type && m.type !== 'member') return false;
+      // Must have a valid primary ID
+      const primaryId = m.userId || m.id;
+      if (!primaryId || primaryId === 'undefined' || primaryId === 'null') return false;
+      // Must have a valid tag or name
+      const displayName = m.tag || m.username || m.name;
+      if (!displayName || displayName === 'undefined' || displayName === 'null') return false;
+      return true;
+    });
 
   const handleToggleModule = async () => {
     if (!mod || !onUpdateConfig) return;
@@ -188,11 +200,14 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
               <tr>
                 <td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>No members whitelisted yet.</td>
               </tr>
-            ) : members.map((m: any) => (
-              <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+            ) : members.map((m: any) => {
+              const primaryId = m.userId || m.id;
+              const displayTag = m.tag || m.username || m.name || `User-${primaryId}`;
+              return (
+              <tr key={primaryId} style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <td style={{ padding: '16px' }}>
-                  <div style={{ fontWeight: 600 }}>{m.tag}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{m.userId}</div>
+                  <div style={{ fontWeight: 600 }}>{displayTag}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{m.userId || m.id}</div>
                 </td>
                 <td style={{ padding: '16px' }}>
                   {m.enabledModules?.length > 0 ? (
@@ -220,11 +235,12 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
                 <td style={{ padding: '16px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="icon-btn" title="Configure" onClick={() => setEditingMember({...m})}><Settings2 size={16} /></button>
-                    <button className="icon-btn" title="Remove" style={{ color: 'var(--color-danger)' }} onClick={() => handleRemove(m.userId)}><Trash2 size={16} /></button>
+                    <button className="icon-btn" title="Remove" style={{ color: 'var(--color-danger)' }} onClick={() => handleRemove(m.userId || m.id)}><Trash2 size={16} /></button>
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

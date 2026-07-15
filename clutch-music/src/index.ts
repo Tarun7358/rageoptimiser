@@ -67,6 +67,9 @@ async function bootstrap() {
       (id, config) => registry.updateModuleConfig(id, config)
     );
 
+    (gateway.client as any).registry = registry;
+    (gateway.client as any).gatewayInstance = gateway;
+
     // Hook for auto-syncing quarantine when security config changes
     const originalUpdate = registry.updateModuleConfig.bind(registry);
     registry.updateModuleConfig = (id, config) => {

@@ -17,12 +17,12 @@ import spotifyUrlInfo from 'spotify-url-info';
 const spotifyFn = (spotifyUrlInfo.default || spotifyUrlInfo) as any;
 const spotify = spotifyFn(fetch as any);
 
-// BUG #9 FIX: Made async so interaction.reply() can be properly awaited.
-// Unawaited replies may silently fail if the interaction token expires.
-async function checkVoicePermissions(interaction: any, queue: GuildQueue): Promise<boolean> {
+// Fix: Convert to synchronous function so that the unawaited "if (!checkVoicePermissions(...)) return;" 
+// checks work correctly in all 36 command handlers.
+function checkVoicePermissions(interaction: any, queue: GuildQueue): boolean {
   const memberVoiceChannel = interaction.member?.voice?.channel;
   if (!memberVoiceChannel) {
-    await interaction.reply({
+    interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setTitle('⚠️ Voice Connection Required')
@@ -37,7 +37,7 @@ async function checkVoicePermissions(interaction: any, queue: GuildQueue): Promi
 
   if (queue.connection && queue.connection.joinConfig.channelId) {
     if (memberVoiceChannel.id !== queue.connection.joinConfig.channelId) {
-      await interaction.reply({
+      interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('⚠️ Voice Channel Mismatch')
@@ -155,6 +155,23 @@ export const MusicManifest: ModuleManifest = {
     {
       name: 'help',
       description: 'Display music help instructions'
+    },
+    {
+      name: 'music-247-enable',
+      description: 'Keep Rage Music connected to a voice channel 24/7.',
+      options: [
+        {
+          name: 'channel',
+          description: 'The voice channel to keep the bot connected to',
+          type: 7,
+          required: true,
+          channel_types: [2]
+        }
+      ]
+    },
+    {
+      name: 'music-247-disable',
+      description: 'Disable 24/7 mode and restore default voice connection behavior.'
     }
   ],
   routes: [
@@ -454,30 +471,16 @@ export const MusicManifest: ModuleManifest = {
       handler: async (client: any, message: any, context: any) => {
         if (message.author.bot || !message.guild) return;
 
-        console.log(`[DEBUG messageCreate] Message: "${message.content}"`);
-
         const modules = context.getModulesState ? context.getModulesState() : [];
         const musicModule = modules.find((m: any) => m.id === 'music');
-        if (!musicModule) {
-          console.log(`[DEBUG messageCreate] Music module not found in modules list.`);
-          return;
-        }
-        if (musicModule.status !== 'enabled') {
-          console.log(`[DEBUG messageCreate] Music module is disabled (status: ${musicModule.status}).`);
-          return;
-        }
+        if (!musicModule || musicModule.status !== 'enabled') return;
 
         const config = musicModule.config || {};
-        console.log(`[DEBUG messageCreate] Prefix Enabled: ${config.prefixEnabled}, Prefix: ${config.musicPrefix}`);
-        if (config.prefixEnabled === false) {
-          console.log(`[DEBUG messageCreate] Prefix commands are disabled.`);
-          return;
-        }
+        if (config.prefixEnabled === false) return;
 
         const prefix = config.musicPrefix || 'r!';
         if (!message.content.startsWith(prefix)) return;
 
-        console.log(`[DEBUG messageCreate] Matched prefix. Parsing args for command.`);
         const args = message.content.slice(prefix.length).trim().split(/ +/);
         const commandName = args.shift()?.toLowerCase();
 
@@ -490,18 +493,27 @@ export const MusicManifest: ModuleManifest = {
             isCommand: () => true,
             commandName,
             options: {
-              getString: (name: string) => args.join(' '), 
-              getInteger: (name: string) => parseInt(args[0]) || 0
+              getString: (name: string) => args.join(' '),
+              getInteger: (name: string) => parseInt(args[0]) || 0,
+              // Bug 7 Fix: Channel options cannot be resolved from prefix commands.
+              // Return null so handlers that require a channel will reply with their own validation error.
+              getChannel: (name: string) => null,
             },
             guild: message.guild,
             member: message.member,
             user: message.author,
             channel: message.channel,
             channelId: message.channelId,
+            replied: false,
+            deferred: false,
             deferReply: async () => {},
             reply: async (content: any) => {
               repliedMessage = await message.channel.send(content).catch((e: any) => {
-                console.error("mockInteraction.reply failed:", e);
+                if (e.code === 50013) {
+                  console.warn(`[Music Warning] Cannot send reply in channel ${message.channelId}: Missing Permissions (50013)`);
+                } else {
+                  console.error("mockInteraction.reply failed:", e);
+                }
                 return null;
               });
               return repliedMessage;
@@ -509,13 +521,27 @@ export const MusicManifest: ModuleManifest = {
             editReply: async (content: any) => {
               if (repliedMessage) {
                 return repliedMessage.edit(content).catch(async (e: any) => {
-                  console.warn("mockInteraction.editReply edit failed, falling back to send:", e);
-                  repliedMessage = await message.channel.send(content).catch((e: any) => console.error("mockInteraction.send fallback failed:", e));
+                  if (e.code === 50013) {
+                    console.warn(`[Music Warning] Cannot edit reply in channel ${message.channelId}: Missing Permissions (50013)`);
+                  } else {
+                    console.warn("mockInteraction.editReply edit failed, falling back to send:", e);
+                    repliedMessage = await message.channel.send(content).catch((err: any) => {
+                      if (err.code === 50013) {
+                        console.warn(`[Music Warning] Cannot send fallback reply in channel ${message.channelId}: Missing Permissions (50013)`);
+                      } else {
+                        console.error("mockInteraction.send fallback failed:", err);
+                      }
+                    });
+                  }
                   return repliedMessage;
                 });
               } else {
                 repliedMessage = await message.channel.send(content).catch((e: any) => {
-                  console.error("mockInteraction.editReply send failed:", e);
+                  if (e.code === 50013) {
+                    console.warn(`[Music Warning] Cannot send editReply in channel ${message.channelId}: Missing Permissions (50013)`);
+                  } else {
+                    console.error("mockInteraction.editReply send failed:", e);
+                  }
                   return null;
                 });
                 return repliedMessage;
@@ -594,7 +620,7 @@ export const MusicManifest: ModuleManifest = {
               url: video.url,
               duration: video.durationRaw || '3:00',
               thumbnail: video.thumbnails?.[0]?.url || '',
-              requester: interaction.user.tag,
+              requester: interaction.user.username ?? interaction.user.tag,
               platform: 'YouTube'
             }));
 
@@ -641,7 +667,7 @@ export const MusicManifest: ModuleManifest = {
               url: `search:${spTrack.name} ${spTrack.artists?.[0]?.name || ''}`,
               duration: '3:30',
               thumbnail: 'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
-              requester: interaction.user.tag,
+              requester: interaction.user.username ?? interaction.user.tag,
               platform: 'Spotify'
             }));
 
@@ -1444,7 +1470,7 @@ export const MusicManifest: ModuleManifest = {
                 url: `search:${spTrack.name} ${spTrack.artists?.[0]?.name || ''}`,
                 duration: '3:30',
                 thumbnail: 'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
-                requester: interaction.user.tag,
+                requester: interaction.user.username ?? interaction.user.tag,
                 platform: 'Spotify'
               };
               await queue.play(track, voiceChannel);
@@ -1486,6 +1512,334 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         await queue.openControls(client);
         await interaction.deferUpdate().catch(() => {});
+      }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 24/7 MUSIC — Separate Enable & Disable Handlers.
+    // ─────────────────────────────────────────────────────────────────────────
+    {
+      name: 'command_music-247-enable',
+      handler: async (client: any, interaction: any, context: any) => {
+        const { PermissionFlagsBits } = await import('discord.js');
+        const { Database } = await import('../../core/Database.js');
+
+        const guild = interaction.guild;
+        const member = interaction.member;
+        const user = interaction.user;
+        const now = Math.floor(Date.now() / 1000);
+
+        const ACCENT = 0x7C5CFC;
+        const WARNING = 0xF59E0B;
+        const ERROR = 0xEF4444;
+        const DIVIDER = '━━━━━━━━━━━━━━━━━━';
+        const FOOTER = { text: 'Rage Music • Premium Voice Experience', iconURL: client.user?.displayAvatarURL?.() };
+
+        // ── Permission Guard ────────────────────────────────────────────────
+        const isOwner = user.id === guild?.ownerId || user.id === process.env.OWNER_ID;
+        let hasPerms = isOwner;
+        if (!hasPerms && member && typeof member.permissions !== 'string') {
+          hasPerms =
+            (member.permissions as any).has(PermissionFlagsBits.Administrator) ||
+            (member.permissions as any).has(PermissionFlagsBits.ManageGuild);
+        }
+
+        // Check configured DJ role
+        if (!hasPerms) {
+          const modules = context.getModulesState?.() ?? [];
+          const musicMod = modules.find((m: any) => m.id === 'music');
+          const djRoleId = musicMod?.config?.djRole;
+          if (djRoleId && member?.roles?.cache?.has?.(djRoleId)) {
+            hasPerms = true;
+          }
+        }
+
+        if (!hasPerms) {
+          return interaction.reply({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+                .setTitle('🚫 Access Denied')
+                .setDescription(
+                  `${DIVIDER}\n\nOnly the following members can manage 24/7 Music.\n\n` +
+                  `• Server Owner\n• Administrators\n• Manage Server Permission\n• Configured DJ Role\n\n${DIVIDER}`
+                )
+                .setColor(ERROR)
+                .setFooter(FOOTER)
+                .setTimestamp()
+            ],
+            flags: 64
+          }).catch(() => {});
+        }
+
+        // Get select channel option
+        const voiceChannel = interaction.options.getChannel('channel');
+        const isVoice = voiceChannel && (
+          voiceChannel.type === 2 || 
+          voiceChannel.type === 'GUILD_VOICE' || 
+          (typeof voiceChannel.isVoiceBased === 'function' && voiceChannel.isVoiceBased())
+        );
+
+        if (!voiceChannel || !isVoice) {
+          return interaction.reply({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+                .setTitle('❌ Invalid Channel')
+                .setDescription(
+                  `${DIVIDER}\n\nThe selected channel must be a valid voice channel.\n\n${DIVIDER}`
+                )
+                .setColor(ERROR)
+                .setFooter(FOOTER)
+                .setTimestamp()
+            ],
+            flags: 64
+          }).catch(() => {});
+        }
+
+        // Bot permission check in target voice channel
+        const botMember = guild.members.me ?? await guild.members.fetchMe().catch(() => null);
+        if (botMember) {
+          const permsInVc = voiceChannel.permissionsFor?.(botMember);
+          const needsConnect = permsInVc && !permsInVc.has(PermissionFlagsBits.Connect);
+          const needsSpeak = permsInVc && !permsInVc.has(PermissionFlagsBits.Speak);
+          const needsView = permsInVc && !permsInVc.has(PermissionFlagsBits.ViewChannel);
+
+          if (needsConnect || needsSpeak || needsView) {
+            return interaction.reply({
+              embeds: [
+                new EmbedBuilder()
+                  .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+                  .setTitle('🔒 Missing Permissions')
+                  .setDescription(
+                    `${DIVIDER}\n\n` +
+                    `I don't have permission to connect or speak in <#${voiceChannel.id}>.\n\n` +
+                    `**Required Permissions**\n\n` +
+                    `• View Channel\n• Connect\n• Speak\n• Use Voice Activity\n\n` +
+                    `${DIVIDER}`
+                  )
+                  .setColor(ERROR)
+                  .setFooter(FOOTER)
+                  .setTimestamp()
+              ],
+              flags: 64
+            }).catch(() => {});
+          }
+        }
+
+        // Write config
+        const modules = context.getModulesState?.() ?? [];
+        const musicModule = modules.find((m: any) => m.id === 'music');
+        const config = musicModule?.config ?? {};
+        const enabledAt = now;
+
+        context.updateModuleConfig?.('music', {
+          ...config,
+          twentyFourSevenMode: true,
+          defaultMusicChannelId: voiceChannel.id,
+          twentyFourSevenEnabledAt: enabledAt,
+          twentyFourSevenEnabledBy: user.id,
+          twentyFourSevenTextChannelId: interaction.channelId
+        });
+
+        // Persist audit
+        const db = Database.getDb();
+        if (db) {
+          await db.run(
+            `INSERT INTO music_247 (guildId, enabled, voiceChannelId, textChannelId, enabledBy, enabledAt, disabledBy, disabledAt)
+             VALUES (?, 1, ?, ?, ?, ?, NULL, NULL)
+             ON CONFLICT(guildId) DO UPDATE SET
+               enabled=1, voiceChannelId=excluded.voiceChannelId,
+               textChannelId=excluded.textChannelId,
+               enabledBy=excluded.enabledBy, enabledAt=excluded.enabledAt,
+               disabledBy=NULL, disabledAt=NULL`,
+            [guild.id, voiceChannel.id, interaction.channelId, user.id, enabledAt]
+          ).catch(() => {});
+        }
+
+        // Immediately trigger connection via Gateway
+        if (context.connect247) {
+          await context.connect247(guild.id, voiceChannel.id).catch((err: any) => {
+            console.error('[24/7 Music] Immediate connection attempt failed:', err);
+          });
+        }
+
+        context.logSyncEvent?.(
+          guild.id,
+          `[24/7 Music] ENABLED by ${user.username ?? user.tag} (${user.id}). VC: ${voiceChannel.name} (${voiceChannel.id}). Text: ${interaction.channelId}. Node: Active. Recovery: Enabled.`,
+          'success'
+        );
+
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+              .setTitle('🎵 24/7 Music Enabled')
+              .setDescription(
+                `Rage Music will now stay connected to the selected voice channel around the clock.\n\n${DIVIDER}\n\n` +
+                `**Configuration**\n\n` +
+                `🎧 **Voice Channel** — <#${voiceChannel.id}>\n` +
+                `💬 **Control Channel** — <#${interaction.channelId}>\n` +
+                `👤 **Enabled By** — <@${user.id}>\n` +
+                `🕒 **Activated** — <t:${enabledAt}:R>\n\n` +
+                `${DIVIDER}\n\n` +
+                `**Status**\n\n` +
+                `✅ Persistent Connection\n` +
+                `✅ Auto Reconnect\n` +
+                `✅ Idle Timeout Disabled\n` +
+                `✅ Empty Channel Protection\n` +
+                `✅ Restart Recovery Enabled\n\n` +
+                `${DIVIDER}\n\n` +
+                `Your music session is now always ready.`
+              )
+              .setColor(ACCENT)
+              .setThumbnail(guild.iconURL?.({ dynamic: true }) ?? null)
+              .setFooter(FOOTER)
+              .setTimestamp()
+          ],
+          flags: 64
+        }).catch(() => {});
+      }
+    },
+    {
+      name: 'command_music-247-disable',
+      handler: async (client: any, interaction: any, context: any) => {
+        const { PermissionFlagsBits } = await import('discord.js');
+        const { Database } = await import('../../core/Database.js');
+
+        const guild = interaction.guild;
+        const member = interaction.member;
+        const user = interaction.user;
+        const now = Math.floor(Date.now() / 1000);
+
+        const ACCENT = 0x7C5CFC;
+        const WARNING = 0xF59E0B;
+        const ERROR = 0xEF4444;
+        const DIVIDER = '━━━━━━━━━━━━━━━━━━';
+        const FOOTER = { text: 'Rage Music • Premium Voice Experience', iconURL: client.user?.displayAvatarURL?.() };
+
+        // ── Permission Guard ────────────────────────────────────────────────
+        const isOwner = user.id === guild?.ownerId || user.id === process.env.OWNER_ID;
+        let hasPerms = isOwner;
+        if (!hasPerms && member && typeof member.permissions !== 'string') {
+          hasPerms =
+            (member.permissions as any).has(PermissionFlagsBits.Administrator) ||
+            (member.permissions as any).has(PermissionFlagsBits.ManageGuild);
+        }
+
+        // Check configured DJ role
+        if (!hasPerms) {
+          const modules = context.getModulesState?.() ?? [];
+          const musicMod = modules.find((m: any) => m.id === 'music');
+          const djRoleId = musicMod?.config?.djRole;
+          if (djRoleId && member?.roles?.cache?.has?.(djRoleId)) {
+            hasPerms = true;
+          }
+        }
+
+        if (!hasPerms) {
+          return interaction.reply({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+                .setTitle('🚫 Access Denied')
+                .setDescription(
+                  `${DIVIDER}\n\nOnly the following members can manage 24/7 Music.\n\n` +
+                  `• Server Owner\n• Administrators\n• Manage Server Permission\n• Configured DJ Role\n\n${DIVIDER}`
+                )
+                .setColor(ERROR)
+                .setFooter(FOOTER)
+                .setTimestamp()
+            ],
+            flags: 64
+          }).catch(() => {});
+        }
+
+        // Read current state
+        const modules = context.getModulesState?.() ?? [];
+        const musicModule = modules.find((m: any) => m.id === 'music');
+        const config = musicModule?.config ?? {};
+        const isCurrentlyEnabled: boolean = !!(config.twentyFourSevenMode);
+        const currentVcId: string | null = config.defaultMusicChannelId ?? null;
+
+        if (!isCurrentlyEnabled) {
+          return interaction.reply({
+            embeds: [
+              new EmbedBuilder()
+                .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+                .setTitle('⚠️ Already Disabled')
+                .setDescription(
+                  `${DIVIDER}\n\n24/7 Music mode is not currently enabled on this server.\n\n${DIVIDER}`
+                )
+                .setColor(WARNING)
+                .setFooter(FOOTER)
+                .setTimestamp()
+            ],
+            flags: 64
+          }).catch(() => {});
+        }
+
+        // Toggle OFF
+        context.updateModuleConfig?.('music', {
+          ...config,
+          twentyFourSevenMode: false,
+          defaultMusicChannelId: null
+        });
+
+        // Persist audit
+        const db = Database.getDb();
+        if (db) {
+          await db.run(
+            `INSERT INTO music_247 (guildId, enabled, voiceChannelId, textChannelId, enabledBy, enabledAt, disabledBy, disabledAt)
+             VALUES (?, 0, NULL, NULL, ?, ?, ?, ?)
+             ON CONFLICT(guildId) DO UPDATE SET
+               enabled=0, voiceChannelId=NULL, textChannelId=NULL,
+               disabledBy=excluded.disabledBy, disabledAt=excluded.disabledAt`,
+            [guild.id, user.id, config.twentyFourSevenEnabledAt ?? now, user.id, now]
+          ).catch(() => {});
+        }
+
+        context.logSyncEvent?.(
+          guild.id,
+          `[24/7 Music] DISABLED by ${user.username ?? user.tag} (${user.id}). VC was: ${currentVcId ?? 'N/A'}`,
+          'info'
+        );
+
+        // Immediately disconnect if queue is not playing
+        const queue = QueueManager.getQueue(guild.id);
+        if (queue && !queue.currentTrack) {
+          try {
+            queue.destroy();
+          } catch (err) {
+            console.error('[24/7 Music] Failed to destroy queue on disable:', err);
+          }
+        }
+
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setAuthor({ name: 'Rage Music', iconURL: client.user?.displayAvatarURL?.() })
+              .setTitle('🎵 24/7 Music Disabled')
+              .setDescription(
+                `Rage Music has returned to normal voice behavior.\n\n${DIVIDER}\n\n` +
+                `**Changes**\n\n` +
+                `❌ Persistent Connection Disabled\n` +
+                `✅ Idle Timeout Restored\n` +
+                `✅ Empty Queue Disconnect Enabled\n` +
+                `✅ Normal Voice Management Active\n\n` +
+                `${DIVIDER}\n\nThank you for using Rage Music.`
+              )
+              .setColor(ACCENT)
+              .addFields(
+                { name: '👤 Disabled By', value: `<@${user.id}>`, inline: true },
+                { name: '🕒 Deactivated', value: `<t:${now}:R>`, inline: true }
+              )
+              .setThumbnail(guild.iconURL?.({ dynamic: true }) ?? null)
+              .setFooter(FOOTER)
+              .setTimestamp()
+          ],
+          flags: 64
+        }).catch(() => {});
       }
     }
   ]

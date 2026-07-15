@@ -6,16 +6,15 @@ import { ModuleRegistry } from './ModuleRegistry.js';
 import { ModuleManifest } from './types.js';
 import jwt from 'jsonwebtoken';
 import { Database } from './Database.js';
-import { IGuildApproval } from '../models/index.js';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import type { PublicFeedManager } from './PublicFeedManager.js';
-import { AuthService } from './AuthService.js';
-import { SecurityService } from './SecurityService.js';
 import { OAuthService } from './OAuthService.js';
-import QRCode from 'qrcode';
 import { AnalyticsService } from './AnalyticsService.js';
 import bcrypt from 'bcryptjs';
+import { EmbedBuilder } from 'discord.js';
+
+
 
 export const authenticateToken = (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
@@ -54,10 +53,10 @@ export class WebServer {
   public getBotMetrics: (() => { latency: number; uptime: string }) | null = null;
   public deployCommandsCallback: (() => Promise<void>) | null = null;
   public triggerEmergencyLock: ((guildId?: string) => Promise<void>) | null = null;
-  public onApprovalAction?: (guildId: string, action: string, reason?: string) => Promise<void>;
   public publicFeed?: PublicFeedManager;
   public getDiscordClient?: () => any;
   public syncRegistryCallback?: (guildId?: string) => Promise<void>;
+
 
   constructor(
     private registry: ModuleRegistry,
@@ -189,6 +188,14 @@ export class WebServer {
           return;
         }
 
+        if (user.role === 'guild_manager') {
+          const managedIds: string[] = user.managedGuildIds || [];
+          if (!managedIds.includes(guildId)) {
+            ws.close(1008, 'Forbidden: You do not manage this guild');
+            return;
+          }
+        }
+
         (ws as any).guildId = guildId;
         this.clients.add(ws);
 
@@ -241,6 +248,32 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.sendStatus(200);
   });
 
+  // Diagnostic Endpoint
+  app.get('/api/diag', (req, res) => {
+    const client = server.getDiscordClient ? server.getDiscordClient() : null;
+    if (!client) {
+      return res.status(503).json({ error: 'Discord Client not linked to WebServer' });
+    }
+    try {
+      const guilds = client.guilds.cache.map((g: any) => ({
+        id: g.id,
+        name: g.name,
+        memberCount: g.memberCount,
+        joinedAt: g.joinedAt
+      }));
+      res.json({
+        status: client.ws.status,
+        ping: client.ws.ping,
+        guildsCount: client.guilds.cache.size,
+        guilds,
+        user: client.user ? { id: client.user.id, tag: client.user.username } : null,
+        intents: client.options.intents
+      });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Public route for Login Page live metrics
   app.get('/api/status', (req, res) => {
     const metrics = server.getBotMetrics ? server.getBotMetrics() : { latency: 0, uptime: 'Offline' };
@@ -248,7 +281,6 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     
     // Calculate simple stats
     const activeModulesCount = modules.filter(m => m.status === 'ready' || m.status === 'enabled').length;
-    const protectedServers = 1; // Assuming single-guild dashboard
 
     // Compute threats blocked from real data: quarantined users + security warn events in sync logs
     const secMod = modules.find(m => m.id === 'security');
@@ -256,6 +288,10 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     const syncLogs = registry.getSyncLogs();
     const securityWarnCount = syncLogs.filter(l => l.type === 'warn' && l.msg.includes('[Anti-Nuke')).length;
     const threatsBlocked = quarantinedCount + securityWarnCount;
+
+    // Compute protected servers count from the live Discord client cache
+    const discordClientForStatus = server.getDiscordClient ? server.getDiscordClient() : null;
+    const protectedServers = discordClientForStatus ? discordClientForStatus.guilds.cache.size : 1;
 
     res.json({
       activeModules: activeModulesCount,
@@ -267,41 +303,9 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     });
   });
 
-
-
-
-
-  // Login Route
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-
-      // Enforce credentials login is reserved exclusively for the platform owner
-      if (username !== 'admin') {
-        return res.status(401).json({ error: 'Access denied: Credentials login is reserved for the platform owner.' });
-      }
-
-      const user = await AuthService.authenticate(username, password);
-      
-      if (!user) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role }, 
-        process.env.JWT_SECRET || 'fallback_secret', 
-        { expiresIn: '1d' }
-      );
-      
-      res.json({ token, role: user.role, username: user.username });
-    } catch (err: any) {
-      if (err.message === 'ACCOUNT_LOCKED') {
-        return res.status(403).json({ error: 'Account locked. Too many failed attempts.' });
-      }
-      console.error('Login error:', err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
+  // Login Route — credentials login is disabled; all authentication is via Discord OAuth.
+  app.post('/api/auth/login', (req, res) => {
+    return res.status(410).json({ error: 'Credentials login is disabled. Please use Discord OAuth to access the dashboard.' });
   });
 
   app.get('/api/state', authenticateToken, authorizeGuildAccess, async (req, res) => {
@@ -351,14 +355,10 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     try {
       const db = Database.getDb();
       if (!db) {
-        return res.json([
-          { username: 'mod_alex', role: 'Security Mod', access: 'Dashboard Access', status: 'Active' },
-          { username: 'staff_lisa', role: 'Lead Admin', access: 'Owner Panel Access', status: 'Active' }
-        ]);
+        return res.status(503).json({ error: 'Database not connected. Staff list unavailable.' });
       }
-      const snapshot = await db.collection('admin_users').get();
-      const staff = snapshot.docs.map(doc => {
-        const d = doc.data();
+      const rows = await db.all<any>('SELECT * FROM admin_users');
+      const staff = rows.map(d => {
         return {
           username: d.username,
           role: d.role === 'owner' ? 'Owner' : 'Staff',
@@ -384,18 +384,21 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
 
-      const userDoc = await db.collection('admin_users').where('username', '==', username).get();
-      if (!userDoc.empty) {
+      const existingUser = await db.get('SELECT 1 FROM admin_users WHERE username = ?', [username]);
+      if (existingUser) {
         return res.status(400).json({ error: 'User already exists' });
       }
 
-      await db.collection('admin_users').add({
-        username,
-        passwordHash,
-        role: role || 'staff',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      const id = 'admin_staff_' + Math.random().toString(36).substring(2, 9);
+      const now = new Date().toISOString();
+
+      await db.run(
+        `INSERT INTO admin_users (
+          id, username, passwordHash, role, totpEnabled, totpSecret, recoveryCodes, 
+          failedAttempts, lockedUntil, lastLogin, createdAt, updatedAt
+        ) VALUES (?, ?, ?, ?, 0, null, '[]', 0, null, null, ?, ?)`,
+        [id, username, passwordHash, role || 'staff', now, now]
+      );
 
       registry.logSyncEvent(`Owner provisioned new staff account: ${username}`, 'success');
       res.json({ success: true });
@@ -413,12 +416,12 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       const db = Database.getDb();
       if (!db) return res.json({ success: true });
 
-      const userDoc = await db.collection('admin_users').where('username', '==', username).get();
-      if (userDoc.empty) {
+      const existingUser = await db.get('SELECT 1 FROM admin_users WHERE username = ?', [username]);
+      if (!existingUser) {
         return res.status(404).json({ error: 'Staff account not found' });
       }
 
-      await userDoc.docs[0].ref.delete();
+      await db.run('DELETE FROM admin_users WHERE username = ?', [username]);
       registry.logSyncEvent(`Owner deleted staff account: ${username}`, 'warn');
       res.json({ success: true });
     } catch (e: any) {
@@ -467,6 +470,51 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.status(503).json({ error: 'Discord Gateway not connected' });
   });
 
+  app.post('/api/modules/logging/test', authenticateToken, authorizeGuildAccess, async (req: any, res: any) => {
+    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const { category } = req.body;
+    
+    const state = registry.getGuildState(guildId);
+    const logMod = state.modules.find(m => m.id === 'logging');
+    if (!logMod || logMod.status !== 'enabled') {
+      return res.status(400).json({ error: 'Logging module is not enabled' });
+    }
+    
+    const config = logMod.config || {};
+    const catConfig = config[category];
+    if (!catConfig || !catConfig.channelId || !catConfig.enabled) {
+      return res.status(400).json({ error: `Category ${category} is not configured or enabled` });
+    }
+    
+    try {
+      const client = server.getDiscordClient ? server.getDiscordClient() : null;
+      if (!client) {
+        return res.status(500).json({ error: 'Discord Client is not initialized' });
+      }
+      
+      const guild = await client.guilds.fetch(guildId).catch(() => null);
+      if (!guild) {
+        return res.status(404).json({ error: 'Guild not found or inaccessible by bot' });
+      }
+      
+      const channel = await guild.channels.fetch(catConfig.channelId).catch(() => null);
+      if (channel && channel.isTextBased()) {
+        const embed = new EmbedBuilder()
+          .setTitle(`🧪 Test Log: ${category.toUpperCase()}`)
+          .setDescription(`This is a test event for the **${category}** log category triggered via Web Dashboard.`)
+          .setColor('#3498db')
+          .setTimestamp();
+        await channel.send({ embeds: [embed] });
+        registry.logSyncEvent(guildId, `Sent test log for category: ${category} via Web Dashboard`, 'success');
+        return res.json({ success: true });
+      } else {
+        return res.status(400).json({ error: 'Log channel is invalid or inaccessible' });
+      }
+    } catch (e: any) {
+      return res.status(500).json({ error: e.message || 'Internal server error sending test log' });
+    }
+  });
+
   app.post('/api/modules/:id', authenticateToken, authorizeGuildAccess, (req, res) => {
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
     const mod = registry.updateModuleConfig(guildId, req.params.id, req.body);
@@ -482,12 +530,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.json(mod);
   });
 
-  app.post('/api/simulate', authenticateToken, authorizeGuildAccess, (req, res) => {
-    const { actionType } = req.body;
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
-    registry.simulateAction(guildId, actionType);
-    res.json({ success: true });
-  });
+  // /api/simulate removed — simulation endpoint was a dev tool using fake IDs and no longer exists.
 
   app.post('/api/sync/refresh', authenticateToken, authorizeGuildAccess, (req, res) => {
     const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
@@ -548,24 +591,9 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.json(activityLogs);
   });
 
-  // --- APPROVAL SYSTEM ENDPOINTS ---
-  app.get('/api/approvals', authenticateToken, async (req: any, res) => {
-    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
-    try {
-      const db = Database.getDb();
-      if (!db) return res.json([]);
-      
-      const snapshot = await db.collection('approvals').orderBy('joinedAt', 'desc').get();
-      const approvals = snapshot.docs.map(doc => doc.data() as IGuildApproval);
-      res.json(approvals);
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to fetch approvals' });
-    }
-  });
 
   // --- PUBLIC FEED ENDPOINTS ---
-  app.get('/api/public/events', (req, res) => {
+  app.get('/api/public/events', async (req, res) => {
     if (!server.publicFeed) {
       return res.status(503).json({ error: 'Public Feed Manager not initialized' });
     }
@@ -573,150 +601,65 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     const timeFilter = req.query.timeFilter ? parseInt(req.query.timeFilter as string) : undefined;
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     
-    const result = server.publicFeed.getEvents(category, timeFilter, page, 10);
-    res.json(result);
-  });
-
-  app.post('/api/approvals/:guildId/action', authenticateToken, async (req: any, res) => {
-    if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied.' });
-    const db = Database.getDb();
-    if (!db) return res.status(503).json({ error: 'Database not connected' });
-
-    const { action, reason } = req.body;
-    const { guildId } = req.params;
-    
     try {
-      const docRef = db.collection('approvals').doc(guildId);
-      const docSnap = await docRef.get();
-      if (!docSnap.exists) return res.status(404).json({ error: 'Guild not found in approval system' });
-
-      const guildData = docSnap.data() as IGuildApproval;
-      const updateData: Partial<IGuildApproval> = { lastUpdated: Date.now() };
-
-      if (action === 'approve') {
-        updateData.status = 'Approved';
-        updateData.approvedAt = Date.now();
-        updateData.approvedBy = 'Dashboard Admin';
-      } else if (action === 'reject') {
-        updateData.status = 'Rejected';
-        updateData.rejectedAt = Date.now();
-        updateData.rejectionReason = reason;
-      } else if (action === 'suspend') {
-        updateData.status = 'Suspended';
-      } else if (action === 'blacklist') {
-        updateData.status = 'Blacklisted';
-        updateData.blacklistedAt = Date.now();
-        updateData.notes = reason;
-      } else {
-        return res.status(400).json({ error: 'Invalid action' });
-      }
-
-      await docRef.update(updateData);
-      
-      if (server.onApprovalAction) {
-        await server.onApprovalAction(guildId, action, reason).catch(console.error);
-      }
-
-      // --- DM Guild Owner on approval/rejection ---
-      if (server.getDiscordClient && (action === 'approve' || action === 'reject')) {
-        const discordClient = server.getDiscordClient();
-        if (discordClient && guildData.ownerId) {
-          try {
-            const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:5173';
-            const musicClientId = process.env.MUSIC_CLIENT_ID || '1520323151928623125';
-            const musicPerms = process.env.MUSIC_BOT_PERMISSIONS || '36700160';
-            // Pre-fill guild_id so the music bot invite targets the correct server
-            const musicInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${musicClientId}&permissions=${musicPerms}&scope=bot%20applications.commands&guild_id=${guildId}`;
-
-            const ownerUser = await discordClient.users.fetch(guildData.ownerId);
-            if (ownerUser) {
-              if (action === 'approve') {
-                await ownerUser.send({
-                  embeds: [{
-                    title: '✅ Server Approved — Rage Optimiser',
-                    description: `Your server **${guildData.guildName}** has been **approved**! You now have full access to the Rage Optimiser dashboard and all features.`,
-                    fields: [
-                      {
-                        name: '🖥️ Step 1 — Access Your Dashboard',
-                        value: `[Click here to open your dashboard](${dashboardUrl}/login?guild=${guildId})\nLog in with Discord → select your server → start configuring!`,
-                        inline: false
-                      },
-                      {
-                        name: '🎵 Step 2 — Add Rage Music Bot',
-                        value: `Music playback runs on a **separate dedicated bot**.\n[Click here to invite Rage Music to ${guildData.guildName}](${musicInviteUrl})\n*(Required for /play, /queue, Spotify & YouTube support)*`,
-                        inline: false
-                      },
-                      {
-                        name: '💡 Why two bots?',
-                        value: 'Music playback requires a dedicated voice bot to ensure zero interruption to moderation and security features. Rage Music handles audio independently.',
-                        inline: false
-                      }
-                    ],
-                    color: 0x22c55e,
-                    footer: { text: 'Rage Optimiser Enterprise Platform • Both bots must be in your server for full functionality' },
-                    timestamp: new Date().toISOString()
-                  }]
-                }).catch(() => {});
-              } else if (action === 'reject') {
-                await ownerUser.send({
-                  embeds: [{
-                    title: '❌ Server Rejected — Rage Optimiser',
-                    description: `Your server **${guildData.guildName}** was **rejected** and will not gain access to Rage Optimiser features.`,
-                    fields: [
-                      { name: '📝 Reason', value: reason || 'No reason provided', inline: false },
-                      { name: 'ℹ️ What to do', value: 'You may re-invite the bot and apply again after addressing the issue. Contact support if you believe this was a mistake.', inline: false }
-                    ],
-                    color: 0xef4444,
-                    footer: { text: 'Rage Optimiser Enterprise Platform' },
-                    timestamp: new Date().toISOString()
-                  }]
-                }).catch(() => {});
-              }
-              registry.logSyncEvent(`DM sent to guild owner (${guildData.ownerUsername}) for action: ${action}.`, 'info');
-            }
-          } catch (dmErr) {
-            console.error('[WebServer] Failed to DM guild owner:', dmErr);
-          }
-        }
-      }
-
-
-      registry.logSyncEvent(`Dashboard Action: Guild ${guildId} was ${action}d.`, action === 'approve' ? 'success' : 'warn');
-      res.json({ success: true });
+      const result = await server.publicFeed.getEvents(category, timeFilter, page, 10);
+      res.json(result);
     } catch (e) {
       console.error(e);
-      res.status(500).json({ error: 'Action failed' });
+      res.status(500).json({ error: 'Failed to retrieve events' });
     }
   });
+
+
 
   // =============================================
   // DISCORD OAUTH2 ENDPOINTS
   // =============================================
 
+  // L-7 FIX: In-memory store for OAuth state → CSRF protection.
+  // State is one-time-use and expires after 10 minutes.
+  const oauthStates = new Map<string, number>();
+  const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+  // Periodic cleanup of expired states
+  setInterval(() => {
+    const now = Date.now();
+    for (const [state, ts] of oauthStates) {
+      if (now - ts > OAUTH_STATE_TTL_MS) oauthStates.delete(state);
+    }
+  }, 5 * 60 * 1000);
+
   // Step 1: Redirect to Discord authorization page
   app.get('/api/auth/discord', (req, res) => {
-    const state = Math.random().toString(36).substring(2, 15);
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    oauthStates.set(state, Date.now());
     const url = OAuthService.getAuthorizationUrl(state);
-    // Store state in a short-lived way (or rely on frontend to track)
     res.json({ url, state });
   });
 
   // Step 2: Discord calls back here with ?code=...&state=...
   app.get('/api/auth/discord/callback', async (req, res) => {
-    const { code, error } = req.query;
+    const { code, error, state } = req.query;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
     if (error) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       return res.redirect(`${frontendUrl}/login?error=oauth_denied`);
     }
+
+    // L-7 FIX: Validate CSRF state before processing the code
+    if (!state || typeof state !== 'string' || !oauthStates.has(state)) {
+      console.warn('[OAuth] Invalid or missing CSRF state parameter on callback.');
+      return res.redirect(`${frontendUrl}/login?error=oauth_invalid_state`);
+    }
+    // One-time use — delete immediately after validating
+    oauthStates.delete(state);
 
     if (!code || typeof code !== 'string') {
       return res.status(400).json({ error: 'Missing authorization code' });
     }
 
     try {
-      const result = await OAuthService.processCallback(code);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const discordClient = server.getDiscordClient ? server.getDiscordClient() : null;
+      const result = await OAuthService.processCallback(code, discordClient);
       
       // Encode data for frontend (token passed via URL hash so it never hits server logs)
       const encoded = encodeURIComponent(JSON.stringify({
@@ -729,12 +672,70 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       return res.redirect(`${frontendUrl}/auth/callback?data=${encoded}`);
     } catch (err: any) {
       console.error('[OAuth] Callback error:', err);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
   });
 
-  // Get approval status for a specific guild (guild_manager use)
+  // Get/Refresh the user's manageable guilds and approvals list
+  app.get('/api/user/guilds', authenticateToken, async (req: any, res: any) => {
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+      const db = Database.getDb();
+      if (!db) {
+        return res.status(503).json({ error: 'Database not available' });
+      }
+
+      const docId = user.id || user.discordId;
+      if (!docId) {
+        return res.status(400).json({ error: 'Invalid token: User ID not found in claim' });
+      }
+
+      // Fetch the OAuth session to get the latest accessToken
+      const session = await db.get<any>('SELECT * FROM discord_sessions WHERE discordId = ?', [docId]);
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+
+      const accessToken = session.accessToken;
+
+      // Fetch fresh guilds from Discord API
+      const freshGuilds = await OAuthService.fetchUserGuilds(accessToken);
+      const manageableGuilds = OAuthService.filterManageableGuilds(freshGuilds);
+
+      // Check live status (bot in server or not)
+      const discordClient = server.getDiscordClient ? server.getDiscordClient() : null;
+      const approvals: Record<string, { status: string; guildName: string }> = {};
+
+      for (const guild of manageableGuilds) {
+        const isInGuild = discordClient ? discordClient.guilds.cache.has(guild.id) : false;
+        const defaultStatus = isInGuild ? 'Approved' : 'Not Registered';
+
+        const row = await db.get<any>('SELECT * FROM approvals WHERE guildId = ?', [guild.id]).catch(() => null);
+        if (row) {
+          let status = row.status;
+          if (status !== 'Blacklisted' && status !== 'Suspended' && status !== 'Rejected') {
+            status = defaultStatus;
+          }
+          approvals[guild.id] = { status, guildName: row.guildName || guild.name };
+        } else {
+          approvals[guild.id] = { status: defaultStatus, guildName: guild.name };
+        }
+      }
+
+      // Return refreshed lists
+      res.json({
+        managedGuilds: manageableGuilds,
+        approvals
+      });
+    } catch (e: any) {
+      console.error('[WebServer] Error syncing user guilds:', e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // Get the bot-managed status for a specific guild (guild_manager use)
   app.get('/api/guild/:guildId/status', authenticateToken, async (req: any, res: any) => {
     const { guildId } = req.params;
     const user = req.user;
@@ -747,32 +748,14 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
       }
     }
 
-    try {
-      const db = Database.getDb();
-      if (!db) return res.status(503).json({ error: 'Database not connected' });
+    // Check if the bot is actually in this guild
+    const discordClient = server.getDiscordClient ? server.getDiscordClient() : null;
+    const isInGuild = discordClient ? discordClient.guilds.cache.has(guildId) : false;
 
-      const docSnap = await db.collection('approvals').doc(guildId).get();
-      if (!docSnap.exists) {
-        return res.json({ status: 'Not Registered', guildId });
-      }
-
-      const data = docSnap.data() as IGuildApproval;
-      res.json({
-        guildId: data.guildId,
-        guildName: data.guildName,
-        status: data.status,
-        memberCount: data.memberCount,
-        riskScore: data.riskScore,
-        riskLevel: data.riskLevel,
-        joinedAt: data.joinedAt,
-        approvedAt: data.approvedAt,
-        rejectedAt: data.rejectedAt,
-        rejectionReason: data.rejectionReason
-      });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ error: 'Failed to fetch guild status' });
-    }
+    res.json({
+      guildId,
+      status: isInGuild ? 'Active' : 'Bot not in server',
+    });
   });
 
   // Guild-scoped state/modules for guild_manager users
@@ -780,21 +763,17 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     const { guildId } = req.params;
     const user = req.user;
 
-    // Guild managers can only access their own guilds, and only if approved
+    // Guild managers can only access their own guilds
     if (user.role === 'guild_manager') {
       const managedIds: string[] = user.managedGuildIds || [];
       if (!managedIds.includes(guildId)) {
         return res.status(403).json({ error: 'Access denied: You do not manage this guild' });
       }
+    }
 
-      // Check approval status
-      const db = Database.getDb();
-      if (db) {
-        const docSnap = await db.collection('approvals').doc(guildId).get();
-        if (!docSnap.exists || (docSnap.data() as IGuildApproval).status !== 'Approved') {
-          return res.status(403).json({ error: 'Guild is not approved yet', status: docSnap.exists ? (docSnap.data() as IGuildApproval).status : 'Not Registered' });
-        }
-      }
+    // Trigger a live Discord sync before returning — ensures fresh roles/channels on each load
+    if (server.syncRegistryCallback) {
+      await server.syncRegistryCallback(guildId).catch(() => {});
     }
 
     const metrics = server.getBotMetrics ? server.getBotMetrics() : { latency: 0, uptime: 'Offline' };
@@ -808,3 +787,4 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     });
   });
 }
+

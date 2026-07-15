@@ -67,7 +67,7 @@ export const AutomationManifest: ModuleManifest = {
           const role = member.guild.roles.cache.get(roleId);
           if (role) {
             await member.roles.add(role);
-            context.logSyncEvent(`Automation Studio: Automatically assigned role "${role.name}" to "${member.user.tag}" on join.`, 'success');
+            context.logSyncEvent(`Automation Studio: Automatically assigned role "${role.name}" to "${member.user.username}" on join.`, 'success');
           }
         } catch (err) {
           console.error('Failed to assign auto-role on join:', err);

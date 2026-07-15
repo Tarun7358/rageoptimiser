@@ -157,7 +157,7 @@ export const VoiceManagerManifest: ModuleManifest = {
         const guild = interaction.guild;
 
         const logVoiceAction = (action: string, details: string) => {
-          context.logSyncEvent(`[Voice Manager] ${interaction.user.tag} — ${action}: ${details}`, 'info');
+          context.logSyncEvent(`[Voice Manager] ${interaction.user.username} — ${action}: ${details}`, 'info');
         };
 
         // MASS DISCONNECT
@@ -319,9 +319,9 @@ export const VoiceManagerManifest: ModuleManifest = {
           const member = guild.members.cache.get(user.id);
           if (!member) return interaction.reply({ content: '❌ Member not found.', flags: 64 });
           if (!interaction.member.voice?.channel) return interaction.reply({ content: '❌ You must be in a voice channel.', flags: 64 });
-          if (!member.voice?.channel) return interaction.reply({ content: `❌ ${user.tag} is not in a voice channel.`, flags: 64 });
+          if (!member.voice?.channel) return interaction.reply({ content: `❌ ${user.username} is not in a voice channel.`, flags: 64 });
           await member.voice.setChannel(interaction.member.voice.channel);
-          logVoiceAction('Pull', `${user.tag} → #${interaction.member.voice.channel.name}`);
+          logVoiceAction('Pull', `${user.username} → #${interaction.member.voice.channel.name}`);
           return interaction.reply({ content: `✅ Pulled ${user} to your channel.`, flags: 64 });
         }
 
@@ -338,7 +338,7 @@ export const VoiceManagerManifest: ModuleManifest = {
               { name: 'ID', value: channel.id, inline: true }
             );
           if (channel.members.size > 0) {
-            embed.addFields({ name: 'Users', value: [...channel.members.values()].map((m: any) => m.user.tag).join(', ').substring(0, 1024) });
+            embed.addFields({ name: 'Users', value: [...channel.members.values()].map((m: any) => m.user.username).join(', ').substring(0, 1024) });
           }
           return interaction.reply({ embeds: [embed], flags: 64 });
         }

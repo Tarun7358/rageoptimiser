@@ -32,26 +32,6 @@ export interface OAuthSession {
 }
 
 export class OAuthService {
-  /**
-   * Helper to run a promise with a timeout. Resolves to the fallback value if the timeout expires.
-   */
-  private static async withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-    let timeoutId: NodeJS.Timeout;
-    const timeoutPromise = new Promise<T>((resolve) => {
-      timeoutId = setTimeout(() => {
-        console.warn(`[OAuthService] Operation timed out after ${ms}ms. Proceeding with fallback.`);
-        resolve(fallback);
-      }, ms);
-    });
-
-    try {
-      const result = await Promise.race([promise, timeoutPromise]);
-      return result;
-    } finally {
-      if (timeoutId!) clearTimeout(timeoutId);
-    }
-  }
-
   private static getClientId(): string {
     return (process.env.CLIENT_ID || '').trim();
   }
@@ -141,7 +121,7 @@ export class OAuthService {
   /**
    * Full OAuth2 flow: exchange code → fetch user + guilds → save session → return JWT
    */
-  public static async processCallback(code: string): Promise<{ 
+  public static async processCallback(code: string, discordClient?: any): Promise<{ 
     token: string; 
     user: DiscordUser; 
     managedGuilds: DiscordGuild[];
@@ -162,27 +142,33 @@ export class OAuthService {
     const db = Database.getDb();
     const approvals: Record<string, { status: string; guildName: string }> = {};
     
-    if (db && manageableGuilds.length > 0) {
+    if (manageableGuilds.length > 0) {
+      console.log(`[DEBUG OAuthService] discordClient is defined: ${!!discordClient}`);
+      if (discordClient) {
+        console.log(`[DEBUG OAuthService] client guilds cache size: ${discordClient.guilds.cache.size}`);
+        console.log(`[DEBUG OAuthService] client guilds cache keys: ${Array.from(discordClient.guilds.cache.keys()).join(', ')}`);
+      }
       for (const guild of manageableGuilds) {
-        try {
-          const docSnap = await this.withTimeout(
-            db.collection('approvals').doc(guild.id).get(),
-            3000,
-            { exists: false } as any
-          );
-          if (docSnap.exists) {
-            const data = docSnap.data() as any;
-            let status = data.status;
-            if (status !== 'Blacklisted' && status !== 'Approved') {
-              status = 'Approved';
-              await docSnap.ref.update({ status: 'Approved', lastUpdated: Date.now() }).catch(() => {});
+        const isInGuild = discordClient ? discordClient.guilds.cache.has(guild.id) : false;
+        const defaultStatus = isInGuild ? 'Approved' : 'Not Registered';
+
+        if (db) {
+          try {
+            const row = await db.get('SELECT * FROM approvals WHERE guildId = ?', [guild.id]);
+            if (row) {
+              let status = row.status;
+              if (status !== 'Blacklisted' && status !== 'Suspended' && status !== 'Rejected') {
+                status = defaultStatus;
+              }
+              approvals[guild.id] = { status, guildName: row.guildName || guild.name };
+            } else {
+              approvals[guild.id] = { status: defaultStatus, guildName: guild.name };
             }
-            approvals[guild.id] = { status, guildName: data.guildName };
-          } else {
-            approvals[guild.id] = { status: 'Not Registered', guildName: guild.name };
+          } catch {
+            approvals[guild.id] = { status: defaultStatus, guildName: guild.name };
           }
-        } catch {
-          approvals[guild.id] = { status: 'Unknown', guildName: guild.name };
+        } else {
+          approvals[guild.id] = { status: defaultStatus, guildName: guild.name };
         }
       }
     }
@@ -198,11 +184,19 @@ export class OAuthService {
         loginAt: Date.now()
       };
       
-      console.log(`[OAuthService] Writing session data for user ${discordUser.username} to Firestore...`);
-      await this.withTimeout(
-        db.collection('discord_sessions').doc(discordUser.id).set(sessionData, { merge: true }),
-        4000,
-        null
+      console.log(`[OAuthService] Writing session data for user ${discordUser.username} to SQLite...`);
+      await db.run(
+        `INSERT OR REPLACE INTO discord_sessions (
+          discordId, discordUsername, discordAvatar, accessToken, managedGuildIds, loginAt
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          sessionData.discordId,
+          sessionData.discordUsername,
+          sessionData.discordAvatar,
+          sessionData.accessToken,
+          JSON.stringify(sessionData.managedGuildIds),
+          sessionData.loginAt
+        ]
       );
       console.log(`[OAuthService] Session write sequence completed.`);
     }
@@ -236,7 +230,8 @@ export class OAuthService {
    */
   public static getAvatarUrl(userId: string, avatarHash: string | null): string {
     if (!avatarHash) {
-      const defaultIndex = (BigInt(userId) >> 22n) % 6n;
+    // H-7 FIX: Discord has 5 default avatars (indices 0-4), not 6.
+      const defaultIndex = (BigInt(userId) >> 22n) % 5n;
       return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
     }
     return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`;

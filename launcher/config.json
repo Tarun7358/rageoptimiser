@@ -8,7 +8,7 @@
   },
   "paths": {
     "backend": "backend",
-    "dashboard": ".",
+    "dashboard": "frontend",
     "logs": "logs",
     "backups": "backups",
     "config": "config",
