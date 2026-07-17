@@ -368,7 +368,7 @@ async function runStartupSequence() {
     config.ports.dashboard = actualDashboardPort; // Also update config object in memory for tray menu URLs
     logger.success(`Dashboard server started on port ${actualDashboardPort}.`);
   } catch (e) {
-    return sendError(STEPS[6].label, e.message);
+    return sendError(STEPS[7].label, e.message);
   }
 
   // ── Step 8: Verify connections

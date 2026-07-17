@@ -8,6 +8,7 @@ import {
 import type { ModuleState, DiscordResourceRegistry } from '../hooks/useDiscordSync';
 import { StatusBadge } from '../components/StatusBadge';
 import { RoleSelect, ChannelSelect } from '../components/ResourceSelectors';
+import { API_BASE } from '../config';
 
 interface VoiceProtectionProps {
   onSaveConfig: (msg: string) => void;
@@ -73,7 +74,7 @@ export function VoiceProtection({ onSaveConfig, modules, onUpdateConfig, registr
 
     const fetchLiveState = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/modules/voice-protection/state`, {
+        const res = await fetch(`${API_BASE}/api/modules/voice-protection/state`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'x-guild-id': activeGuild
@@ -207,6 +208,88 @@ export function VoiceProtection({ onSaveConfig, modules, onUpdateConfig, registr
         </div>
       </div>
 
+      {/* Current Monitoring Status Banner */}
+      {config.currentVoiceChannelId && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(124, 92, 252, 0.15), rgba(15, 17, 21, 0.8))', 
+            border: '1px solid rgba(124, 92, 252, 0.3)', 
+            borderRadius: '16px', 
+            padding: '24px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              width: '48px', 
+              height: '48px', 
+              borderRadius: '12px', 
+              background: 'rgba(124, 92, 252, 0.2)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              color: 'var(--accent-primary)',
+              border: '1px solid rgba(124, 92, 252, 0.4)'
+            }}>
+              <Radio size={24} className="pulse" />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#FFF', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Active Target: <span style={{ color: 'var(--accent-primary)' }}>🎤 {voiceChannels.find(c => c.id === config.currentVoiceChannelId)?.name || 'Unknown Channel'}</span>
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                The Voice Protection module is locked to this channel.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#10B981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block', boxShadow: '0 0 6px #10B981' }} />
+                {config.monitoringStatus === 'monitoring' ? 'ACTIVE MONITORING' : 'SUSPENDED'}
+              </span>
+            </div>
+
+            {config.connectedSince && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Connected Since</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#FFF' }}>
+                  {new Date(config.connectedSince).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+
+            {config.lastSwitched && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Last Switched</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#FFF' }}>
+                  {new Date(config.lastSwitched).toLocaleDateString()} at {new Date(config.lastSwitched).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+
+            {config.switchedBy && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Switched By</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#FFF' }}>
+                  @{config.switchedBy}
+                </span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
       {/* Metrics Cards Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
         
@@ -311,7 +394,8 @@ export function VoiceProtection({ onSaveConfig, modules, onUpdateConfig, registr
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
                 transition={{ duration: 0.2 }}
-                style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '36px', alignItems: 'start' }}
+                className="grid-split-3-2"
+                style={{ gap: '36px', alignItems: 'start' }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                   <div>

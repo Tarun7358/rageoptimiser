@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Link, Bell, Shield, Lock } from 'lucide-react';
 
@@ -29,6 +30,8 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
   const [inviteScope, setInviteScope] = useState(globalSettings.inviteScope || 'Administrator role required (Standard)');
   const [incidentDispatch, setIncidentDispatch] = useState(globalSettings.incidentDispatch !== false);
   const [webhookUrl, setWebhookUrl] = useState(globalSettings.webhookUrl || 'https://discord.com/api/webhooks/...');
+  const [useV2Welcome, setUseV2Welcome] = useState(!!globalSettings.useV2Welcome);
+  const [useV2Tickets, setUseV2Tickets] = useState(!!globalSettings.useV2Tickets);
 
   const voiceChannels = registry?.channels?.filter((c: any) => c.type === 'voice') || [];
 
@@ -55,7 +58,7 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
   const handleSaveSettings = async () => {
     try {
       const token = localStorage.getItem('cn_token');
-      await fetch('http://localhost:5000/api/settings', {
+      await fetch(`${API_BASE}/api/settings`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -67,7 +70,9 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
           botSync,
           inviteScope,
           incidentDispatch,
-          webhookUrl
+          webhookUrl,
+          useV2Welcome,
+          useV2Tickets
         })
       });
       onSaveConfig('Global settings saved successfully.', 'success');
@@ -91,6 +96,7 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
           <button className={`tab-btn ${activeTab === 'discord' ? 'active' : ''}`} onClick={() => setActiveTab('discord')}>Discord Linkage</button>
           <button className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`} onClick={() => setActiveTab('notifications')}>Notifications Config</button>
           <button className={`tab-btn ${activeTab === 'voice_presence' ? 'active' : ''}`} onClick={() => setActiveTab('voice_presence')}>Voice Presence</button>
+          <button className={`tab-btn ${activeTab === 'migration' ? 'active' : ''}`} onClick={() => setActiveTab('migration')}>Version Manager</button>
         </div>
 
         <div className="panel-body">
@@ -267,6 +273,37 @@ export function Settings({ onSaveConfig, modules, registry, onUpdateConfig }: Se
 
               <button className="btn btn-primary" onClick={handleSaveVoice} style={{ alignSelf: 'flex-start' }}>
                 Save Voice Presence Settings
+              </button>
+            </div>
+          )}
+
+          {/* Version Manager settings */}
+          {activeTab === 'migration' && (
+            <div className="form-section" style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="form-group-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+                <div>
+                  <div className="form-label" style={{ fontWeight: 'bold' }}>Welcome System vNext (V2)</div>
+                  <div className="form-help">Route welcome card generation (Puppeteer), DMs, boosters roles, server milestones, and birthdays to the modular V2 architecture.</div>
+                </div>
+                <label className="switch">
+                  <input type="checkbox" checked={useV2Welcome} onChange={(e) => setUseV2Welcome(e.target.checked)} />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              <div className="form-group-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px' }}>
+                <div>
+                  <div className="form-label" style={{ fontWeight: 'bold' }}>Ticket System vNext (V2)</div>
+                  <div className="form-help">Activate dynamic ticket panels, questionnaire wizard forms, staff claim states, ticket escalations, and automated transcript archives.</div>
+                </div>
+                <label className="switch">
+                  <input type="checkbox" checked={useV2Tickets} onChange={(e) => setUseV2Tickets(e.target.checked)} />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              <button className="btn btn-primary" onClick={handleSaveSettings} style={{ alignSelf: 'flex-start' }}>
+                Save Version Controls
               </button>
             </div>
           )}

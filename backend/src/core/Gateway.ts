@@ -276,11 +276,19 @@ export class Gateway {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      this.dispatchEvent('ready');
+      const readyGuildIds = Array.from(this.client.guilds.cache.keys());
+      for (const gId of readyGuildIds) {
+        this.dispatchEventForGuild('ready', gId);
+      }
 
       setInterval(() => this.syncRegistry(), 30000);
       setInterval(() => this.checkVoicePresence(), 10000);
-      setInterval(() => this.dispatchEvent('tick'), 10000);
+      setInterval(() => {
+        const cachedGuildIds = Array.from(this.client.guilds.cache.keys());
+        for (const gId of cachedGuildIds) {
+          this.dispatchEventForGuild('tick', gId);
+        }
+      }, 10000);
       setTimeout(() => this.checkVoicePresence(), 2000);
       setInterval(() => {
         const metrics = this.getMetrics();
@@ -488,7 +496,10 @@ export class Gateway {
       // Track voice time
       // BUG #10 FIX: Key by guildId+userId to prevent cross-guild session collision
       // when a user is in multiple guilds served by the same bot instance.
-      const sessionKey = `${newState.guild?.id || oldState.guild?.id}_${member.id}`;
+      // NULL GUARD FIX: If both guild refs are null (e.g. DM voice edge case), skip tracking entirely.
+      const resolvedGuildId = newState.guild?.id || oldState.guild?.id;
+      if (!resolvedGuildId) return;
+      const sessionKey = `${resolvedGuildId}_${member.id}`;
       if (!oldState.channelId && newState.channelId) {
         // User joined
         this.voiceSessions.set(sessionKey, Date.now());
@@ -667,8 +678,9 @@ export class Gateway {
                         this.logSyncEvent(cmdGuildId, msgOrGuildId, msgOrType as any);
                       }
                     },
-                    getModulesState: () => this.getModulesState(cmdGuildId),
+                    getModulesState: (gId?: string) => this.getModulesState(gId || cmdGuildId),
                     getRegistry: () => this.getRegistry(cmdGuildId),
+                    getGlobalSettings: (gId?: string) => this.getGlobalSettings(gId || cmdGuildId),
                     updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(cmdGuildId, id, config),
                     registry: {
                       logWhitelistAudit: (guildId: string | undefined, audit: any) => {
@@ -712,10 +724,19 @@ export class Gateway {
         }
       } else if (interaction.isButton()) {
         this.dispatchEvent(`button_${interaction.customId}`, interaction);
+        if (interaction.customId.startsWith('tickets_v2_')) {
+          this.dispatchEvent('button_tickets_v2_generic', interaction);
+        }
       } else if (interaction.isAnySelectMenu()) {
         this.dispatchEvent(`select_${interaction.customId}`, interaction);
+        if (interaction.customId.startsWith('tickets_v2_')) {
+          this.dispatchEvent('select_tickets_v2_generic', interaction);
+        }
       } else if (interaction.isModalSubmit()) {
         this.dispatchEvent(`modal_${interaction.customId}`, interaction);
+        if (interaction.customId.startsWith('tickets_v2_')) {
+          this.dispatchEvent('modal_tickets_v2_generic', interaction);
+        }
       }
     });
   }
@@ -904,6 +925,10 @@ export class Gateway {
   }
 
   private dispatchEvent(eventName: string, ...args: any[]) {
+    this.dispatchEventForGuild(eventName, undefined, ...args);
+  }
+
+  private dispatchEventForGuild(eventName: string, guildIdOverride: string | undefined, ...args: any[]) {
     const resolveGuildId = (eventArgs: any[]): string | undefined => {
       if (!eventArgs || eventArgs.length === 0) return undefined;
       const first = eventArgs[0];
@@ -930,7 +955,7 @@ export class Gateway {
       return undefined;
     };
 
-    const guildId = resolveGuildId(args) || process.env.GUILD_ID || 'default_guild';
+    const guildId = guildIdOverride || resolveGuildId(args) || process.env.GUILD_ID || 'default_guild';
 
     this.manifests.forEach(m => {
       const ev = m.events?.find(e => e.name === eventName);
@@ -945,8 +970,9 @@ export class Gateway {
                 this.logSyncEvent(guildId, msgOrGuildId, msgOrType as any);
               }
             },
-            getModulesState: () => this.getModulesState(guildId),
+            getModulesState: (gId?: string) => this.getModulesState(gId || guildId),
             getRegistry: () => this.getRegistry(guildId),
+            getGlobalSettings: (gId?: string) => this.getGlobalSettings(gId || guildId),
             updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(guildId, id, config),
             triggerEmergencyLock: (gId?: string) => this.triggerEmergencyLock(gId || guildId),
             client: this.client,

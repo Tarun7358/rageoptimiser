@@ -4,7 +4,7 @@ import {
   LineChart, Settings, ShieldAlert, Bell, Search, Play, Pause, 
   Terminal, Server, Activity, ChevronDown, Menu, X, AlertTriangle,
   Volume2, ShieldCheck, LogOut, LayoutTemplate, Music, RefreshCw,
-  Gift, Send, Sparkles, Award, Radio
+  Gift, Send, Sparkles, Award, Radio, MessageSquare
 } from 'lucide-react';
 import type { NotificationItem } from '../hooks/useActivityFeed';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -64,7 +64,8 @@ export function Layout({
     { id: 'reaction_roles', label: 'Reaction Roles', icon: <Sparkles size={18} /> },
     { id: 'leveling', label: 'Leveling & XP', icon: <Award size={18} /> },
     { id: 'reminders', label: 'Reminder System', icon: <Bell size={18} /> },
-    { id: 'community', label: 'Community', icon: <Users size={18} /> },
+    { id: 'welcome', label: 'Welcome System V2', icon: <Sparkles size={18} color="#d4af37" /> },
+    { id: 'tickets', label: 'Tickets System V2', icon: <MessageSquare size={18} color="#d4af37" /> },
     { id: 'roles', label: 'Roles Manager', icon: <span style={{ fontSize: 14 }}>🎭</span> },
   ];
 
@@ -162,7 +163,7 @@ export function Layout({
           }}>RO</div>
           <span className="logo-text" style={{ textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em', color: '#fff' }}>RAGE OPTIMISER</span>
           <button 
-            style={{ marginLeft: 'auto', display: 'none' }} 
+            style={{ marginLeft: 'auto' }} 
             className="menu-toggle"
             onClick={() => setMobileMenuOpen(false)}
           >

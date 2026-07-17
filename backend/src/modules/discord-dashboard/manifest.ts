@@ -11,7 +11,7 @@ function getServerStats(guild: any) {
 }
 
 // Generate the embed based on the page
-function generateDashboardEmbed(guild: any, page: string, client: any) {
+function generateDashboardEmbed(guild: any, page: string, client: any, context: any) {
   const stats = getServerStats(guild);
   
   const embed = new EmbedBuilder()
@@ -47,17 +47,23 @@ function generateDashboardEmbed(guild: any, page: string, client: any) {
         );
       break;
     case 'voice':
+      const voiceCount = guild.members.cache.filter((m: any) => m.voice?.channelId).size;
       embed.setTitle('🎙️ **Voice Comms**')
         .setDescription('> Live monitoring of audio channels and active speakers.')
         .addFields(
-          { name: '🔊 Current Connections', value: '```yaml\nStatus: 0 active users\n```' }
+          { name: '🔊 Current Connections', value: `\`\`\`yaml\nStatus: ${voiceCount} active users\n\`\`\`` }
         );
       break;
     case 'tickets':
+      const modules = context?.getModulesState ? context.getModulesState() : [];
+      const ticketsModule = modules.find((m: any) => m.id === 'tickets');
+      const catId = ticketsModule?.config?.categoryId;
+      const activeTickets = catId ? guild.channels.cache.filter((c: any) => c.parentId === catId && c.name.startsWith('ticket-')).size : 0;
+      
       embed.setTitle('🎫 **Support Desk**')
         .setDescription('> Overview of active inquiries and staff response metrics.')
         .addFields(
-          { name: '📬 Open Tickets', value: `**0** Active`, inline: true },
+          { name: '📬 Open Tickets', value: `**${activeTickets}** Active`, inline: true },
           { name: '✅ Resolved Today', value: `**0** Closed`, inline: true }
         );
       break;
@@ -87,22 +93,62 @@ function generateDashboardEmbed(guild: any, page: string, client: any) {
   return embed;
 }
 
-function generateDashboardComponents() {
-  const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('dbn_home').setLabel('Home').setEmoji('🏠').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('dbn_members').setLabel('Members').setEmoji('👥').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('dbn_messages').setLabel('Messages').setEmoji('💬').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('dbn_voice').setLabel('Voice').setEmoji('🎙️').setStyle(ButtonStyle.Secondary)
-  );
+function generateDashboardComponents(config: any = {}, activePage: string = 'home') {
+  const enabledPages = config.enabledPages || {
+    home: true,
+    members: true,
+    messages: true,
+    voice: true,
+    tickets: true,
+    events: true,
+    stats: true,
+    more: true
+  };
 
-  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('dbn_tickets').setLabel('Tickets').setEmoji('🎫').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('dbn_events').setLabel('Events').setEmoji('🎉').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('dbn_stats').setLabel('Statistics').setEmoji('📊').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('dbn_more').setLabel('More').setEmoji('⚙️').setStyle(ButtonStyle.Secondary)
-  );
+  const allButtons = [
+    { id: 'dbn_home', label: 'Home', emoji: '🏠', page: 'home' },
+    { id: 'dbn_members', label: 'Members', emoji: '👥', page: 'members' },
+    { id: 'dbn_messages', label: 'Messages', emoji: '💬', page: 'messages' },
+    { id: 'dbn_voice', label: 'Voice', emoji: '🎙️', page: 'voice' },
+    { id: 'dbn_tickets', label: 'Tickets', emoji: '🎫', page: 'tickets' },
+    { id: 'dbn_events', label: 'Events', emoji: '🎉', page: 'events' },
+    { id: 'dbn_stats', label: 'Statistics', emoji: '📊', page: 'stats' },
+    { id: 'dbn_more', label: 'More', emoji: '⚙️', page: 'more' }
+  ];
 
-  return [row1, row2];
+  // Filter only enabled pages
+  const enabledButtons = allButtons.filter(b => enabledPages[b.page] !== false);
+
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  let currentRow = new ActionRowBuilder<ButtonBuilder>();
+
+  for (const b of enabledButtons) {
+    if (currentRow.components.length >= 5) {
+      rows.push(currentRow);
+      currentRow = new ActionRowBuilder<ButtonBuilder>();
+    }
+    const style = b.page === activePage ? ButtonStyle.Primary : ButtonStyle.Secondary;
+    currentRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(b.id)
+        .setLabel(b.label)
+        .setEmoji(b.emoji)
+        .setStyle(style)
+    );
+  }
+
+  if (currentRow.components.length > 0) {
+    rows.push(currentRow);
+  }
+
+  // Utility row (always enabled)
+  const utilityRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId('dbn_refresh').setLabel('Refresh').setEmoji('🔄').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('dbn_config').setLabel('Configure').setEmoji('🛠️').setStyle(ButtonStyle.Secondary)
+  );
+  rows.push(utilityRow);
+
+  return rows;
 }
 
 export const DiscordDashboardManifest: ModuleManifest = {
@@ -162,8 +208,8 @@ export const DiscordDashboardManifest: ModuleManifest = {
           const message = await channel.messages.fetch(config.messageId).catch(() => null);
           if (!message) return;
 
-          const embed = generateDashboardEmbed(guild, 'home', client);
-          const components = generateDashboardComponents();
+          const embed = generateDashboardEmbed(guild, 'home', client, context);
+          const components = generateDashboardComponents(config, 'home');
           await message.edit({ embeds: [embed], components });
         } catch (err) {
           console.error('[Discord Dashboard] Background refresh failed:', err);
@@ -181,8 +227,8 @@ export const DiscordDashboardManifest: ModuleManifest = {
         }
 
         try {
-          const embed = generateDashboardEmbed(interaction.guild, 'home', client);
-          const components = generateDashboardComponents();
+          const embed = generateDashboardEmbed(interaction.guild, 'home', client, context);
+          const components = generateDashboardComponents(dashModule.config || {}, 'home');
 
           const message = await interaction.reply({ embeds: [embed], components, fetchReply: true });
           
@@ -206,8 +252,12 @@ export const DiscordDashboardManifest: ModuleManifest = {
       name: `button_dbn_${page}`,
       handler: async (client: any, interaction: any, context: any) => {
         try {
-          const embed = generateDashboardEmbed(interaction.guild, page, client);
-          const components = generateDashboardComponents();
+          const modules = context.getModulesState ? context.getModulesState() : [];
+          const dashModule = modules.find((m: any) => m.id === 'discord-dashboard');
+          const config = dashModule?.config || {};
+
+          const embed = generateDashboardEmbed(interaction.guild, page, client, context);
+          const components = generateDashboardComponents(config, page);
           await interaction.update({ embeds: [embed], components });
         } catch (err) {
           console.error(err);
@@ -218,8 +268,12 @@ export const DiscordDashboardManifest: ModuleManifest = {
       name: 'button_dbn_refresh',
       handler: async (client: any, interaction: any, context: any) => {
         try {
-          const embed = generateDashboardEmbed(interaction.guild, 'home', client); // Refreshes home by default on refresh button
-          const components = generateDashboardComponents();
+          const modules = context.getModulesState ? context.getModulesState() : [];
+          const dashModule = modules.find((m: any) => m.id === 'discord-dashboard');
+          const config = dashModule?.config || {};
+
+          const embed = generateDashboardEmbed(interaction.guild, 'home', client, context);
+          const components = generateDashboardComponents(config, 'home');
           await interaction.update({ embeds: [embed], components });
         } catch (err) {
           console.error(err);
@@ -232,8 +286,9 @@ export const DiscordDashboardManifest: ModuleManifest = {
         if (!interaction.memberPermissions?.has('Administrator')) {
           return interaction.reply({ content: '❌ Only Administrators can access this config.', flags: 64 });
         }
+        const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:4680';
         await interaction.reply({ 
-          content: '🛠️ **Dashboard Configuration**\nManage appearance, intervals, and pages directly from the Web Dashboard at: `http://localhost:3000/dashboard`', 
+          content: `🛠️ **Dashboard Configuration**\nManage appearance, intervals, and pages directly from the Web Dashboard at: \`${dashboardUrl}/dashboard\``, 
           flags: 64 
         });
       }

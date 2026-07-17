@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -354,7 +355,7 @@ export function Landing({ onGetStarted }: { onGetStarted: () => void }) {
 
   useEffect(() => {
     const checkStatus = () => {
-      fetch('http://localhost:5000/api/status')
+      fetch(`${API_BASE}/api/status`)
         .then(r => r.json())
         .then(d => setLiveStatus({ latency: d.latency, online: true }))
         .catch(() => setLiveStatus({ online: false }));

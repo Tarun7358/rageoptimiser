@@ -18,6 +18,14 @@ export const VoiceManagerManifest: ModuleManifest = {
       description: 'Voice channel management',
       options: [
         {
+          name: 'move',
+          description: 'Move Voice Protection monitoring to a new voice channel',
+          type: 1,
+          options: [
+            { name: 'channel', type: 7, description: 'Voice channel to monitor', required: true, channel_types: [2, 13] }
+          ]
+        },
+        {
           name: 'mass-disconnect',
           description: 'Disconnect all members from a voice channel',
           type: 1,
@@ -149,12 +157,17 @@ export const VoiceManagerManifest: ModuleManifest = {
     {
       name: 'command_voice',
       handler: async (client: any, interaction: any, context: any) => {
+        const sub = interaction.options.getSubcommand(false);
+        const guild = interaction.guild;
+
+        if (sub === 'move') {
+          const { handleVoiceProtectionMoveCommand } = await import('../voice-protection/commands.js');
+          return handleVoiceProtectionMoveCommand(client, interaction, context);
+        }
+
         if (!interaction.memberPermissions?.has(PermissionFlagsBits.MoveMembers)) {
           return interaction.reply({ content: '🔒 Move Members permission required.', flags: 64 });
         }
-
-        const sub = interaction.options.getSubcommand(false);
-        const guild = interaction.guild;
 
         const logVoiceAction = (action: string, details: string) => {
           context.logSyncEvent(`[Voice Manager] ${interaction.user.username} — ${action}: ${details}`, 'info');

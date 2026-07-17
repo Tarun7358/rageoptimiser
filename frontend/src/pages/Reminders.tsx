@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { Bell, Save, Trash2, Clock, Plus, Info, Calendar, RefreshCw, MessageSquare } from 'lucide-react';
 import type { ModuleState, DiscordChannel } from '../hooks/useDiscordSync';
@@ -41,7 +42,7 @@ export function Reminders({
         headers['X-Guild-Id'] = currentGuild;
       }
 
-      const res = await fetch('http://localhost:5000/api/modules/reminders/state', { headers });
+      const res = await fetch(`${API_BASE}/api/modules/reminders/state`, { headers });
       if (res.ok) {
         const data = await res.json();
         setReminders(data.reminders || []);
@@ -72,7 +73,7 @@ export function Reminders({
 
     setSaving(true);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/reminders/create', {
+      const res = await fetch(`${API_BASE}/api/modules/reminders/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +114,7 @@ export function Reminders({
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/modules/reminders/cancel', {
+      const res = await fetch(`${API_BASE}/api/modules/reminders/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +217,7 @@ export function Reminders({
       </div>
 
       {/* Grid: Form Left, Active Right */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '24px', alignItems: 'start' }}>
+      <div className="grid-split-1-1" style={{ alignItems: 'start' }}>
         
         {/* Form Left */}
         <div className="section-panel" style={{

@@ -17,7 +17,7 @@ import { TemplateEngine } from './TemplateEngine.js';
 import type { ContentTypeFilter } from './providers/BaseProvider.js';
 
 const POLLING_INTERVALS: Record<string, number> = {
-  fast:   2  * 60 * 1000,   // 2 minutes
+  fast:   30 * 1000,        // 30 seconds (super-fast, like Koya)
   normal: 10 * 60 * 1000,   // 10 minutes
   slow:   30 * 60 * 1000    // 30 minutes
 };
@@ -56,7 +56,7 @@ export class Scheduler {
         this.timers.delete(subscriptionId);
         return;
       }
-      const interval = POLLING_INTERVALS[sub.pollingMode] || POLLING_INTERVALS.normal;
+      const interval = POLLING_INTERVALS[sub.pollingMode] || POLLING_INTERVALS.fast;
       const timer = setTimeout(reschedule, interval);
       this.timers.set(subscriptionId, timer);
     };
@@ -67,7 +67,7 @@ export class Scheduler {
       .then(async () => {
         const sub = await SocialSubscriptionRepository.findById(subscriptionId).catch(() => null);
         if (!sub || !sub.enabled) return;
-        const interval = POLLING_INTERVALS[sub.pollingMode] || POLLING_INTERVALS.normal;
+        const interval = POLLING_INTERVALS[sub.pollingMode] || POLLING_INTERVALS.fast;
         const timer = setTimeout(reschedule, interval);
         this.timers.set(subscriptionId, timer);
       });

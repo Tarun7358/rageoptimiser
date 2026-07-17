@@ -130,7 +130,7 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/modules/music/playlists', {
+      const res = await fetch(`${API_BASE}/api/modules/music/playlists`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export function Music({ onSaveConfig, modules, registry, onUpdateConfig, musicPl
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/modules/music/action', {
+      const res = await fetch(`${API_BASE}/api/modules/music/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

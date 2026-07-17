@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config';
 import React, { useState } from 'react';
 import type { ModuleState, DiscordRole, DiscordChannel } from '../../hooks/useDiscordSync';
 import { Users, Plus, Trash2, Settings2 } from 'lucide-react';
@@ -38,7 +39,7 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/member_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/member_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/member_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/member_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ export function MemberWhitelist({ modules, registry, onUpdateConfig }: MemberWhi
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/member_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/member_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

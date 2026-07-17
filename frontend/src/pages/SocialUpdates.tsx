@@ -39,7 +39,7 @@ interface SocialUpdatesProps {
   addSyncLog: (msg: string, type: 'info' | 'warn' | 'success') => void;
 }
 
-export default function SocialUpdates({
+export function SocialUpdates({
   initialTab = 'youtube',
   registry,
   modules,

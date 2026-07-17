@@ -48,8 +48,9 @@ export interface ModuleState {
 export const INITIAL_MODULES: ModuleState[] = [
   { id: 'security', name: 'Security Guard', status: 'config_required', progress: 0, errors: ['No Quarantine Role selected', 'No alert channel configured', 'No exceptions defined'], config: {} },
   { id: 'moderation', name: 'Moderation Console', status: 'config_required', progress: 0, errors: ['No Log Channel configured', 'No Moderator Roles selected'], config: {} },
-  { id: 'community', name: 'Community Hub', status: 'config_required', progress: 0, errors: ['No Welcome Channel selected', 'No reaction role templates configured'], config: {} },
+  { id: 'welcome-v2', name: 'Welcome System V2', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'tickets', name: 'Ticket Management', status: 'config_required', progress: 0, errors: ['No Support Category specified', 'No Claimed Staff Roles selected'], config: {} },
+  { id: 'tickets-v2', name: 'Tickets System V2', status: 'not_configured', progress: 0, errors: [], config: {} },
   { id: 'verification', name: 'Verification Gate', status: 'config_required', progress: 0, errors: ['No Verified Member role selected', 'No Unverified Role selected'], config: {} },
   { id: 'logging', name: 'System Logs Timeline', status: 'config_required', progress: 0, errors: ['No central log channel configured'], config: {} },
   { id: 'backups', name: 'Backup Hub', status: 'config_required', progress: 0, errors: ['No status notification channel configured'], config: {} },
@@ -66,7 +67,8 @@ export const INITIAL_MODULES: ModuleState[] = [
   { id: 'voice-protection', name: 'Voice Protection', status: 'not_configured', progress: 100, errors: [], config: {} },
   { id: 'discord-dashboard', name: 'Discord Dashboard', status: 'config_required', progress: 0, errors: ['No target channel configured'], config: {} },
   { id: 'join_role_guard', name: 'Join Role Guard', status: 'enabled', progress: 100, errors: [], config: {} },
-  { id: 'social_updates', name: 'Social Updates', status: 'not_configured', progress: 100, errors: [], config: {} }
+  { id: 'social_updates', name: 'Social Updates', status: 'not_configured', progress: 100, errors: [], config: {} },
+  { id: 'join_to_create', name: 'Join To Create', status: 'not_configured', progress: 0, errors: [], config: {} }
 ];
 
 export function useDiscordSync() {
@@ -132,14 +134,14 @@ export function useDiscordSync() {
         if (guildId) {
           headers['X-Guild-Id'] = guildId;
         }
-        const res = await fetch('http://localhost:5000/api/state', { headers });
+        const res = await fetch(`${API_BASE}/api/state`, { headers });
         if (res.ok) {
           const data = await res.json();
           setModules(data.modules);
           setRegistry(data.registry);
           setSyncLogs(data.syncLogs);
           setGlobalSettings(data.globalSettings || {});
-          fetch('http://localhost:5000/api/modules/music/player', { headers })
+          fetch(`${API_BASE}/api/modules/music/player`, { headers })
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d) setMusicPlayerState(d); })
             .catch(() => {});
@@ -339,7 +341,7 @@ export function useDiscordSync() {
         }
 
         if (action) {
-          fetch('http://localhost:5000/api/modules/music/action', {
+          fetch(`${API_BASE}/api/modules/music/action`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

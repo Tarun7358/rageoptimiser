@@ -1,5 +1,6 @@
 import { sendVoiceProtectionLog } from './logger.js';
 import { checkBypassImmunity } from '../../utils/whitelistCheck.js';
+import { VoiceIncidentRepository } from './VoiceIncidentRepository.js';
 
 const cooldowns: Map<string, number> = new Map();
 
@@ -23,7 +24,8 @@ export async function executePunishment(
   avgLoudness: number,
   peakLoudness: number,
   config: any,
-  context: any
+  context: any,
+  reason = 'Excessive volume detected'
 ) {
   // Check cooldown
   const now = Date.now();
@@ -49,8 +51,49 @@ export async function executePunishment(
   const cooldownDuration = (config.cooldown || 60) * 1000;
   cooldowns.set(userId, now + cooldownDuration);
 
-  const punishmentType = config.punishment || 'servermute';
+  let punishmentType = config.punishment || 'servermute';
+  if (punishmentType === 'escalate') {
+    const recentCount = await VoiceIncidentRepository.getRecentCountForUser(guildId, userId, 24 * 60 * 60 * 1000);
+    if (recentCount === 0) {
+      punishmentType = 'warn';
+    } else if (recentCount === 1) {
+      punishmentType = 'tempmute';
+    } else if (recentCount === 2) {
+      punishmentType = 'timeout';
+    } else if (recentCount === 3) {
+      const modules = context.getModulesState ? context.getModulesState(guildId) : [];
+      const secMod = modules.find((m: any) => m.id === 'security');
+      const quarantineRoleId = secMod?.config?.quarantineRoleId;
+      if (quarantineRoleId) {
+        punishmentType = 'quarantine';
+      } else {
+        punishmentType = 'servermute';
+      }
+    } else {
+      punishmentType = 'ban';
+    }
+  }
+
   let actionApplied = punishmentType;
+
+  // Save incident to database
+  try {
+    await VoiceIncidentRepository.insert({
+      id: `vi_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      guildId,
+      userId,
+      username: member.user.username,
+      channelId,
+      channelName: channel.name,
+      loudness: avgLoudness,
+      peakLoudness,
+      action: punishmentType,
+      reason,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('[Voice Protection] Failed to save incident to database:', err);
+  }
 
   // Perform DM notification
   if (config.dmNotification) {
@@ -58,7 +101,7 @@ export async function executePunishment(
       const dm = await member.createDM();
       const embed = {
         title: '🎙️ Voice Protection Notification',
-        description: `You have been punished in **${guild.name}** for excessive volume / voice disturbance in channel **${channel.name}**.`,
+        description: `You have been punished in **${guild.name}** for **${reason.toLowerCase()}** in channel **${channel.name}**.`,
         color: 0xe74c3c,
         fields: [
           { name: 'Action', value: punishmentType.toUpperCase(), inline: true }
@@ -66,7 +109,7 @@ export async function executePunishment(
         timestamp: new Date().toISOString()
       } as any;
 
-      if (punishmentType === 'tempmute') {
+      if (punishmentType === 'tempmute' || punishmentType === 'timeout') {
         embed.fields.push({ name: 'Duration', value: `${config.muteDuration || 30} seconds`, inline: true });
       }
 
@@ -84,6 +127,38 @@ export async function executePunishment(
       }
     } catch (err) {
       console.error(`[Voice Protection] Failed to server-mute member ${member.user.username}:`, err);
+    }
+  } else if (punishmentType === 'disconnect') {
+    try {
+      if (member.voice.channel) {
+        await member.voice.disconnect('Voice Protection: Excessive volume').catch(() => {});
+      }
+    } catch (err) {
+      console.error(`[Voice Protection] Failed to disconnect member ${member.user.username}:`, err);
+    }
+  } else if (punishmentType === 'timeout') {
+    try {
+      const muteDuration = config.muteDuration || 30;
+      await member.timeout(muteDuration * 1000, 'Voice Protection: Excessive volume').catch(() => {});
+    } catch (err) {
+      console.error(`[Voice Protection] Failed to timeout member ${member.user.username}:`, err);
+    }
+  } else if (punishmentType === 'quarantine') {
+    try {
+      const modules = context.getModulesState ? context.getModulesState(guildId) : [];
+      const secMod = modules.find((m: any) => m.id === 'security');
+      const quarantineRoleId = secMod?.config?.quarantineRoleId;
+      if (quarantineRoleId) {
+        await member.roles.add(quarantineRoleId, 'Voice Protection: Quarantine assignment').catch(() => {});
+      }
+    } catch (err) {
+      console.error(`[Voice Protection] Failed to quarantine member ${member.user.username}:`, err);
+    }
+  } else if (punishmentType === 'ban') {
+    try {
+      await member.ban({ reason: 'Voice Protection: Maximum voice violations exceeded' }).catch(() => {});
+    } catch (err) {
+      console.error(`[Voice Protection] Failed to ban member ${member.user.username}:`, err);
     }
   }
 

@@ -55,3 +55,13 @@ clutch-music/dist/
 
 clutch-music/*.json
 clutch-music/ragebot-8263b-firebase-adminsdk-fbsvc-d602dd54c2.json
+
+# Runtime state JSON files (generated at runtime, should not be committed)
+backend/src/public-feed.json
+backend/src/backups.json
+backend/src/economy.json
+backend/src/afk.json
+backend/src/verifications.json
+clutch-music/src/public-feed.json
+clutch-music/src/afk.json
+clutch-music/src/verifications.json

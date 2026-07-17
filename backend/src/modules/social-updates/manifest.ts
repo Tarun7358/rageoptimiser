@@ -190,7 +190,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
           embedConfig: JSON.stringify(embedConfig || {}),
           notificationTemplate: notificationTemplate || null,
           mentionRoles: JSON.stringify(mentionRoles || []),
-          pollingMode: pollingMode || 'normal',
+          pollingMode: pollingMode || 'fast',
           contentTypes: JSON.stringify(contentTypes || {
             videos: true, shorts: true, streams: true,
             premieres: true, communityPosts: false, posts: true, reels: true

@@ -29,7 +29,6 @@ export function SearchOverlay({ isOpen, onClose, onNavigate }: SearchOverlayProp
     { id: 'sh-4', category: 'Security', title: 'Anti Raid configuration', subtitle: 'Set join filters and automated locks', targetPage: 'security', targetTab: 'antiraid', icon: <Shield size={16} /> },
     { id: 'sh-5', category: 'Security', title: 'Anti Nuke policy options', subtitle: 'Limit mass channel/role deletions', targetPage: 'security', targetTab: 'antinuke', icon: <ShieldAlert size={16} /> },
     { id: 'sh-6', category: 'Pages', title: 'Moderation Console', subtitle: 'Warn, Timeout, and Ban cases', targetPage: 'moderation', icon: <Shield size={16} /> },
-    { id: 'sh-7', category: 'Pages', title: 'Community Welcomer & Roles', subtitle: 'Welcome messages, reaction roles', targetPage: 'community', icon: <User size={16} /> },
     { id: 'sh-8', category: 'Pages', title: 'Ticket Management', subtitle: 'Open claims, transcripts, and departments', targetPage: 'tickets', icon: <FileText size={16} /> },
     { id: 'sh-9', category: 'Pages', title: 'Verification Center', subtitle: 'Captcha, Button, Math, and Manual approvals', targetPage: 'verification', icon: <Shield size={16} /> },
     { id: 'sh-10', category: 'Pages', title: 'System Audit Logs', subtitle: 'Timeline and filters for message, role, webhooks', targetPage: 'logs', icon: <FileText size={16} /> },

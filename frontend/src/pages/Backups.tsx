@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Play, ShieldCheck, Database, Calendar, Trash2, Globe } from 'lucide-react';
 import { StatusBadge } from '../components/StatusBadge';
@@ -38,7 +39,7 @@ export function Backups({
 
   const fetchBackups = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/modules/backups/list', {
+      const res = await fetch(`${API_BASE}/api/modules/backups/list`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'X-Guild-Id': activeGuildId
@@ -62,7 +63,7 @@ export function Backups({
     onManualTrigger('Backup System: Commencing instant manual server backup task...', 'info', 'Backup');
     
     try {
-      const res = await fetch('http://localhost:5000/api/modules/backups/create', {
+      const res = await fetch(`${API_BASE}/api/modules/backups/create`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,7 +91,7 @@ export function Backups({
   const handleDeleteBackup = async (id: string) => {
     if (!window.confirm(`Are you sure you want to delete backup ${id}?`)) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/modules/backups/delete/${id}`, {
+      const res = await fetch(`${API_BASE}/api/modules/backups/delete/${id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

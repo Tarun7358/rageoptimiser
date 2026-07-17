@@ -1,9 +1,59 @@
 import jwt from 'jsonwebtoken';
 import { Database } from './Database.js';
+import crypto from 'crypto';
 
 const DISCORD_API = 'https://discord.com/api/v10';
 const PERMISSIONS_MANAGE_SERVER = 0x20; // ManageGuild permission bit
 const PERMISSIONS_ADMINISTRATOR = 0x8; // Administrator permission bit
+
+// ─── TOKEN ENCRYPTION ────────────────────────────────────────────────────────
+// Encrypts/decrypts Discord access tokens stored in discord_sessions using
+// AES-256-GCM. The key must be 32 bytes (64 hex chars) set in TOKEN_ENCRYPTION_KEY.
+// If the env var is missing, a derived fallback key is used with a one-time warning.
+
+function getEncryptionKey(): Buffer {
+  const raw = process.env.TOKEN_ENCRYPTION_KEY;
+  if (raw && raw.length === 64) {
+    return Buffer.from(raw, 'hex');
+  }
+  if (!OAuthService._encKeyWarned) {
+    console.warn('[OAuthService] ⚠️  TOKEN_ENCRYPTION_KEY is not set or invalid. Using derived fallback key — set a 32-byte hex key in your .env before deploying to production.');
+    OAuthService._encKeyWarned = true;
+  }
+  // Derive a deterministic fallback from JWT_SECRET so at least the key isn't empty
+  return crypto.createHash('sha256').update(process.env.JWT_SECRET || 'fallback_secret').digest();
+}
+
+function encryptToken(plain: string): string {
+  const key = getEncryptionKey();
+  const iv = crypto.randomBytes(12); // 96-bit IV for GCM
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  // Format: iv:authTag:ciphertext (all hex)
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptToken(stored: string): string {
+  // Support legacy plaintext tokens that are not in the encrypted format
+  if (!stored.includes(':')) return stored;
+  const parts = stored.split(':');
+  if (parts.length !== 3) return stored;
+  try {
+    const key = getEncryptionKey();
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = Buffer.from(parts[2], 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    return decipher.update(encrypted) + decipher.final('utf8');
+  } catch {
+    // Decryption failed — token may be from before encryption was added
+    return stored;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface DiscordUser {
   id: string;
@@ -32,6 +82,9 @@ export interface OAuthSession {
 }
 
 export class OAuthService {
+  /** @internal — tracks whether the encryption key warning has been emitted */
+  static _encKeyWarned = false;
+
   private static getClientId(): string {
     return (process.env.CLIENT_ID || '').trim();
   }
@@ -143,11 +196,6 @@ export class OAuthService {
     const approvals: Record<string, { status: string; guildName: string }> = {};
     
     if (manageableGuilds.length > 0) {
-      console.log(`[DEBUG OAuthService] discordClient is defined: ${!!discordClient}`);
-      if (discordClient) {
-        console.log(`[DEBUG OAuthService] client guilds cache size: ${discordClient.guilds.cache.size}`);
-        console.log(`[DEBUG OAuthService] client guilds cache keys: ${Array.from(discordClient.guilds.cache.keys()).join(', ')}`);
-      }
       for (const guild of manageableGuilds) {
         const isInGuild = discordClient ? discordClient.guilds.cache.has(guild.id) : false;
         const defaultStatus = isInGuild ? 'Approved' : 'Not Registered';
@@ -173,32 +221,22 @@ export class OAuthService {
       }
     }
 
-    // 5. Save/update Discord OAuth session in DB
+    // 5. Save/update Discord OAuth session in DB — accessToken stored AES-256-GCM encrypted
     if (db) {
-      const sessionData: OAuthSession = {
-        discordId: discordUser.id,
-        discordUsername: discordUser.username,
-        discordAvatar: discordUser.avatar,
-        accessToken: access_token,
-        managedGuildIds: manageableGuilds.map(g => g.id),
-        loginAt: Date.now()
-      };
-      
-      console.log(`[OAuthService] Writing session data for user ${discordUser.username} to SQLite...`);
+      const encryptedToken = encryptToken(access_token);
       await db.run(
         `INSERT OR REPLACE INTO discord_sessions (
           discordId, discordUsername, discordAvatar, accessToken, managedGuildIds, loginAt
         ) VALUES (?, ?, ?, ?, ?, ?)`,
         [
-          sessionData.discordId,
-          sessionData.discordUsername,
-          sessionData.discordAvatar,
-          sessionData.accessToken,
-          JSON.stringify(sessionData.managedGuildIds),
-          sessionData.loginAt
+          discordUser.id,
+          discordUser.username,
+          discordUser.avatar,
+          encryptedToken,
+          JSON.stringify(manageableGuilds.map(g => g.id)),
+          Date.now()
         ]
       );
-      console.log(`[OAuthService] Session write sequence completed.`);
     }
 
     // 6. Issue a JWT for the dashboard session (role: 'guild_manager')
@@ -215,6 +253,28 @@ export class OAuthService {
     );
 
     return { token, user: discordUser, managedGuilds: manageableGuilds, approvals };
+  }
+
+  /**
+   * Retrieve and decrypt the stored access token for a user.
+   * Use this whenever a stored token needs to be used for Discord API calls.
+   */
+  public static async getDecryptedAccessToken(discordId: string): Promise<string | null> {
+    const db = Database.getDb();
+    if (!db) return null;
+    const session = await db.get<any>('SELECT accessToken FROM discord_sessions WHERE discordId = ?', [discordId]);
+    if (!session?.accessToken) return null;
+    return decryptToken(session.accessToken);
+  }
+
+  /**
+   * Fetch fresh user guilds using stored (decrypted) session token.
+   * Replaces the pattern in WebServer that reads accessToken directly.
+   */
+  public static async fetchUserGuildsFromSession(discordId: string): Promise<DiscordGuild[] | null> {
+    const accessToken = await this.getDecryptedAccessToken(discordId);
+    if (!accessToken) return null;
+    return this.fetchUserGuilds(accessToken);
   }
 
   /**

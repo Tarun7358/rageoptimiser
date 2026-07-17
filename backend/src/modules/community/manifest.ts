@@ -126,6 +126,10 @@ export const CommunityManifest: ModuleManifest = {
     {
       name: 'command_welcome',
       handler: async (client: any, interaction: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Welcome) {
+          return interaction.reply({ content: '⚙️ Welcome V2 is active. The legacy /welcome command is disabled.', flags: 64 });
+        }
         const action = interaction.options.getString('action');
         const isOwner = interaction.guild?.ownerId === interaction.user?.id ||
                         interaction.member?.permissions?.has?.('Administrator');
@@ -479,6 +483,8 @@ export const CommunityManifest: ModuleManifest = {
     {
       name: 'guildMemberAdd',
       handler: async (client: any, member: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Welcome) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const commModule = modules.find((m: any) => m.id === 'community');
         if (!commModule || commModule.status !== 'enabled') return;
@@ -555,6 +561,8 @@ export const CommunityManifest: ModuleManifest = {
     {
       name: 'guildMemberRemove',
       handler: async (client: any, member: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Welcome) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const commModule = modules.find((m: any) => m.id === 'community');
         if (!commModule || commModule.status !== 'enabled') return;

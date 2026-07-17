@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -14,7 +15,7 @@ export function SecuritySettingsTab({ onSaveConfig }: { onSaveConfig: (msg: stri
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/totp/status', {
+      const res = await fetch(`${API_BASE}/api/auth/totp/status`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -34,7 +35,7 @@ export function SecuritySettingsTab({ onSaveConfig }: { onSaveConfig: (msg: stri
   const startSetup = async () => {
     setError('');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/totp/setup', {
+      const res = await fetch(`${API_BASE}/api/auth/totp/setup`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -51,7 +52,7 @@ export function SecuritySettingsTab({ onSaveConfig }: { onSaveConfig: (msg: stri
   const verifySetup = async () => {
     setError('');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/totp/verify-setup', {
+      const res = await fetch(`${API_BASE}/api/auth/totp/verify-setup`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -77,7 +78,7 @@ export function SecuritySettingsTab({ onSaveConfig }: { onSaveConfig: (msg: stri
     requireElevation(async () => {
       try {
         const elevatedToken = localStorage.getItem('cn_elevated_token');
-        const res = await fetch('http://localhost:5000/api/auth/totp/disable', {
+        const res = await fetch(`${API_BASE}/api/auth/totp/disable`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

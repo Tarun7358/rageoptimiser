@@ -13,6 +13,7 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
   const [newEntry, setNewEntry] = useState('');
   const [entryType, setEntryType] = useState('word');
   const [banReason, setBanReason] = useState('Violation of Blacklist rules');
+  const [actionType, setActionType] = useState('delete');
 
   const bModule = (modules || []).find(m => m.id === 'blacklist');
   const config = bModule?.config || {};
@@ -30,8 +31,9 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
     const updatedEntries = [...entries, {
       id: `bl_${Date.now()}`,
       value: newEntry.trim(),
+      label: newEntry.trim(),
       type: entryType,
-      action: 'ban',
+      action: actionType,
       reason: banReason,
       createdAt: new Date().toISOString()
     }];
@@ -51,7 +53,12 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
     regex: entries.filter((e: any) => e.type === 'regex').length,
     domain: entries.filter((e: any) => e.type === 'domain').length,
     user: entries.filter((e: any) => e.type === 'user').length,
-    invite: entries.filter((e: any) => e.type === 'invite').length
+    invite: entries.filter((e: any) => e.type === 'invite').length,
+    role: entries.filter((e: any) => e.type === 'role').length,
+    channel: entries.filter((e: any) => e.type === 'channel').length,
+    bot: entries.filter((e: any) => e.type === 'bot').length,
+    emoji: entries.filter((e: any) => e.type === 'emoji').length,
+    sticker: entries.filter((e: any) => e.type === 'sticker').length
   };
 
   return (
@@ -62,7 +69,7 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 className="page-title">Blacklist Manager</h1>
-            <p className="page-subtitle">Configure filter rules and strict auto-ban triggers for words, regexes, domains, and invites.</p>
+            <p className="page-subtitle">Configure filter rules and penalty triggers for words, regexes, domains, invites, users, roles, channels, bots, emojis, and stickers.</p>
           </div>
           <button 
             className={`btn ${bModule?.status === 'enabled' ? 'btn-secondary' : 'btn-primary'}`}
@@ -91,13 +98,18 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
       </div>
 
       {/* Grid Stats */}
-      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+      <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
         {[
           { label: 'Words / Phrasing', val: counts.word, color: '#4f8cff' },
           { label: 'Regex Filters', val: counts.regex, color: '#a855f7' },
           { label: 'Banned Domains', val: counts.domain, color: '#f43f5e' },
           { label: 'Targeted Users', val: counts.user, color: '#eab308' },
-          { label: 'Server Invites', val: counts.invite, color: '#10b981' }
+          { label: 'Server Invites', val: counts.invite, color: '#10b981' },
+          { label: 'Banned Roles', val: counts.role, color: '#3b82f6' },
+          { label: 'Blocked Channels', val: counts.channel, color: '#ec4899' },
+          { label: 'Blocked Bots', val: counts.bot, color: '#f97316' },
+          { label: 'Banned Emojis', val: counts.emoji, color: '#14b8a6' },
+          { label: 'Banned Stickers', val: counts.sticker, color: '#84cc16' }
         ].map((stat, i) => (
           <div key={i} className="section-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{stat.label.toUpperCase()}</span>
@@ -199,13 +211,26 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
                   <select 
                     className="custom-input"
                     value={entryType}
-                    onChange={e => setEntryType(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setEntryType(val);
+                      if (val === 'user' || val === 'bot') {
+                        setActionType('ban');
+                      } else {
+                        setActionType('delete');
+                      }
+                    }}
                   >
                     <option value="word">Keyword / Phrasing</option>
                     <option value="regex">Regex Expression</option>
                     <option value="domain">Banned Domain Link</option>
                     <option value="invite">Discord Server Invite link</option>
-                    <option value="user">User ID (Auto-ban on join)</option>
+                    <option value="user">User ID (Human)</option>
+                    <option value="role">Role ID</option>
+                    <option value="channel">Channel ID</option>
+                    <option value="bot">Bot User ID (Auto-kick on join)</option>
+                    <option value="emoji">Emoji Name or ID</option>
+                    <option value="sticker">Sticker Name or ID</option>
                   </select>
                 </div>
 
@@ -214,10 +239,31 @@ export function Blacklist({ onSaveConfig, modules, onUpdateConfig }: BlacklistPr
                   <input 
                     type="text"
                     className="custom-input"
-                    placeholder={entryType === 'regex' ? 'e.g. \\b[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b' : 'Type keyword or ID to filter...'}
+                    placeholder={
+                      entryType === 'regex' 
+                        ? 'e.g. \\b[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b' 
+                        : entryType === 'emoji' 
+                          ? 'e.g. :pepe: or emoji ID' 
+                          : 'Type keyword or ID to filter...'
+                    }
                     value={newEntry}
                     onChange={e => setNewEntry(e.target.value)}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Enforcement Action</label>
+                  <select 
+                    className="custom-input"
+                    value={actionType}
+                    onChange={e => setActionType(e.target.value)}
+                  >
+                    <option value="delete">Delete Message Only</option>
+                    <option value="warn">Warn Member & Delete Message</option>
+                    <option value="timeout">Timeout Member (5m) & Delete Message</option>
+                    <option value="kick">Kick Member & Delete Message</option>
+                    <option value="ban">Ban Member & Delete Message</option>
+                  </select>
                 </div>
 
                 <div className="form-group">

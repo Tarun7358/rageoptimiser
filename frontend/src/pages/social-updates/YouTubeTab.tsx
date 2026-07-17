@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config';
 /**
  * Social Updates — YouTubeTab
  * YouTube channel subscription management panel.
@@ -55,7 +56,7 @@ const SAMPLE_DATA_YOUTUBE: Record<string, string> = {
 };
 
 const POLLING_MODES = [
-  { value: 'fast', label: '⚡ Fast', desc: 'Every 2 min — High API usage' },
+  { value: 'fast', label: '⚡ Fast', desc: 'Every 30 sec — Real-time (Koya Speed)' },
   { value: 'normal', label: '⚖️ Normal', desc: 'Every 10 min — Balanced' },
   { value: 'slow', label: '🐢 Slow', desc: 'Every 30 min — Minimal usage' }
 ];
@@ -116,7 +117,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
   const loadSubscriptions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/status', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/status`, {
         headers: apiHeaders()
       });
       if (res.ok) {
@@ -138,7 +139,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
     setValidating(true);
     setValidationError('');
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/validate', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/validate`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ provider: 'youtube', input: channelInput.trim() })
@@ -151,7 +152,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
       }
 
       // Add subscription with default embed
-      const subRes = await fetch('http://localhost:5000/api/modules/social_updates/subscribe', {
+      const subRes = await fetch(`${API_BASE}/api/modules/social_updates/subscribe`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -162,7 +163,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
           discordChannelId: (channels.find(c => c.type === 'text') || channels[0])?.id || '',
           embedConfig: DEFAULT_EMBED,
           mentionRoles: [],
-          pollingMode: 'normal',
+          pollingMode: 'fast',
           contentTypes: { videos: true, shorts: true, streams: true, premieres: true, communityPosts: false }
         })
       });
@@ -185,7 +186,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
 
   const handleUpdate = async (id: string, patch: Partial<Subscription>) => {
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/update', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/update`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id, ...patch })
@@ -200,7 +201,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
   const handleRemove = async (id: string) => {
     if (!confirm('Remove this YouTube channel subscription?')) return;
     try {
-      await fetch('http://localhost:5000/api/modules/social_updates/unsubscribe', {
+      await fetch(`${API_BASE}/api/modules/social_updates/unsubscribe`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id })
@@ -213,7 +214,7 @@ export function YouTubeTab({ guildId, token, channels, roles, onSaveConfig }: Yo
   const handleTest = async (id: string) => {
     setTestingId(id);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/test', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/test`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id })

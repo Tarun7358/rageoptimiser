@@ -219,6 +219,117 @@ export class Database {
         voiceMinutes INTEGER DEFAULT 0,
         commands INTEGER DEFAULT 0,
         PRIMARY KEY (guildId, date)
+      );`,
+      // Persistent sync log store — survives process restarts
+      // Max 500 rows per guild enforced by ModuleRegistry on insert.
+      `CREATE TABLE IF NOT EXISTS sync_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guildId TEXT NOT NULL,
+        time TEXT NOT NULL,
+        msg TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'info',
+        createdAt INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_sync_logs_guild ON sync_logs (guildId, id DESC);`,
+      // Migration tracking table for future schema changes
+      `CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        appliedAt INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );`,
+      // V2 Tickets Tables
+      `CREATE TABLE IF NOT EXISTS tickets (
+        id TEXT PRIMARY KEY,
+        ticketId TEXT NOT NULL,
+        guildId TEXT NOT NULL,
+        panelId TEXT NOT NULL,
+        panelOptionId TEXT,
+        departmentId TEXT,
+        categoryId TEXT NOT NULL,
+        creatorId TEXT NOT NULL,
+        creatorName TEXT NOT NULL,
+        creatorAvatar TEXT,
+        status TEXT NOT NULL,
+        priority TEXT NOT NULL DEFAULT 'medium',
+        claimedById TEXT,
+        claimedByName TEXT,
+        claimedByAvatar TEXT,
+        claimedAt INTEGER,
+        transferredAt INTEGER,
+        transferredFrom TEXT,
+        transferredTo TEXT,
+        escalatedAt INTEGER,
+        escalatedFrom TEXT,
+        escalatedTo TEXT,
+        reopenedAt INTEGER,
+        reopenedCount INTEGER DEFAULT 0,
+        ratingValue INTEGER,
+        ratingComment TEXT,
+        transcriptUrl TEXT,
+        messageCount INTEGER DEFAULT 0,
+        attachmentCount INTEGER DEFAULT 0,
+        participantsJson TEXT,
+        modalResponsesJson TEXT,
+        workflowState TEXT,
+        tagsJson TEXT,
+        channelId TEXT,
+        threadId TEXT,
+        forumId TEXT,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL,
+        closedAt INTEGER,
+        closedBy TEXT,
+        internalNotes TEXT,
+        isArchived INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_tickets_guild ON tickets (guildId, status);`,
+      `CREATE INDEX IF NOT EXISTS idx_tickets_creator ON tickets (guildId, creatorId);`,
+      `CREATE TABLE IF NOT EXISTS ticket_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticketId TEXT NOT NULL,
+        messageId TEXT NOT NULL,
+        senderId TEXT NOT NULL,
+        senderName TEXT NOT NULL,
+        senderAvatar TEXT,
+        content TEXT NOT NULL,
+        embedsJson TEXT,
+        attachmentsJson TEXT,
+        stickersJson TEXT,
+        isEdited INTEGER DEFAULT 0,
+        isDeleted INTEGER DEFAULT 0,
+        replyToId TEXT,
+        mentionsJson TEXT,
+        interactionEventJson TEXT,
+        isStaff INTEGER DEFAULT 0,
+        isInternal INTEGER DEFAULT 0,
+        timestamp INTEGER NOT NULL,
+        FOREIGN KEY(ticketId) REFERENCES tickets(id) ON DELETE CASCADE
+      );`,
+      `CREATE INDEX IF NOT EXISTS idx_messages_ticket ON ticket_messages (ticketId);`,
+      `CREATE TABLE IF NOT EXISTS ticket_panels (
+        id TEXT PRIMARY KEY,
+        guildId TEXT NOT NULL,
+        name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        version INTEGER DEFAULT 1,
+        configJson TEXT NOT NULL,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL
+      );`,
+      `CREATE TABLE IF NOT EXISTS ticket_panel_history (
+        id TEXT PRIMARY KEY,
+        panelId TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        configJson TEXT NOT NULL,
+        updatedBy TEXT NOT NULL,
+        updatedAt INTEGER NOT NULL,
+        FOREIGN KEY(panelId) REFERENCES ticket_panels(id) ON DELETE CASCADE
+      );`,
+      `CREATE TABLE IF NOT EXISTS member_birthdays (
+        guildId TEXT NOT NULL,
+        userId TEXT NOT NULL,
+        birthday TEXT NOT NULL,
+        PRIMARY KEY (guildId, userId)
       );`
     ];
 

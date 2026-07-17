@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { Express, Request } from 'express';
 import cors from 'cors';
 import { createServer, Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -13,6 +13,38 @@ import { OAuthService } from './OAuthService.js';
 import { AnalyticsService } from './AnalyticsService.js';
 import bcrypt from 'bcryptjs';
 import { EmbedBuilder } from 'discord.js';
+
+/**
+ * Unified guild ID resolution — reads from header, query, params, or env fallback.
+ * Eliminates the repeated 4-way fallback pattern across all route handlers.
+ */
+export function resolveGuildId(req: Request): string {
+  return (
+    (req.headers['x-guild-id'] as string) ||
+    (req.query.guildId as string) ||
+    (req.params?.guildId as string) ||
+    process.env.GUILD_ID ||
+    'default_guild'
+  );
+}
+
+/** Middleware that validates x-internal-secret for music-bot internal endpoints. */
+const internalSecretMiddleware = (req: any, res: any, next: any) => {
+  const secret = process.env.INTERNAL_SECRET;
+  if (!secret) {
+    // If no secret is configured, only allow requests from localhost
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+      return next();
+    }
+    return res.status(401).json({ error: 'Internal endpoint: x-internal-secret not configured and request is not from localhost' });
+  }
+  const provided = req.headers['x-internal-secret'];
+  if (!provided || provided !== secret) {
+    return res.status(401).json({ error: 'Unauthorized: missing or invalid x-internal-secret header' });
+  }
+  next();
+};
 
 
 
@@ -76,10 +108,21 @@ export class WebServer {
     this.app.use(express.json());
 
 
-    // Basic Rate Limiting - Increased for Dashboard heavy API usage
+    // Auth-specific rate limit — strict per-IP to prevent brute-force / token fishing
+    const authLimiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 20,
+      standardHeaders: true,
+      legacyHeaders: false,
+      keyGenerator: (req) => req.ip || 'unknown',
+      message: { error: 'Too many authentication requests. Please try again later.' }
+    });
+    this.app.use('/api/auth/', authLimiter);
+
+    // General API rate limit — generous for dashboard heavy usage
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 2000, // Increased limit to prevent 429 errors during dashboard sync
+      max: 2000,
       standardHeaders: true,
       legacyHeaders: false,
     });
@@ -111,7 +154,7 @@ export class WebServer {
                 registry: this.registry,
                 client: this.getDiscordClient ? this.getDiscordClient() : null,
                 broadcast: this.broadcast.bind(this),
-                getModulesState: () => this.registry.getModulesState(guildId),
+                getModulesState: (gId?: string) => this.registry.getModulesState(gId || guildId),
                 updateModuleConfig: (id: string, config: Record<string, any>) => {
                   this.registry.updateModuleConfig(guildId, id, config);
                 },
@@ -230,8 +273,8 @@ export class WebServer {
 
 function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, refreshCallback: (guildId?: string) => void) {
   
-  // Internal Endpoint for Music Bot Logs
-  app.post('/api/internal/music/logs', express.json(), (req, res) => {
+  // Internal Endpoint for Music Bot Logs — requires x-internal-secret header
+  app.post('/api/internal/music/logs', internalSecretMiddleware, express.json(), (req, res) => {
     const { msg, type, source, guildId } = req.body;
     if (msg && type) {
       registry.logSyncEvent(guildId, `[MUSIC] ${msg}`, type);
@@ -239,8 +282,8 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
     res.sendStatus(200);
   });
 
-  // Internal Endpoint for Music Bot State/Metrics Forwarding
-  app.post('/api/internal/music/state', express.json(), (req, res) => {
+  // Internal Endpoint for Music Bot State/Metrics Forwarding — requires x-internal-secret header
+  app.post('/api/internal/music/state', internalSecretMiddleware, express.json(), (req, res) => {
     if (req.body && req.body.type) {
       // Forward the WebSocket event to the dashboard
       server.broadcast(req.body);
@@ -309,7 +352,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.get('/api/state', authenticateToken, authorizeGuildAccess, async (req, res) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     // Trigger a live Discord sync before returning — ensures fresh roles/channels on each load
     if (server.syncRegistryCallback) {
       await server.syncRegistryCallback(guildId).catch(() => {});
@@ -327,7 +370,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
 
   app.post('/api/system/override', authenticateToken, authorizeGuildAccess, async (req: any, res: any) => {
     const { action, value } = req.body;
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     if (req.user.role !== 'owner') return res.status(403).json({ error: 'Access Denied: Only the Owner may perform this action.' });
     try {
       if (action === 'toggle_maintenance') {
@@ -471,7 +514,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.post('/api/modules/logging/test', authenticateToken, authorizeGuildAccess, async (req: any, res: any) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const { category } = req.body;
     
     const state = registry.getGuildState(guildId);
@@ -516,7 +559,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.post('/api/modules/:id', authenticateToken, authorizeGuildAccess, (req, res) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const mod = registry.updateModuleConfig(guildId, req.params.id, req.body);
     if (!mod) return res.status(404).json({ error: 'Module not found' });
     res.json(mod);
@@ -524,7 +567,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
 
   app.post('/api/modules/:id/toggle', authenticateToken, authorizeGuildAccess, (req, res) => {
     const { enabledOverride } = req.body;
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const mod = registry.toggleModule(guildId, req.params.id, enabledOverride);
     if (!mod) return res.status(400).json({ error: 'Module validation failed. Cannot toggle.' });
     res.json(mod);
@@ -533,7 +576,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   // /api/simulate removed — simulation endpoint was a dev tool using fake IDs and no longer exists.
 
   app.post('/api/sync/refresh', authenticateToken, authorizeGuildAccess, (req, res) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     refreshCallback(guildId);
     res.json({ success: true });
   });
@@ -550,7 +593,7 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
 
   app.post('/api/settings', authenticateToken, authorizeGuildAccess, (req, res) => {
     const data = req.body;
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const currentReg = registry.getRegistry(guildId);
     const newReg = {
       ...currentReg,
@@ -580,13 +623,13 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
   });
 
   app.get('/api/whitelist/audit', authenticateToken, authorizeGuildAccess, (req: any, res: any) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const auditLogs = registry.getWhitelistAudit(guildId);
     res.json(auditLogs);
   });
 
   app.get('/api/whitelist/activity', authenticateToken, authorizeGuildAccess, (req: any, res: any) => {
-    const guildId = req.headers['x-guild-id'] as string || req.query.guildId as string || process.env.GUILD_ID || 'default_guild';
+    const guildId = resolveGuildId(req);
     const activityLogs = registry.getWhitelistActivity(guildId);
     res.json(activityLogs);
   });
@@ -692,16 +735,17 @@ function appRoutes(server: WebServer, app: Express, registry: ModuleRegistry, re
         return res.status(400).json({ error: 'Invalid token: User ID not found in claim' });
       }
 
-      // Fetch the OAuth session to get the latest accessToken
-      const session = await db.get<any>('SELECT * FROM discord_sessions WHERE discordId = ?', [docId]);
+      // Verify session exists
+      const session = await db.get<any>('SELECT discordId FROM discord_sessions WHERE discordId = ?', [docId]);
       if (!session) {
         return res.status(404).json({ error: 'Session not found' });
       }
 
-      const accessToken = session.accessToken;
-
-      // Fetch fresh guilds from Discord API
-      const freshGuilds = await OAuthService.fetchUserGuilds(accessToken);
+      // Retrieve and decrypt the stored access token via OAuthService
+      const freshGuilds = await OAuthService.fetchUserGuildsFromSession(docId);
+      if (!freshGuilds) {
+        return res.status(401).json({ error: 'Could not decrypt session token. Please re-authenticate.' });
+      }
       const manageableGuilds = OAuthService.filterManageableGuilds(freshGuilds);
 
       // Check live status (bot in server or not)

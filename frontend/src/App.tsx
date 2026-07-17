@@ -7,47 +7,47 @@ import { useActivityFeed } from './hooks/useActivityFeed';
 import { useDiscordSync } from './hooks/useDiscordSync';
 
 // Pages
-import { Login } from './pages/Login';
-import { OAuthCallback } from './pages/OAuthCallback';
-import { ServerSelection } from './pages/ServerSelection';
-import { Landing } from './pages/Landing';
-import { DashboardHome } from './pages/DashboardHome';
-import { DiscordDashboard } from './pages/DiscordDashboard';
-import { ConfigHealth } from './pages/ConfigHealth';
-import { Security } from './pages/Security';
-import { Moderation } from './pages/Moderation';
-import { Community } from './pages/Community';
-import { Automation } from './pages/Automation';
-import { Logging } from './pages/Logging';
-import { Analytics } from './pages/Analytics';
-import { Settings } from './pages/Settings';
-import SocialUpdates from './pages/SocialUpdates';
-import { Tickets } from './pages/Tickets';
-import { Verification } from './pages/Verification';
-import { Backups } from './pages/Backups';
-import { VoicePresence } from './pages/VoicePresence';
-import { VoiceProtection } from './pages/VoiceProtection';
-import { Music } from './pages/Music';
-import { Roles } from './pages/Roles';
-import { WhitelistOverview } from './pages/whitelist/Overview';
-import { BotWhitelist } from './pages/whitelist/BotWhitelist';
-import { MemberWhitelist } from './pages/whitelist/MemberWhitelist';
-import { RoleWhitelist } from './pages/whitelist/RoleWhitelist';
-import { WhitelistActivity } from './pages/whitelist/Activity';
-import { WhitelistAudit } from './pages/whitelist/AuditLogs';
-import { WhitelistSettings } from './pages/whitelist/Settings';
-import { Incidents } from './pages/Incidents';
-import { PublicDashboard } from './pages/PublicDashboard';
+const Login = React.lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const OAuthCallback = React.lazy(() => import('./pages/OAuthCallback').then(m => ({ default: m.OAuthCallback })));
+const ServerSelection = React.lazy(() => import('./pages/ServerSelection').then(m => ({ default: m.ServerSelection })));
+const Landing = React.lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
+const DashboardHome = React.lazy(() => import('./pages/DashboardHome').then(m => ({ default: m.DashboardHome })));
+const DiscordDashboard = React.lazy(() => import('./pages/DiscordDashboard').then(m => ({ default: m.DiscordDashboard })));
+const ConfigHealth = React.lazy(() => import('./pages/ConfigHealth').then(m => ({ default: m.ConfigHealth })));
+const Security = React.lazy(() => import('./pages/Security').then(m => ({ default: m.Security })));
+const Moderation = React.lazy(() => import('./pages/Moderation').then(m => ({ default: m.Moderation })));
+const Automation = React.lazy(() => import('./pages/Automation').then(m => ({ default: m.Automation })));
+const Logging = React.lazy(() => import('./pages/Logging').then(m => ({ default: m.Logging })));
+const Analytics = React.lazy(() => import('./pages/Analytics').then(m => ({ default: m.Analytics })));
+const Settings = React.lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const SocialUpdates = React.lazy(() => import('./pages/SocialUpdates').then(m => ({ default: m.SocialUpdates })));
+const Welcome = React.lazy(() => import('./pages/Welcome').then(m => ({ default: m.Welcome })));
+const Tickets = React.lazy(() => import('./pages/Tickets').then(m => ({ default: m.Tickets })));
+const Verification = React.lazy(() => import('./pages/Verification').then(m => ({ default: m.Verification })));
+const Backups = React.lazy(() => import('./pages/Backups').then(m => ({ default: m.Backups })));
+const VoicePresence = React.lazy(() => import('./pages/VoicePresence').then(m => ({ default: m.VoicePresence })));
+const VoiceProtection = React.lazy(() => import('./pages/VoiceProtection').then(m => ({ default: m.VoiceProtection })));
+const Music = React.lazy(() => import('./pages/Music').then(m => ({ default: m.Music })));
+const Roles = React.lazy(() => import('./pages/Roles').then(m => ({ default: m.Roles })));
+const WhitelistOverview = React.lazy(() => import('./pages/whitelist/Overview').then(m => ({ default: m.WhitelistOverview })));
+const BotWhitelist = React.lazy(() => import('./pages/whitelist/BotWhitelist').then(m => ({ default: m.BotWhitelist })));
+const MemberWhitelist = React.lazy(() => import('./pages/whitelist/MemberWhitelist').then(m => ({ default: m.MemberWhitelist })));
+const RoleWhitelist = React.lazy(() => import('./pages/whitelist/RoleWhitelist').then(m => ({ default: m.RoleWhitelist })));
+const WhitelistActivity = React.lazy(() => import('./pages/whitelist/Activity').then(m => ({ default: m.WhitelistActivity })));
+const WhitelistAudit = React.lazy(() => import('./pages/whitelist/AuditLogs').then(m => ({ default: m.WhitelistAudit })));
+const WhitelistSettings = React.lazy(() => import('./pages/whitelist/Settings').then(m => ({ default: m.WhitelistSettings })));
+const Incidents = React.lazy(() => import('./pages/Incidents').then(m => ({ default: m.Incidents })));
+const PublicDashboard = React.lazy(() => import('./pages/PublicDashboard').then(m => ({ default: m.PublicDashboard })));
 
-import { Automod } from './pages/Automod';
-import { Download } from './pages/Download';
-import { Blacklist } from './pages/Blacklist';
-import { Giveaway } from './pages/Giveaway';
-import { Announcements } from './pages/Announcements';
-import { JoinToCreate } from './pages/JoinToCreate';
-import { ReactionRoles } from './pages/ReactionRoles';
-import { Leveling } from './pages/Leveling';
-import { Reminders } from './pages/Reminders';
+const Automod = React.lazy(() => import('./pages/Automod').then(m => ({ default: m.Automod })));
+const Download = React.lazy(() => import('./pages/Download').then(m => ({ default: m.Download })));
+const Blacklist = React.lazy(() => import('./pages/Blacklist').then(m => ({ default: m.Blacklist })));
+const Giveaway = React.lazy(() => import('./pages/Giveaway').then(m => ({ default: m.Giveaway })));
+const Announcements = React.lazy(() => import('./pages/Announcements').then(m => ({ default: m.Announcements })));
+const JoinToCreate = React.lazy(() => import('./pages/JoinToCreate').then(m => ({ default: m.JoinToCreate })));
+const ReactionRoles = React.lazy(() => import('./pages/ReactionRoles').then(m => ({ default: m.ReactionRoles })));
+const Leveling = React.lazy(() => import('./pages/Leveling').then(m => ({ default: m.Leveling })));
+const Reminders = React.lazy(() => import('./pages/Reminders').then(m => ({ default: m.Reminders })));
 import { useAuth } from './hooks/useAuth';
 
 interface ToastItem {
@@ -199,16 +199,6 @@ function App() {
             onUpdateConfig={updateModuleConfig}
           />
         );
-      case 'community':
-        return (
-          <Community
-            onSaveConfig={triggerToast}
-            onManualTrigger={pushManualEvent}
-            modules={modules}
-            registry={registry}
-            onUpdateConfig={updateModuleConfig}
-          />
-        );
       case 'automation':
         return (
           <Automation
@@ -321,6 +311,16 @@ function App() {
         return <WhitelistSettings modules={modules} registry={registry} onUpdateConfig={updateModuleConfig} onSave={() => triggerToast('Settings saved successfully.')} />;
       case 'incidents':
         return <Incidents syncLogs={syncLogs} onNavigate={handleNavigate} />;
+      case 'welcome':
+        return (
+          <Welcome
+            onSaveConfig={triggerToast}
+            onManualTrigger={pushManualEvent}
+            modules={modules}
+            registry={registry}
+            onUpdateConfig={updateModuleConfig}
+          />
+        );
       case 'tickets':
         return (
           <Tickets
@@ -508,7 +508,13 @@ function App() {
         onLogout={logout}
         modules={modules}
       >
-        {renderActivePage()}
+        <React.Suspense fallback={
+          <div className="flex h-64 items-center justify-center">
+            <div className="text-slate-400">Loading page...</div>
+          </div>
+        }>
+          {renderActivePage()}
+        </React.Suspense>
       </Layout>
 
       {/* Modal Overlays */}

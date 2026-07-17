@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { Award, Save, RefreshCw, Trash2, Plus, Info, ShieldAlert, BarChart2, Shield } from 'lucide-react';
 import type { ModuleState, DiscordRole } from '../hooks/useDiscordSync';
@@ -41,7 +42,7 @@ export function Leveling({
         headers['X-Guild-Id'] = currentGuild;
       }
 
-      const res = await fetch('http://localhost:5000/api/modules/leveling/state', { headers });
+      const res = await fetch(`${API_BASE}/api/modules/leveling/state`, { headers });
       if (res.ok) {
         const data = await res.json();
         setMultiplier(data.multiplier || '1.0');
@@ -73,7 +74,7 @@ export function Leveling({
 
     setSaving(true);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/leveling/update', {
+      const res = await fetch(`${API_BASE}/api/modules/leveling/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export function Leveling({
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/modules/leveling/reset', {
+      const res = await fetch(`${API_BASE}/api/modules/leveling/reset`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

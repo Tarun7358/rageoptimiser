@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import { useState, useEffect, useRef } from 'react';
 
 export interface ActivityEvent {
@@ -66,7 +67,7 @@ export function useActivityFeed() {
 
     const fetchInitialLogs = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/state', {
+        const res = await fetch(`${API_BASE}/api/state`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

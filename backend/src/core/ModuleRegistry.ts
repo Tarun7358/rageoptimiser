@@ -54,10 +54,22 @@ export class ModuleRegistry {
         const globalSettings = JSON.parse(row.globalSettings || '{}');
         
         const guildId = row.guildId;
+
+        // Hydrate persisted sync logs from SQLite (latest 100, ordered newest-first)
+        let persistedLogs: any[] = [];
+        try {
+          persistedLogs = await db.all(
+            'SELECT time, msg, type FROM sync_logs WHERE guildId = ? ORDER BY id DESC LIMIT 100',
+            [guildId]
+          );
+        } catch {
+          // sync_logs table may not exist on older installs — safe to ignore
+        }
+
         const state = {
           modules,
           registry: this.getDefaultRegistry(),
-          syncLogs: [],
+          syncLogs: persistedLogs,
           globalSettings,
           whitelistAudit: [],
           whitelistActivity: []
@@ -151,6 +163,24 @@ export class ModuleRegistry {
     state.syncLogs.unshift(log);
     if (state.syncLogs.length > 100) state.syncLogs.pop();
     this.broadcast({ type: 'SYNC_LOG', log, guildId: id });
+
+    // Persist to SQLite for durability across restarts
+    const db = Database.getDb();
+    if (db && id !== 'default_guild') {
+      db.run(
+        'INSERT INTO sync_logs (guildId, time, msg, type) VALUES (?, ?, ?, ?)',
+        [id, time, finalMsg, finalType]
+      ).catch(() => {
+        // Non-critical — in-memory log already written
+      });
+      // Trim to 500 rows per guild (FIFO — delete oldest beyond the limit)
+      db.run(
+        `DELETE FROM sync_logs WHERE guildId = ? AND id NOT IN (
+          SELECT id FROM sync_logs WHERE guildId = ? ORDER BY id DESC LIMIT 500
+        )`,
+        [id, id]
+      ).catch(() => {});
+    }
 
     // Live Discord Log Forwarding
     if (this.client && id && id !== 'default_guild') {

@@ -8,7 +8,6 @@ import { TicketsManifest } from '../modules/tickets/manifest.js';
 import { VerificationManifest } from '../modules/verification/manifest.js';
 import { LoggingManifest } from '../modules/logging/manifest.js';
 import { BackupsManifest } from '../modules/backups/manifest.js';
-import { CommunityManifest } from '../modules/community/manifest.js';
 import { AutomationManifest } from '../modules/automation/manifest.js';
 import { VoiceManifest } from '../modules/voice/manifest.js';
 import { MemberWhitelistManifest } from '../modules/member_whitelist/manifest.js';
@@ -27,6 +26,8 @@ import { VoiceManagerManifest } from '../modules/voice_manager/manifest.js';
 import { BulkOpsManifest } from '../modules/bulk_ops/manifest.js';
 import { DiagnosticsManifest } from '../modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from '../modules/voice-protection/index.js';
+import { WelcomeV2Manifest } from '../modules/welcome-v2/manifest.js';
+import { TicketsV2Manifest } from '../modules/tickets-v2/manifest.js';
 
 
 dotenv.config();
@@ -50,7 +51,6 @@ const manifests = [
   VerificationManifest,
   LoggingManifest,
   BackupsManifest,
-  CommunityManifest,
   AutomationManifest,
   VoiceManifest,
   MemberWhitelistManifest,
@@ -67,7 +67,9 @@ const manifests = [
   VoiceManagerManifest,
   BulkOpsManifest,
   DiagnosticsManifest,
-  VoiceProtectionManifest
+  VoiceProtectionManifest,
+  WelcomeV2Manifest,
+  TicketsV2Manifest,
 ];
 
 

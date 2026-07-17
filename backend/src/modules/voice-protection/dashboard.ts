@@ -1,4 +1,5 @@
 import { getCurrentlyMonitoredUsers } from './analyzer.js';
+import { VoiceIncidentRepository } from './VoiceIncidentRepository.js';
 
 export const VoiceProtectionRoutes = [
   {
@@ -33,9 +34,17 @@ export const VoiceProtectionRoutes = [
         }
       }
 
+      let incidents: any[] = [];
+      try {
+        incidents = await VoiceIncidentRepository.findRecent(guildId, 50);
+      } catch (err) {
+        console.error('[Voice Protection] Failed to fetch incidents for dashboard:', err);
+      }
+
       res.json({
         config: vpMod?.config || {},
-        monitoredUsers
+        monitoredUsers,
+        incidents
       });
     }
   }

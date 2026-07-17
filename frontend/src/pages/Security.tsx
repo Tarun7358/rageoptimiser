@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ShieldAlert, ShieldCheck, Key, Shield, UserX, AlertTriangle, 
@@ -47,7 +48,7 @@ export function Security({
       
       const updatedConfig = { ...upmConfig, ...newConfig };
 
-      const res = await fetch(`http://localhost:5000/api/modules/security/upm/config`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/upm/config`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ config: updatedConfig })
@@ -69,7 +70,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/upm/snapshot`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/upm/snapshot`, {
         method: 'POST',
         headers
       });
@@ -96,7 +97,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/upm/restore`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/upm/restore`, {
         method: 'POST',
         headers
       });
@@ -121,7 +122,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/upm/rollback/${userId}`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/upm/rollback/${userId}`, {
         method: 'POST',
         headers
       });
@@ -165,6 +166,7 @@ export function Security({
   const whitelist = config.whitelist || [];
   const trustedManagers = config.trustedManagers || [];
   const rules = config.rules || {};
+  const hasRules = Object.keys(rules).length > 0;
 
   // Scan state
   const [isScanning, setIsScanning] = useState(false);
@@ -263,7 +265,7 @@ export function Security({
         risk: 'warning'
       });
     }
-    if (!rules || Object.keys(rules).length === 0) {
+    if (!hasRules) {
       score -= 15;
       issues.push({
         type: 'rules',
@@ -278,7 +280,7 @@ export function Security({
       riskRating: score > 80 ? 'Low' : score > 50 ? 'Medium' : 'High',
       issues
     };
-  }, [registry?.roles, modules, quarantineRoleId, rules]);
+  }, [registry?.roles, modules, quarantineRoleId, hasRules]);
 
   // Emergency lockdown confirmation
   const [showLockdownModal, setShowLockdownModal] = useState(false);
@@ -310,7 +312,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/presets`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/presets`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ preset: presetName })
@@ -337,7 +339,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/lockdown`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/lockdown`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ action: lockdownAction })
@@ -383,7 +385,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/whitelist`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/whitelist`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ whitelist: updated })
@@ -407,7 +409,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/whitelist`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/whitelist`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ whitelist: updated })
@@ -475,7 +477,7 @@ export function Security({
         'Authorization': `Bearer ${token}`
       };
       if (activeGuildId) headers['X-Guild-Id'] = activeGuildId;
-      const res = await fetch(`http://localhost:5000/api/modules/security/quarantine/${userId}/action`, {
+      const res = await fetch(`${API_BASE}/api/modules/security/quarantine/${userId}/action`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ action: 'release' })

@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, ShieldAlert, Server, Activity, Database, Lock, Globe, Loader2 } from 'lucide-react';
@@ -26,7 +27,7 @@ export function Login() {
 
   useEffect(() => {
     const fetchStatus = () => {
-      fetch('http://localhost:5000/api/status')
+      fetch(`${API_BASE}/api/status`)
         .then(res => res.json())
         .then(data => setStatus(data))
         .catch(err => console.error('Failed to fetch status:', err));
@@ -41,7 +42,7 @@ export function Login() {
     setDiscordLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/discord');
+      const res = await fetch(`${API_BASE}/api/auth/discord`);
       const { url } = await res.json();
       window.location.href = url;
     } catch (err) {

@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { LineChart, BarChart2, Activity, Shield, Users, AlertTriangle, CheckCircle2, Zap, Server, Clock, Calendar } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -22,7 +23,7 @@ export function Analytics({ modules, registry, syncLogs }: AnalyticsProps) {
       setLoading(true);
       try {
         const guildId = localStorage.getItem('cn_active_guild_id') || 'fallback';
-        const res = await fetch(`http://localhost:5000/api/analytics/summary?guildId=${guildId}&days=${days}`, {
+        const res = await fetch(`${API_BASE}/api/analytics/summary?guildId=${guildId}&days=${days}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok && active) {

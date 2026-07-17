@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -235,7 +236,7 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await fetch('http://localhost:5000/api/user/guilds', {
+      const res = await fetch(`${API_BASE}/api/user/guilds`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -245,13 +246,13 @@ export function ServerSelection({ onSelectGuild }: { onSelectGuild: (guildId: st
         updateDiscordGuilds(data.managedGuilds, data.approvals);
       } else {
         // Fallback to OAuth redirect if token is expired/invalid
-        const authRes = await fetch('http://localhost:5000/api/auth/discord');
+        const authRes = await fetch(`${API_BASE}/api/auth/discord`);
         const { url } = await authRes.json();
         window.location.href = url;
       }
     } catch {
       try {
-        const authRes = await fetch('http://localhost:5000/api/auth/discord');
+        const authRes = await fetch(`${API_BASE}/api/auth/discord`);
         const { url } = await authRes.json();
         window.location.href = url;
       } catch {

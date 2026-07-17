@@ -52,7 +52,7 @@ function Section({ title, enabled, onToggle, children, badge }: SectionProps) {
       }} onClick={() => setOpen(!open)}>
         {onToggle && (
           <div
-            onClick={e => { e.stopPropagation(); onToggle(); }}
+            onClick={e => e.stopPropagation()}
             style={{ cursor: 'pointer' }}
           >
             <label className="switch" style={{ width: 36, height: 20 }}>

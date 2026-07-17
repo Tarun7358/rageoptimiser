@@ -1,637 +1,379 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Volume2, Settings, Users, Shield, Lock, Eye, 
-  Sparkles, Radio, HelpCircle, Save, Layers, ArrowRight,
-  ShieldCheck, EyeOff, UserCheck, Trash2, RefreshCw
-} from 'lucide-react';
+import { Volume2, Settings, Radio, RefreshCw, Plus, Trash2, Edit3, Check, X, Sparkles, Eye, EyeOff, Lock, Globe, Mic } from 'lucide-react';
 import type { ModuleState } from '../hooks/useDiscordSync';
+
+interface Trigger {
+  id: string;
+  label: string;
+  triggerChannelId: string;
+  categoryId?: string | null;
+  defaultName: string;
+  defaultLimit: number;
+  privacy: 'public' | 'private' | 'locked' | 'invisible' | 'stage' | 'sync';
+}
 
 interface JoinToCreateProps {
   onSaveConfig: (msg: string) => void;
   modules: ModuleState[];
   onUpdateConfig: (moduleId: string, config: Record<string, any>, enabledOverride?: boolean) => void;
-  registry?: {
-    channels: Array<{
-      id: string;
-      name: string;
-      type: string;
-      category?: string;
-    }>;
-  };
+  registry?: { channels: Array<{ id: string; name: string; type: string; category?: string }> };
 }
 
-export function JoinToCreate({ onSaveConfig, modules, onUpdateConfig, registry }: JoinToCreateProps) {
-  const [activeTab, setActiveTab] = useState('settings');
-  const [isSaving, setIsSaving] = useState(false);
+const PRIVACY_OPTS = [
+  { id: 'public',    label: 'Public',    desc: 'Anyone can join',            icon: Globe,   color: '#10B981' },
+  { id: 'private',   label: 'Private',   desc: 'Invite-only, owner controls', icon: Eye,     color: '#3B82F6' },
+  { id: 'locked',    label: 'Locked',    desc: 'Visible, no one can enter',   icon: Lock,    color: '#F59E0B' },
+  { id: 'invisible', label: 'Invisible', desc: 'Hidden from channel list',    icon: EyeOff,  color: '#8B5CF6' },
+  { id: 'stage',     label: 'Stage',     desc: 'All muted, owner is host',    icon: Mic,     color: '#EC4899' },
+  { id: 'sync',      label: 'Sync with Category', desc: 'Inherit parent overrides', icon: RefreshCw, color: '#06B6D4' },
+];
 
-  const jtcModule = (modules || []).find(m => m.id === 'join_to_create');
-  const config = jtcModule?.config || {};
+const blank = (): Trigger => ({
+  id: `trigger_${Date.now()}`,
+  label: '',
+  triggerChannelId: '',
+  categoryId: null,
+  defaultName: "{username}'s Channel",
+  defaultLimit: 0,
+  privacy: 'public',
+});
+
+export function JoinToCreate({ onSaveConfig, modules, onUpdateConfig, registry }: JoinToCreateProps) {
+  const [tab, setTab] = useState<'triggers' | 'active'>('triggers');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Trigger>(blank());
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const jtcMod = (modules || []).find(m => m.id === 'join_to_create');
+  const config = jtcMod?.config || {};
+  const triggers: Trigger[] = (() => {
+    const arr: Trigger[] = [...(config.triggers || [])];
+    // Migrate legacy single-trigger config if not already in the array
+    if (config.triggerChannelId && !arr.find((t: Trigger) => t.triggerChannelId === config.triggerChannelId)) {
+      arr.unshift({
+        id: `trigger_${config.triggerChannelId}`,
+        label: (config as any).label || 'Default Trigger',
+        triggerChannelId: config.triggerChannelId,
+        categoryId: config.categoryId ?? null,
+        defaultName: config.defaultName || "{username}'s Channel",
+        defaultLimit: config.defaultLimit ?? 0,
+        privacy: config.privacy || 'public',
+      });
+    }
+    return arr;
+  })();
+
   const activeChannels: any[] = config.activeChannels || [];
 
-  // Config States
-  const triggerChannelId = config.triggerChannelId || '';
-  const categoryId = config.categoryId || '';
-  const defaultName = config.defaultName || "{user}'s Lounge";
-  const defaultLimit = config.defaultLimit || 0;
-  const privacy = config.privacy || 'public';
-
-  const handleToggleEnable = () => {
-    if (!jtcModule) return;
-    const nextEnabled = jtcModule.status !== 'enabled';
-    onUpdateConfig('join_to_create', {}, nextEnabled);
-    onSaveConfig(`Join to Create ${nextEnabled ? 'ENABLED' : 'DISABLED'}.`);
-  };
-
-  const handleSaveSettings = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      onSaveConfig('Join to Create configuration saved.');
-      setIsSaving(false);
-    }, 800);
-  };
-
-  const handleUpdate = (fields: Record<string, any>) => {
-    onUpdateConfig('join_to_create', fields);
-  };
-
-  // Filter channels safely
   const voiceChannels = (registry?.channels || []).filter(c => c.type === 'voice');
-  const categories = (registry?.channels || []).filter(c => c.type === 'category');
+  const categories   = (registry?.channels || []).filter(c => c.type === 'category');
 
-  // Privacy options meta helper
-  const privacyOptions = [
-    {
-      id: 'public',
-      label: 'Public Access',
-      desc: 'Anyone can view and join the room instantly.',
-      icon: Eye,
-      color: '#10B981',
-      bgGlow: 'rgba(16, 185, 129, 0.15)'
-    },
-    {
-      id: 'private',
-      label: 'Request to Join',
-      desc: 'Invisible/hidden room, users must ask to connect.',
-      icon: EyeOff,
-      color: '#F59E0B',
-      bgGlow: 'rgba(245, 158, 11, 0.15)'
-    },
-    {
-      id: 'locked',
-      label: 'Locked Room',
-      desc: 'Visible to everyone, but new members cannot join.',
-      icon: Lock,
-      color: '#EF4444',
-      bgGlow: 'rgba(239, 68, 68, 0.15)'
-    }
-  ];
+  const saveTriggers = (next: Trigger[], msg = 'Triggers saved.') => {
+    setSaving(true);
+    // Always persist new array AND clear legacy root fields to prevent duplicates
+    onUpdateConfig('join_to_create', {
+      triggers: next,
+      triggerChannelId: null,
+      categoryId: null,
+      defaultName: null,
+      defaultLimit: null,
+      privacy: null,
+    });
+    setTimeout(() => { onSaveConfig(msg); setSaving(false); }, 600);
+  };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', width: '100%' }}>
-      
-      {/* Premium Page Header */}
-      <div className="page-header" style={{ position: 'relative', overflow: 'hidden', padding: '12px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', zIndex: 2 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span className="badge badge-purple" style={{ padding: '6px 12px', fontSize: '10px', borderRadius: '20px', letterSpacing: '0.05em' }}>
-                <Sparkles size={11} style={{ marginRight: '4px' }} /> Dynamic Voice Systems
-              </span>
-            </div>
-            <h1 className="page-title" style={{ fontSize: '28px', fontWeight: 800, background: 'linear-gradient(to right, #FFF, #9CA3AF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '6px' }}>
-              Join-to-Create Hub
-            </h1>
-            <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '650px', lineHeight: '1.5' }}>
-              Create a seamless voice lounge experience. When users join a trigger channel, the bot instantly provisions a private, customizable voice room and migrates them automatically.
-            </p>
+
+  const handleAdd = () => { setDraft(blank()); setAdding(true); setEditingId(null); };
+  const handleEdit = (t: Trigger) => { setDraft({ ...t }); setEditingId(t.id); setAdding(false); };
+  const handleCancel = () => { setAdding(false); setEditingId(null); };
+
+  const handleSaveDraft = () => {
+    if (!draft.triggerChannelId) { setFormError('Please select a trigger channel.'); return; }
+    setFormError(null);
+    // BUG FIX: do not mutate draft directly — compute label from state snapshot
+    const label = draft.label.trim() || voiceChannels.find(c => c.id === draft.triggerChannelId)?.name || 'Trigger';
+    const finalDraft = { ...draft, label };
+    const next = editingId
+      ? triggers.map(t => t.id === editingId ? finalDraft : t)
+      : [...triggers, { ...finalDraft, id: `trigger_${draft.triggerChannelId}` }];
+    saveTriggers(next, editingId ? 'Trigger updated.' : 'Trigger added.');
+    setAdding(false); setEditingId(null);
+  };
+
+  const handleDelete = (id: string) => {
+    if (!confirm('Remove this trigger?')) return;
+    saveTriggers(triggers.filter(t => t.id !== id), 'Trigger removed.');
+  };
+
+  const setD = (f: Partial<Trigger>) => setDraft(p => ({ ...p, ...f }));
+
+  const formOpen = adding || !!editingId;
+
+  // ─── Form panel — defined as a named function so React keeps it stable ──────
+  const TriggerForm = (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+      style={{ background: 'rgba(20,23,30,0.95)', border: '1px solid rgba(124,92,252,0.35)', borderRadius: 16, padding: 28, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <h3 style={{ color: '#FFF', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Plus size={16} color="var(--accent-primary)" />{editingId ? 'Edit Trigger' : 'New Trigger'}
+        </h3>
+        <button onClick={handleCancel} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+      </div>
+
+      {/* Inline validation error */}
+      {formError && (
+        <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: '#EF4444', marginBottom: 16 }}>
+          ⚠️ {formError}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* BUG FIX: box-sizing ensures padding doesn't overflow the grid cell */}
+        {/* Label */}
+        <div>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Label</label>
+          <input value={draft.label} onChange={e => setD({ label: e.target.value })} placeholder="e.g. Gaming Lounge"
+            style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(15,17,21,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '11px 14px', color: '#FFF', fontSize: 13 }} />
+        </div>
+        {/* Trigger Channel */}
+        <div>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Trigger Channel *</label>
+          <select value={draft.triggerChannelId} onChange={e => { setD({ triggerChannelId: e.target.value }); setFormError(null); }}
+            style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(15,17,21,0.8)', border: `1px solid ${formError && !draft.triggerChannelId ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 10, padding: '11px 14px', color: '#FFF', fontSize: 13 }}>
+            <option value="">Select voice channel…</option>
+            {voiceChannels.map(c => <option key={c.id} value={c.id}>🔊 {c.name} {c.category ? `[${c.category}]` : ''}</option>)}
+          </select>
+        </div>
+        {/* Spawn Category */}
+        <div>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Spawn Category</label>
+          <select value={draft.categoryId || ''} onChange={e => setD({ categoryId: e.target.value || null })}
+            style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(15,17,21,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '11px 14px', color: '#FFF', fontSize: 13 }}>
+            <option value="">Same as trigger (auto)</option>
+            {categories.map(c => <option key={c.id} value={c.id}>📁 {c.name}</option>)}
+          </select>
+        </div>
+        {/* Name Template */}
+        <div>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Name Template</label>
+          <input value={draft.defaultName} onChange={e => setD({ defaultName: e.target.value })} placeholder="{username}'s Channel"
+            style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(15,17,21,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '11px 14px', color: '#FFF', fontSize: 13 }} />
+        </div>
+        {/* User Limit */}
+        <div>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>
+            User Limit: <strong style={{ color: '#FFF' }}>{draft.defaultLimit === 0 ? '∞ Unlimited' : `${draft.defaultLimit} max`}</strong>
+          </label>
+          {/* BUG FIX: parseInt can return NaN on empty string — use fallback 0 */}
+          <input type="range" min={0} max={99} value={draft.defaultLimit} onChange={e => setD({ defaultLimit: parseInt(e.target.value) || 0 })}
+            style={{ width: '100%', accentColor: 'var(--accent-primary)' }} />
+        </div>
+        {/* Privacy */}
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Privacy Mode</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+            {PRIVACY_OPTS.map(o => {
+              const Icon = o.icon;
+              const sel = draft.privacy === o.id;
+              const rgb = o.color === '#10B981' ? '16,185,129' : o.color === '#3B82F6' ? '59,130,246' : o.color === '#F59E0B' ? '245,158,11' : o.color === '#8B5CF6' ? '139,92,246' : o.color === '#06B6D4' ? '6,182,212' : '236,72,153';
+              return (
+                <button key={o.id} onClick={() => setD({ privacy: o.id as any })} title={(o as any).desc}
+                  style={{ padding: '12px 6px', borderRadius: 10, background: sel ? `rgba(${rgb},0.14)` : 'rgba(15,17,21,0.6)',
+                    border: `1.5px solid ${sel ? o.color : 'rgba(255,255,255,0.06)'}`, color: sel ? o.color : 'var(--text-muted)',
+                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+                    boxShadow: sel ? `0 0 12px rgba(${rgb},0.2)` : 'none', transition: 'all 0.18s' }}>
+                  <Icon size={15} />{o.label}
+                  <span style={{ fontSize: 9, fontWeight: 400, opacity: 0.7, textAlign: 'center', lineHeight: 1.3 }}>{(o as any).desc}</span>
+                </button>
+              );
+            })}
           </div>
-
-          <motion.button 
-            whileHover={{ scale: 1.03, boxShadow: '0 0 20px rgba(124, 92, 252, 0.3)' }}
-            whileTap={{ scale: 0.97 }}
-            onClick={handleToggleEnable}
-            style={{ 
-              minWidth: '160px',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              background: jtcModule?.status === 'enabled' 
-                ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1))'
-                : 'linear-gradient(135deg, rgba(124, 92, 252, 0.15), rgba(79, 140, 255, 0.05))',
-              border: jtcModule?.status === 'enabled' 
-                ? '1px solid rgba(34, 197, 94, 0.4)' 
-                : '1px solid rgba(124, 92, 252, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              fontWeight: 700,
-              fontSize: '13px',
-              color: jtcModule?.status === 'enabled' ? '#10B981' : 'var(--text-primary)',
-              transition: 'all 0.3s ease',
-              backdropFilter: 'blur(8px)'
-            }}
-          >
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: jtcModule?.status === 'enabled' ? '#10B981' : '#6B7280',
-              boxShadow: jtcModule?.status === 'enabled' ? '0 0 10px #10B981' : 'none',
-              display: 'inline-block'
-            }} />
-            {jtcModule?.status === 'enabled' ? 'SYSTEM ACTIVE' : 'SYSTEM INACTIVE'}
-          </motion.button>
         </div>
       </div>
 
-      {/* Main Grid Wrapper */}
-      <div className="section-panel" style={{
-        background: 'rgba(23, 26, 33, 0.65)',
-        border: '1px solid rgba(255, 255, 255, 0.05)',
-        borderRadius: '18px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-        backdropFilter: 'blur(12px)',
-        overflow: 'hidden'
-      }}>
-        
-        {/* Navigation Tabs */}
-        <div className="tabs-nav" style={{
-          display: 'flex',
-          gap: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          padding: '0 28px',
-          background: 'rgba(0, 0, 0, 0.15)'
-        }}>
+      <div style={{ marginTop: 20, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <button onClick={handleCancel} style={{ padding: '10px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={handleSaveDraft}
+          style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-purple))', border: 'none', color: '#FFF', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          {saving ? <RefreshCw size={14} className="spin" /> : <Check size={14} />}
+          {editingId ? 'Update Trigger' : 'Add Trigger'}
+        </motion.button>
+      </div>
+    </motion.div>
+  );
+
+  // ─── Trigger card ───────────────────────────────────────────────
+  const TriggerCard = ({ t }: { t: Trigger }) => {
+    const ch = voiceChannels.find(c => c.id === t.triggerChannelId);
+    const cat = categories.find(c => c.id === t.categoryId);
+    const privOpt = PRIVACY_OPTS.find(o => o.id === t.privacy) || PRIVACY_OPTS[0];
+    const Icon = privOpt.icon;
+    const activeCount = activeChannels.filter(a => a.triggerId === t.id).length;
+    return (
+      <motion.div whileHover={{ y: -3, boxShadow: '0 12px 28px rgba(0,0,0,0.35)' }} transition={{ duration: 0.2 }}
+        style={{ background: 'rgba(18,21,28,0.8)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#FFF', marginBottom: 2 }}>{t.label || ch?.name || 'Unnamed'}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>🔊 {ch?.name || t.triggerChannelId}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {activeCount > 0 && (
+              <span style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981', fontSize: 10, fontWeight: 700 }}>
+                🟢 {activeCount} LIVE
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Stats row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
           {[
-            { id: 'settings', label: 'Trigger Blueprints', icon: Settings },
-            { id: 'active', label: `Active Temporary Rooms (${activeChannels.length})`, icon: Radio }
-          ].map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '18px 8px',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  color: activeTab === tab.id ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  borderBottom: activeTab === tab.id ? '2px solid var(--accent-primary)' : '2px solid transparent',
-                  transition: 'all 0.2s ease',
-                  background: 'none'
-                }}
-              >
-                <Icon size={16} />
-                {tab.label}
-              </button>
-            );
-          })}
+            { label: 'Privacy', value: <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: privOpt.color }}><Icon size={11} />{privOpt.label}</span> },
+            { label: 'Limit', value: t.defaultLimit === 0 ? '∞ Unlimited' : `${t.defaultLimit} max` },
+            { label: 'Category', value: cat?.name || 'Auto' },
+          ].map(s => (
+            <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+              <div style={{ fontSize: 12, color: '#FFF', fontWeight: 600 }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+        {/* Name template */}
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '6px 10px' }}>
+          Template: <code style={{ color: 'var(--accent-primary)' }}>{t.defaultName}</code>
+        </div>
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+          <button onClick={() => handleEdit(t)}
+            style={{ flex: 1, padding: '9px', borderRadius: 9, background: 'rgba(124,92,252,0.1)', border: '1px solid rgba(124,92,252,0.25)', color: 'var(--accent-primary)', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <Edit3 size={13} /> Edit
+          </button>
+          <button onClick={() => handleDelete(t.id)}
+            style={{ padding: '9px 14px', borderRadius: 9, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#EF4444', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28, width: '100%' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <span className="badge badge-purple" style={{ padding: '5px 12px', fontSize: 10, borderRadius: 20, letterSpacing: '0.05em', display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+            <Sparkles size={10} /> Dynamic Voice Systems
+          </span>
+          <h1 style={{ fontSize: 26, fontWeight: 800, background: 'linear-gradient(to right, #FFF, #9CA3AF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 4 }}>
+            Join-to-Create Hub
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', maxWidth: 560 }}>
+            Configure multiple trigger channels — each with its own name template, privacy and category. Users auto-get a private room on join.
+          </p>
+        </div>
+        {/* BUG FIX: toggle was negating the WRONG side — status 'enabled' means currently enabled,
+             so clicking should DISABLE it (pass false), not re-enable. Fixed the boolean. */}
+        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+          onClick={() => {
+            const nextEnabled = jtcMod?.status !== 'enabled';
+            onUpdateConfig('join_to_create', {}, nextEnabled);
+            onSaveConfig(`JTC ${nextEnabled ? 'ENABLED' : 'DISABLED'}.`);
+          }}
+          style={{ minWidth: 150, padding: '11px 22px', borderRadius: 12, background: jtcMod?.status === 'enabled' ? 'rgba(34,197,94,0.12)' : 'rgba(124,92,252,0.1)', border: `1px solid ${jtcMod?.status === 'enabled' ? 'rgba(34,197,94,0.35)' : 'rgba(124,92,252,0.25)'}`, color: jtcMod?.status === 'enabled' ? '#22C55E' : 'var(--text-primary)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: jtcMod?.status === 'enabled' ? '#22C55E' : '#6B7280', boxShadow: jtcMod?.status === 'enabled' ? '0 0 8px #22C55E' : 'none', display: 'inline-block' }} />
+          {jtcMod?.status === 'enabled' ? 'ACTIVE' : 'INACTIVE'}
+        </motion.button>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ background: 'rgba(23,26,33,0.65)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 28px', background: 'rgba(0,0,0,0.15)' }}>
+          {[{ id: 'triggers', label: `Trigger Blueprints (${triggers.length})`, icon: Settings }, { id: 'active', label: `Live Rooms (${activeChannels.length})`, icon: Radio }].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id as any)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '17px 0', fontWeight: 600, fontSize: 13, background: 'none', border: 'none', borderBottom: tab === t.id ? '2px solid var(--accent-primary)' : '2px solid transparent', color: tab === t.id ? 'var(--accent-primary)' : 'var(--text-secondary)', cursor: 'pointer' }}>
+              <t.icon size={15} />{t.label}
+            </button>
+          ))}
         </div>
 
-        {/* Tab Body */}
-        <div className="panel-body" style={{ padding: '32px' }}>
+        <div style={{ padding: 28 }}>
           <AnimatePresence mode="wait">
-            {activeTab === 'settings' && (
-              <motion.div
-                key="settings"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.3 }}
-                style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '36px', alignItems: 'start' }}
-              >
-                {/* Left Side: Setup Forms */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                  
-                  {/* Section Title */}
-                  <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#FFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Layers size={18} color="var(--accent-primary)" /> Voice Generator Blueprint
-                    </h3>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                      Customize how dynamic rooms are constructed and managed by the bot.
-                    </p>
+            {tab === 'triggers' && (
+              <motion.div key="triggers" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
+                {/* Add button */}
+                {!formOpen && (
+                  <motion.button whileHover={{ scale: 1.01 }} onClick={handleAdd}
+                    style={{ width: '100%', padding: '14px', borderRadius: 12, background: 'rgba(124,92,252,0.07)', border: '1.5px dashed rgba(124,92,252,0.35)', color: 'var(--accent-primary)', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', marginBottom: 24 }}>
+                    <Plus size={18} /> Add New Trigger Channel
+                  </motion.button>
+                )}
+
+                {/* Form — TriggerForm is a JSX element variable, not a component */}
+                <AnimatePresence>{formOpen && TriggerForm}</AnimatePresence>
+
+                {/* Trigger cards grid */}
+                {triggers.length === 0 && !formOpen ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <Volume2 size={40} style={{ opacity: 0.3 }} />
+                    <div style={{ color: '#FFF', fontSize: 15, fontWeight: 600 }}>No Trigger Channels Yet</div>
+                    <p style={{ fontSize: 13, maxWidth: 340, lineHeight: 1.5 }}>Click "Add New Trigger Channel" above to configure your first Join-to-Create trigger. You can add as many as you need!</p>
                   </div>
-
-                  {/* Form Blocks */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    
-                    {/* Trigger Channel Dropdown */}
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '8px' }}>
-                        Voice Trigger Channel
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <select
-                          className="form-select"
-                          value={triggerChannelId}
-                          onChange={e => handleUpdate({ triggerChannelId: e.target.value })}
-                          style={{
-                            width: '100%',
-                            background: 'rgba(15, 17, 21, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '12px',
-                            padding: '14px 16px',
-                            color: '#FFF',
-                            fontSize: '14px',
-                            appearance: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="">Select voice channel trigger...</option>
-                          {voiceChannels.map(ch => (
-                            <option key={ch.id} value={ch.id}>
-                              🔊 {ch.name} {ch.category ? `[${ch.category}]` : ''}
-                            </option>
-                          ))}
-                        </select>
-                        <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
-                          ▼
-                        </div>
-                      </div>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.4' }}>
-                        When a member joins this channel, the bot immediately spawns a new temporary room and moves them to it.
-                      </p>
-                    </div>
-
-                    {/* Fallback Category Dropdown */}
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '8px' }}>
-                        Spawn Category
-                      </label>
-                      <div style={{ position: 'relative' }}>
-                        <select
-                          className="form-select"
-                          value={categoryId}
-                          onChange={e => handleUpdate({ categoryId: e.target.value || null })}
-                          style={{
-                            width: '100%',
-                            background: 'rgba(15, 17, 21, 0.8)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: '12px',
-                            padding: '14px 16px',
-                            color: '#FFF',
-                            fontSize: '14px',
-                            appearance: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="">Same Category as Trigger (Auto-Resolve)</option>
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>
-                              📁 {cat.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
-                          ▼
-                        </div>
-                      </div>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.4' }}>
-                        Specifies which Discord category the new channel should be created inside.
-                      </p>
-                    </div>
-
-                    {/* Room Naming Template */}
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '8px' }}>
-                        Channel Name Template
-                      </label>
-                      <input 
-                        type="text"
-                        placeholder="e.g. {user}'s Lounge"
-                        value={defaultName}
-                        onChange={e => handleUpdate({ defaultName: e.target.value })}
-                        style={{
-                          width: '100%',
-                          background: 'rgba(15, 17, 21, 0.8)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: '12px',
-                          padding: '14px 16px',
-                          color: '#FFF',
-                          fontSize: '14px'
-                        }}
-                      />
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.4' }}>
-                        Placeholders: <code>{`{user}`}</code> (server nickname), <code>{`{username}`}</code> (discord ID name), or <code>{`{count}`}</code> (global counter index).
-                      </p>
-                    </div>
-
-                    {/* Privacy Selector Cards */}
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '12px' }}>
-                        Default Privacy Mode
-                      </label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                        {privacyOptions.map(opt => {
-                          const Icon = opt.icon;
-                          const isSelected = privacy === opt.id;
-                          return (
-                            <motion.div
-                              key={opt.id}
-                              whileHover={{ scale: 1.02, y: -2 }}
-                              onClick={() => handleUpdate({ privacy: opt.id })}
-                              style={{
-                                background: isSelected ? 'rgba(29, 33, 43, 0.9)' : 'rgba(15, 17, 21, 0.5)',
-                                border: isSelected ? `1.5px solid ${opt.color}` : '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: '12px',
-                                padding: '16px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '8px',
-                                transition: 'border-color 0.2s ease, background 0.2s ease',
-                                position: 'relative',
-                                overflow: 'hidden'
-                              }}
-                            >
-                              {isSelected && (
-                                <div style={{
-                                  position: 'absolute',
-                                  right: 0,
-                                  top: 0,
-                                  width: '40px',
-                                  height: '40px',
-                                  background: `radial-gradient(circle at 100% 0%, ${opt.color} 0%, transparent 70%)`,
-                                  opacity: 0.4
-                                }} />
-                              )}
-                              <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: isSelected ? opt.bgGlow : 'rgba(255,255,255,0.04)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: isSelected ? opt.color : 'var(--text-secondary)',
-                                transition: 'all 0.2s ease'
-                              }}>
-                                <Icon size={16} />
-                              </div>
-                              <span style={{ fontSize: '13px', fontWeight: 700, color: isSelected ? '#FFF' : 'var(--text-secondary)' }}>
-                                {opt.label}
-                              </span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.3' }}>
-                                {opt.desc}
-                              </span>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Room Capacity/User Limit */}
-                    <div className="form-group">
-                      <label className="form-label" style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '8px' }}>
-                        Default User Limit
-                      </label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <input 
-                          type="range"
-                          min={0}
-                          max={99}
-                          value={defaultLimit}
-                          onChange={e => handleUpdate({ defaultLimit: parseInt(e.target.value) || 0 })}
-                          style={{
-                            flex: 1,
-                            accentColor: 'var(--accent-primary)',
-                            height: '6px',
-                            background: 'rgba(255,255,255,0.1)',
-                            borderRadius: '3px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                          }}
-                        />
-                        <div style={{
-                          minWidth: '70px',
-                          textAlign: 'center',
-                          padding: '10px 14px',
-                          background: 'rgba(15, 17, 21, 0.8)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: 700,
-                          color: '#FFF'
-                        }}>
-                          {defaultLimit === 0 ? '∞ slots' : `${defaultLimit} max`}
-                        </div>
-                      </div>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                        Limit the number of members allowed in the voice room simultaneously.
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div style={{ marginTop: '12px' }}>
-                      <motion.button 
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleSaveSettings}
-                        disabled={isSaving}
-                        style={{ 
-                          padding: '14px 28px',
-                          borderRadius: '12px',
-                          background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-purple))',
-                          border: 'none',
-                          color: '#FFF',
-                          fontWeight: 700,
-                          fontSize: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          cursor: isSaving ? 'not-allowed' : 'pointer',
-                          boxShadow: '0 10px 20px rgba(124, 92, 252, 0.2)'
-                        }}
-                      >
-                        {isSaving ? (
-                          <RefreshCw size={16} className="spin" />
-                        ) : (
-                          <Save size={16} />
-                        )}
-                        <span>{isSaving ? 'Saving Blueprint...' : 'Save Blueprint'}</span>
-                      </motion.button>
-                    </div>
-
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
+                    {triggers.map(t => <TriggerCard key={t.id} t={t} />)}
                   </div>
-                </div>
-
-                {/* Right Side: Quick Info Panel */}
-                <div style={{
-                  background: 'rgba(15, 17, 21, 0.4)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  borderRadius: '14px',
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '20px'
-                }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#FFF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    💡 How it Works
-                  </h4>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(124,92,252,0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                        1
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFF', display: 'block' }}>User Joins Generator</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: '1.4' }}>
-                          A member joins your voice trigger channel (e.g. 🔊 "Join to Create").
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(124,92,252,0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                        2
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFF', display: 'block' }}>Room Creation</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: '1.4' }}>
-                          The bot instantly spawns a new temporary voice channel using your config blueprint.
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(124,92,252,0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                        3
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFF', display: 'block' }}>Auto Transfer</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: '1.4' }}>
-                          The user is automatically migrated to their new lounge room.
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(124,92,252,0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, flexShrink: 0 }}>
-                        4
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFF', display: 'block' }}>Zero-Clutter Clean</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px', lineHeight: '1.4' }}>
-                          When the last member leaves the spawned channel, it is instantly deleted.
-                        </span>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
+                )}
               </motion.div>
             )}
 
-            {activeTab === 'active' && (
-              <motion.div
-                key="active"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -15 }}
-                transition={{ duration: 0.3 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
-              >
-                {/* Header Copy */}
-                <div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#FFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Radio size={18} color="var(--accent-primary)" className="pulse" /> Live Temp Rooms
-                  </h3>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    List of dynamically managed voice rooms currently active on the Discord server.
-                  </p>
-                </div>
-
+            {tab === 'active' && (
+              <motion.div key="active" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#FFF', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Radio size={17} color="var(--accent-primary)" /> Live Temporary Rooms
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24 }}>Dynamically managed voice rooms currently active on the server.</p>
                 {activeChannels.length === 0 ? (
-                  <div style={{ 
-                    padding: '80px 40px', 
-                    textAlign: 'center', 
-                    background: 'rgba(15, 17, 21, 0.3)', 
-                    border: '1px dashed rgba(255,255,255,0.08)',
-                    borderRadius: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px'
-                  }}>
-                    <Volume2 size={48} color="var(--text-muted)" style={{ opacity: 0.5 }} />
-                    <div>
-                      <h4 style={{ color: '#FFF', fontSize: '15px', fontWeight: 600 }}>No Active Channels</h4>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px', maxWidth: '380px' }}>
-                        No members are currently using the Join-to-Create generator voice room. Spawning details appear here in real time.
-                      </p>
-                    </div>
+                  <div style={{ textAlign: 'center', padding: '60px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: 'rgba(15,17,21,0.3)', border: '1px dashed rgba(255,255,255,0.07)', borderRadius: 14 }}>
+                    <Volume2 size={40} style={{ opacity: 0.3 }} />
+                    <div style={{ color: '#FFF', fontSize: 14, fontWeight: 600 }}>No Active Channels</div>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 340 }}>No members are using any JTC trigger right now. Details appear here in real time.</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                    {activeChannels.map((room: any) => (
-                      <motion.div
-                        key={room.channelId}
-                        whileHover={{ y: -4, border: '1px solid rgba(124, 92, 252, 0.4)', boxShadow: '0 10px 20px rgba(0,0,0,0.3)' }}
-                        style={{
-                          background: 'rgba(15, 17, 21, 0.7)',
-                          border: '1px solid rgba(255,255,255,0.06)',
-                          borderRadius: '14px',
-                          padding: '20px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '16px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        {/* Room Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span className="badge badge-success" style={{ fontSize: '9px', padding: '3px 8px', borderRadius: '12px' }}>
-                            🟢 LIVE
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            ID: <code>{room.channelId}</code>
-                          </span>
-                        </div>
-
-                        {/* Room Title */}
-                        <div>
-                          <h4 style={{ color: '#FFF', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Volume2 size={16} color="var(--accent-primary)" />
-                            {room.name}
-                          </h4>
-                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                            Created by: <strong>@{room.ownerTag}</strong>
-                          </span>
-                        </div>
-
-                        {/* Divider */}
-                        <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-
-                        {/* Room Stats */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                            <Users size={14} />
-                            <span>{room.userCount || 1} connected</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 18 }}>
+                    {activeChannels.map((room: any) => {
+                      const src = triggers.find(t => t.id === room.triggerId);
+                      return (
+                        <motion.div key={room.channelId} whileHover={{ y: -3 }}
+                          style={{ background: 'rgba(15,17,21,0.7)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 9, padding: '3px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981', fontWeight: 700 }}>🟢 LIVE</span>
+                            {src && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>via {src.label}</span>}
                           </div>
-                          <span style={{ color: 'var(--text-muted)' }}>
-                            {room.limit === 0 ? 'Unlimited' : `${room.limit} slots max`}
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))}
+                          <div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: '#FFF', display: 'flex', alignItems: 'center', gap: 6 }}><Volume2 size={14} color="var(--accent-primary)" />{room.name}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>Owner: <strong>@{room.ownerTag}</strong></div>
+                          </div>
+                          <div style={{ height: 1, background: 'rgba(255,255,255,0.05)' }} />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)' }}>
+                            <span>{room.locked ? '🔒 Locked' : '🔓 Open'}</span>
+                            {/* BUG FIX: room.limit may be undefined for legacy active channels */}
+                            <span>{room.limit === undefined || room.limit === 0 ? '∞ slots' : `${room.limit} max`}</span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
       </div>
-
     </div>
   );
 }

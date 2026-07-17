@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { Shield, CheckCircle2, AlertTriangle, Play, Check, ChevronRight, RefreshCw, Loader, Info } from 'lucide-react';
 
@@ -41,7 +42,7 @@ export function RestoreWizard({ isOpen, onClose, onSuccess, initialBackupId }: R
     setRestoreProgress(0);
 
     // Fetch full backups list
-    fetch('http://localhost:5000/api/modules/backups/list', {
+    fetch(`${API_BASE}/api/modules/backups/list`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'X-Guild-Id': activeGuildId
@@ -70,7 +71,7 @@ export function RestoreWizard({ isOpen, onClose, onSuccess, initialBackupId }: R
     setIsLoadingDetails(true);
     setErrorMsg('');
 
-    fetch(`http://localhost:5000/api/modules/backups/info/${selectedPoint}`, {
+    fetch(`${API_BASE}/api/modules/backups/info/${selectedPoint}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'X-Guild-Id': activeGuildId
@@ -143,7 +144,7 @@ export function RestoreWizard({ isOpen, onClose, onSuccess, initialBackupId }: R
     setRestoreStatus('Contacting backend restoration engine...');
 
     try {
-      const res = await fetch('http://localhost:5000/api/modules/backups/restore', {
+      const res = await fetch(`${API_BASE}/api/modules/backups/restore`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

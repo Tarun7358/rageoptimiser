@@ -2,6 +2,7 @@
 export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  roots: ['<rootDir>/dist'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { useESM: true }]
   },

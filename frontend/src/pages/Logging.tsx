@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState } from 'react';
 import { 
   ShieldAlert, UserX, Bomb, Bot, Link, Mic, ClipboardList, Settings, 
@@ -58,7 +59,7 @@ export function Logging({
     try {
       const token = localStorage.getItem('cn_token');
       const activeGuild = localStorage.getItem('cn_active_guild');
-      const res = await fetch('http://localhost:5000/api/modules/logging/test', {
+      const res = await fetch(`${API_BASE}/api/modules/logging/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

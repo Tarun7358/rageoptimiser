@@ -39,6 +39,8 @@ export const TicketsManifest: ModuleManifest = {
     {
       name: 'command_setup-tickets',
       handler: async (client: any, interaction: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Tickets) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {
@@ -71,6 +73,8 @@ export const TicketsManifest: ModuleManifest = {
     {
       name: 'button_ticket_btn_create',
       handler: async (client: any, interaction: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Tickets) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {
@@ -156,6 +160,8 @@ export const TicketsManifest: ModuleManifest = {
     {
       name: 'button_ticket_btn_close',
       handler: async (client: any, interaction: any, context: any) => {
+        const globalSettings = context.getGlobalSettings ? context.getGlobalSettings() : {};
+        if (globalSettings.useV2Tickets) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const tickModule = modules.find((m: any) => m.id === 'tickets');
         if (!tickModule || tickModule.status !== 'enabled') {

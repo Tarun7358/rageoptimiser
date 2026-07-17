@@ -1,5 +1,9 @@
 import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
 import { startMonitoringUser, stopMonitoringUser, stopMonitoringAllInGuild } from './analyzer.js';
+import { executePunishment } from './punishment.js';
+
+const joinHistory: Map<string, number[]> = new Map();
+const muteHistory: Map<string, number[]> = new Map();
 
 export async function updateVoiceChannelConnection(guild: any, config: any, context: any) {
   const guildId = guild.id;
@@ -23,20 +27,32 @@ export async function updateVoiceChannelConnection(guild: any, config: any, cont
 
   let bestChannel = null;
   let maxHumans = 0;
+  let isManualOverride = false;
 
-  for (const channel of monitoredChannels.values()) {
-    // Count connected human members (non-bots) who are not server-muted
-    const humans = channel.members.filter((m: any) => !m.user.bot && !m.voice.serverMute).size;
-    if (humans > maxHumans) {
-      maxHumans = humans;
-      bestChannel = channel;
+  if (config.currentVoiceChannelId) {
+    const targetChannel = guild.channels.cache.get(config.currentVoiceChannelId);
+    if (targetChannel && targetChannel.isVoiceBased()) {
+      bestChannel = targetChannel;
+      maxHumans = targetChannel.members.filter((m: any) => !m.user.bot && !m.voice.serverMute).size;
+      isManualOverride = true;
+    }
+  }
+
+  if (!bestChannel) {
+    for (const channel of monitoredChannels.values()) {
+      // Count connected human members (non-bots) who are not server-muted
+      const humans = channel.members.filter((m: any) => !m.user.bot && !m.voice.serverMute).size;
+      if (humans > maxHumans) {
+        maxHumans = humans;
+        bestChannel = channel;
+      }
     }
   }
 
   const currentConnection = getVoiceConnection(guildId);
 
-  // If there are no active human members in any monitored channel
-  if (maxHumans === 0) {
+  // If there are no active human members in any monitored channel (and no manual override)
+  if (maxHumans === 0 && !isManualOverride) {
     if (currentConnection) {
       // Check if connection is shared with other modules (voice 24/7 presence, music)
       const modules = context.getModulesState ? context.getModulesState() : [];
@@ -101,11 +117,12 @@ export async function updateVoiceChannelConnection(guild: any, config: any, cont
       if (currentConnection.joinConfig.channelId !== bestChannel.id) {
         // If bestChannel has more humans than current connection channel, switch!
         const currentChannel = guild.channels.cache.get(currentConnection.joinConfig.channelId);
-        const currentHumans = currentChannel
+        const isCurrentChannelIgnored = config.ignoredChannels?.includes(currentConnection.joinConfig.channelId);
+        const currentHumans = (currentChannel && !isCurrentChannelIgnored)
           ? currentChannel.members.filter((m: any) => !m.user.bot && !m.voice.serverMute).size
           : 0;
 
-        if (maxHumans > currentHumans) {
+        if (isManualOverride || maxHumans > currentHumans) {
           const permissions = bestChannel.permissionsFor(guild.members.me);
           if (!permissions?.has('ViewChannel') || !permissions?.has('Connect') || !permissions?.has('MuteMembers')) {
             return;
@@ -164,6 +181,56 @@ export async function handleVoiceStateUpdate(
 
   const guildId = guild.id;
   if (!config.enabled) return;
+
+  const memberId = newState.id;
+
+  // 1. Channel Hopping Detection
+  if (newState.channelId && oldState.channelId !== newState.channelId) {
+    const now = Date.now();
+    let history = joinHistory.get(memberId) || [];
+    history = history.filter(t => now - t < 10000); // 10s window
+    history.push(now);
+    joinHistory.set(memberId, history);
+
+    if (history.length > 3) {
+      await executePunishment(
+        client,
+        guildId,
+        memberId,
+        newState.channelId,
+        99,
+        100,
+        config,
+        context,
+        'Voice Channel Hopping'
+      );
+      return;
+    }
+  }
+
+  // 2. Mute/Unmute toggle spam detection
+  if (oldState.selfMute !== newState.selfMute) {
+    const now = Date.now();
+    let history = muteHistory.get(memberId) || [];
+    history = history.filter(t => now - t < 10000); // 10s window
+    history.push(now);
+    muteHistory.set(memberId, history);
+
+    if (history.length > 5) {
+      await executePunishment(
+        client,
+        guildId,
+        memberId,
+        newState.channelId || oldState.channelId || '',
+        99,
+        100,
+        config,
+        context,
+        'Rapid Mute Toggle Spam'
+      );
+      return;
+    }
+  }
 
   // Run channel load balancer
   await updateVoiceChannelConnection(guild, config, context);

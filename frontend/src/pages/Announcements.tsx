@@ -155,7 +155,7 @@ export function Announcements({ onSaveConfig, modules, onUpdateConfig }: Announc
           )}
 
           {activeTab === 'compose' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '24px', flexWrap: 'wrap' }}>
+            <div className="grid-split-3-2">
               {/* Form panel */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group">

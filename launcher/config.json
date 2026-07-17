@@ -23,7 +23,8 @@
   },
   "health": {
     "checkIntervalMs": 5000,
-    "startupTimeoutMs": 60000
+    "startupTimeoutMs": 60000,
+    "zombieThreshold": 3
   },
   "logging": {
     "maxDays": 7,

@@ -74,7 +74,7 @@ export class InstagramProvider extends BaseProvider {
 
     // Use a fixed reference base time to ensure stable IDs and timestamps across polls
     const baseTime = 1780000000000; 
-    return Array.from({ length: Math.min(limit, 3) }, (_, i) => {
+    const posts: ContentItem[] = Array.from({ length: Math.min(limit, 3) }, (_, i) => {
       const t = types[i % types.length];
       const date = new Date(baseTime - i * 3600000);
       return {
@@ -97,6 +97,44 @@ export class InstagramProvider extends BaseProvider {
           'profile.avatar': ''
         }
       };
+    });
+
+    // Sandbox real-time simulator: generate a new post every 2 minutes
+    const now = Date.now();
+    const intervalKey = Math.floor(now / (120 * 1000)); // New ID every 2 minutes
+    const dynamicPost: ContentItem = {
+      id: `ig_live_${username}_${intervalKey}`,
+      title: `New post shared by @${username}`,
+      url: `https://www.instagram.com/${username}/`,
+      thumbnailUrl: undefined,
+      description: `Check out this brand new post from @${username} on Instagram! (Live Simulation)`,
+      publishedAt: new Date(now).toISOString(),
+      isShort: false,
+      isLive: false,
+      isPremiere: false,
+      isCommunityPost: false,
+      extra: {
+        'post.caption': `Live update from @${username}! 📸 (Live Simulation)`,
+        'post.image': '',
+        'post.url': `https://www.instagram.com/${username}/`,
+        'profile.name': username,
+        'profile.username': username,
+        'profile.avatar': ''
+      }
+    };
+
+    return [dynamicPost, ...posts];
+  }
+
+  override filterByContentType(items: ContentItem[], filter: any): ContentItem[] {
+    return items.filter(item => {
+      // For Instagram, contentTypes is { posts: boolean, reels: boolean, stories: boolean }
+      if (item.isShort) {
+        // Reels
+        return !!filter.reels;
+      }
+      // Posts
+      return !!filter.posts;
     });
   }
 

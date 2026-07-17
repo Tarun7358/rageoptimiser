@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect, useRef } from 'react';
 import { Users, Mic, MessageSquare, Server, Music, Ticket, Calendar, Search, RefreshCw, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
 
@@ -58,7 +59,7 @@ export function PublicDashboard() {
       if (activeTimeFilter > 0) {
         query.append('timeFilter', activeTimeFilter.toString());
       }
-      const res = await fetch(`http://localhost:5000/api/public/events?${query.toString()}`);
+      const res = await fetch(`${API_BASE}/api/public/events?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setEvents(data.events);

@@ -1,6 +1,8 @@
 import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { updateVoiceChannelConnection } from './detector.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
+import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
+import { stopMonitoringAllInGuild, startMonitoringUser } from './analyzer.js';
 
 export const VoiceProtectionCommands = [
   {
@@ -47,7 +49,12 @@ export const VoiceProtectionCommands = [
             choices: [
               { name: 'Warn Only (DM)', value: 'warn' },
               { name: 'Server Mute', value: 'servermute' },
-              { name: 'Temp Server Mute', value: 'tempmute' }
+              { name: 'Temp Server Mute', value: 'tempmute' },
+              { name: 'Disconnect', value: 'disconnect' },
+              { name: 'Timeout', value: 'timeout' },
+              { name: 'Quarantine Role', value: 'quarantine' },
+              { name: 'Ban Member', value: 'ban' },
+              { name: 'Escalate Automatically', value: 'escalate' }
             ]
           },
           {
@@ -472,3 +479,164 @@ export async function handleVoiceProtectionSlashCommand(
     return interaction.reply({ embeds: [embed], flags: 64 });
   }
 }
+
+export async function handleVoiceProtectionMoveCommand(client: any, interaction: any, context: any) {
+  const guild = interaction.guild;
+  if (!guild) return;
+
+  const guildId = guild.id;
+
+  // Check permissions: Administrator, Server Owner, or whitelisted for voice_protection
+  const hasPermission = interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) ||
+                        interaction.user.id === guild.ownerId ||
+                        await checkWhitelistPermission(interaction.user.id, guild, context, 'voice_protection');
+  if (!hasPermission) {
+    return interaction.reply({
+      content: '❌ You do not have permission to change the Voice Protection monitoring channel.',
+      flags: 64
+    });
+  }
+
+  const modules = context.getModulesState ? context.getModulesState() : [];
+  const vpMod = modules.find((m: any) => m.id === 'voice-protection');
+  const config = vpMod?.config || {};
+
+  // Step 1: Validate Voice Protection module is enabled
+  if (!vpMod || vpMod.status !== 'enabled') {
+    return interaction.reply({
+      content: '❌ Voice Protection is currently disabled.',
+      flags: 64
+    });
+  }
+
+  const channel = interaction.options.getChannel('channel', true);
+
+  // Check that the selected channel is a voice channel
+  const isVoice = channel.isVoiceBased?.() || channel.type === 2 || channel.type === 13;
+  if (!isVoice) {
+    return interaction.reply({
+      content: '❌ Selected channel is not a Voice Channel.',
+      flags: 64
+    });
+  }
+
+  // Check bot permissions: ViewChannel, Connect, MuteMembers
+  const me = guild.members.me || (await guild.members.fetch(client.user.id).catch(() => null));
+  if (!me) {
+    return interaction.reply({
+      content: '❌ Unknown error: Could not fetch bot member in guild.',
+      flags: 64
+    });
+  }
+
+  const permissions = channel.permissionsFor(me);
+  if (!permissions?.has(PermissionFlagsBits.ViewChannel) || 
+      !permissions?.has(PermissionFlagsBits.Connect) || 
+      !permissions?.has(PermissionFlagsBits.MuteMembers)) {
+    return interaction.reply({
+      content: '❌ I don\'t have the required permissions to monitor that voice channel.',
+      flags: 64
+    });
+  }
+
+  // Step 3: Prevent Duplicate Switch
+  if (config.currentVoiceChannelId === channel.id) {
+    const conn = getVoiceConnection(guildId);
+    if (conn && conn.joinConfig.channelId === channel.id) {
+      return interaction.reply({
+        content: '⚠️ Voice Protection is already monitoring this voice channel.',
+        flags: 64
+      });
+    }
+  }
+
+  // Defer reply for channel swapping operation
+  await interaction.deferReply({ flags: 64 });
+
+  const previousChannelId = config.currentVoiceChannelId;
+  const previousChannel = previousChannelId ? guild.channels.cache.get(previousChannelId) : null;
+
+  try {
+    // Step 4 & 5: Gracefully Stop Current Monitoring & Leave Previous Voice Channel
+    stopMonitoringAllInGuild(guildId);
+    const currentConnection = getVoiceConnection(guildId);
+    if (currentConnection) {
+      currentConnection.destroy();
+    }
+
+    // Step 6: Join New Voice Channel
+    const connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: guildId,
+      adapterCreator: guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: true
+    });
+
+    // Wait until connection state is ready (up to 2.5 seconds)
+    let isReady = false;
+    for (let i = 0; i < 5; i++) {
+      if (connection.state.status === 'ready') {
+        isReady = true;
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    if (!isReady && connection.state.status !== 'ready') {
+      console.log(`[Voice Protection] Connection state is ${connection.state.status}, starting monitoring anyway.`);
+    }
+
+    // Initialize monitoring for members currently in the channel
+    for (const member of channel.members.values()) {
+      if (!member.user.bot && !member.voice.serverMute) {
+        startMonitoringUser(connection, guildId, member.id, channel.id, config, context);
+      }
+    }
+
+    // Step 7: Update Runtime Configuration & Persist
+    const now = Date.now();
+    const updatedConfig = {
+      ...config,
+      currentVoiceChannelId: channel.id,
+      monitoringStatus: 'monitoring',
+      connectedSince: now,
+      lastSwitched: now,
+      switchedBy: interaction.user.username
+    };
+
+    await context.updateModuleConfig('voice-protection', updatedConfig);
+
+    // Step 8: Success Embed
+    const embed = new EmbedBuilder()
+      .setTitle('🛡️ Voice Protection Moved')
+      .setColor(0x7c5cfc)
+      .addFields(
+        { name: 'Previous Channel', value: previousChannel ? `🎤 ${previousChannel.name}` : '🎤 None', inline: true },
+        { name: 'Current Channel', value: `🎤 ${channel.name}`, inline: true },
+        { name: 'Status', value: '🟢 Monitoring', inline: true },
+        { name: 'Changed By', value: `<@${interaction.user.id}>`, inline: true },
+        { name: 'Time', value: `<t:${Math.floor(now / 1000)}:F>`, inline: true }
+      )
+      .setFooter({ text: 'Rage Optimiser • Voice Protection' })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+
+    // Audit Log Entry
+    if (context.logSyncEvent) {
+      context.logSyncEvent(
+        guildId,
+        `Voice Protection Channel Updated\n\nAction:\nMove Monitoring\n\nPrevious Channel:\n${previousChannel ? previousChannel.name : 'None'}\n\nCurrent Channel:\n${channel.name}\n\nChanged By:\n${interaction.user.username}\n\nTime:\n${new Date(now).toISOString()}`,
+        'info'
+      );
+    }
+
+  } catch (err: any) {
+    console.error('[Voice Protection] Failed to switch voice channel:', err);
+    await interaction.editReply({
+      content: `❌ Failed to switch Voice Protection. Please check the logs. Error: ${err.message || err}`
+    });
+  }
+}
+

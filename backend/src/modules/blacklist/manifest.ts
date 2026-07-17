@@ -210,7 +210,32 @@ export const BlacklistManifest: ModuleManifest = {
           entries.push(entry);
           saveEntries(entries);
           context.logSyncEvent(`[Blacklist] Added ${type} blacklist entry: ${label} by ${interaction.user.username}`, 'info');
-          return interaction.reply({ content: `✅ **${type.toUpperCase()}** \`${label}\` has been blacklisted.`, flags: 64 });
+
+          // Apply immediate enforcement if the member is present in the guild
+          if (type === 'user' || type === 'bot') {
+            interaction.guild.members.fetch(value).then(async (member: any) => {
+              if (member) {
+                if (type === 'bot') {
+                  await member.kick('Blacklisted bot').catch(() => {});
+                  context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.username} immediately.`, 'warn');
+                } else {
+                  const act = entry.action || 'ban';
+                  if (act === 'ban') {
+                    await member.ban({ reason: entry.reason || 'Blacklisted user' }).catch(() => {});
+                    context.logSyncEvent(`[Blacklist] Banned blacklisted user ${member.user.username} immediately.`, 'warn');
+                  } else if (act === 'kick') {
+                    await member.kick(entry.reason || 'Blacklisted user').catch(() => {});
+                    context.logSyncEvent(`[Blacklist] Kicked blacklisted user ${member.user.username} immediately.`, 'warn');
+                  } else if (act === 'timeout') {
+                    await member.timeout(5 * 60 * 1000, entry.reason || 'Blacklisted user').catch(() => {});
+                    context.logSyncEvent(`[Blacklist] Timed out blacklisted user ${member.user.username} immediately.`, 'warn');
+                  }
+                }
+              }
+            }).catch(() => {});
+          }
+
+          return interaction.reply({ content: `✅ **${type.toUpperCase()}** \`${label}\` has been blacklisted and immediate actions applied.`, flags: 64 });
         }
 
         // --- REMOVE ---
@@ -325,6 +350,34 @@ export const BlacklistManifest: ModuleManifest = {
           }
         }
 
+        // User check
+        if (!matched) {
+          matched = entries.find(e => e.type === 'user' && e.value === message.author.id) || null;
+        }
+
+        // Role check
+        if (!matched && message.member?.roles?.cache) {
+          matched = entries.find(e => e.type === 'role' && message.member.roles.cache.has(e.value)) || null;
+        }
+
+        // Channel check
+        if (!matched) {
+          matched = entries.find(e => e.type === 'channel' && e.value === message.channelId) || null;
+        }
+
+        // Sticker check
+        if (!matched && message.stickers?.size > 0) {
+          for (const sticker of message.stickers.values()) {
+            for (const e of entries.filter(e => e.type === 'sticker')) {
+              if (sticker.id === e.value || sticker.name.toLowerCase() === e.value.toLowerCase()) {
+                matched = e;
+                break;
+              }
+            }
+            if (matched) break;
+          }
+        }
+
         // Emoji check
         if (!matched) {
           for (const e of entries.filter(e => e.type === 'emoji')) {
@@ -353,19 +406,36 @@ export const BlacklistManifest: ModuleManifest = {
         } catch (err) { console.error('[Blacklist] enforcement error:', err); }
       }
     },
-    // --- Bot join enforcement ---
+    // --- Member join enforcement ---
     {
       name: 'guildMemberAdd',
       handler: async (client: any, member: any, context: any) => {
-        if (!member.user.bot) return;
         const modules = context.getModulesState ? context.getModulesState() : [];
         const blMod = modules.find((m: any) => m.id === 'blacklist');
         if (!blMod || blMod.status !== 'enabled') return;
         const entries: IBlacklistEntry[] = blMod.config?.entries || [];
-        const botEntry = entries.find(e => e.type === 'bot' && e.value === member.user.id);
-        if (botEntry) {
-          await member.kick('Blacklisted bot').catch(() => {});
-          context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.username} on join.`, 'warn');
+
+        if (member.user.bot) {
+          const botEntry = entries.find(e => e.type === 'bot' && e.value === member.user.id);
+          if (botEntry) {
+            await member.kick('Blacklisted bot').catch(() => {});
+            context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.username} on join.`, 'warn');
+          }
+        } else {
+          const userEntry = entries.find(e => e.type === 'user' && e.value === member.user.id);
+          if (userEntry) {
+            const action = userEntry.action || 'ban';
+            if (action === 'ban') {
+              await member.ban({ reason: userEntry.reason || 'Blacklisted user' }).catch(() => {});
+              context.logSyncEvent(`[Blacklist] Banned blacklisted user ${member.user.username} on join.`, 'warn');
+            } else if (action === 'kick') {
+              await member.kick(userEntry.reason || 'Blacklisted user').catch(() => {});
+              context.logSyncEvent(`[Blacklist] Kicked blacklisted user ${member.user.username} on join.`, 'warn');
+            } else if (action === 'timeout') {
+              await member.timeout(5 * 60 * 1000, userEntry.reason || 'Blacklisted user').catch(() => {});
+              context.logSyncEvent(`[Blacklist] Timed out blacklisted user ${member.user.username} on join.`, 'warn');
+            }
+          }
         }
       }
     }
@@ -391,7 +461,35 @@ export const BlacklistManifest: ModuleManifest = {
 
         if (action === 'add') {
           if (!entries.find(e => e.type === payload.type && e.value === payload.value)) {
-            entries.push({ ...payload, id: `bl_${Date.now()}`, createdAt: new Date() });
+            const entry = { ...payload, id: `bl_${Date.now()}`, createdAt: new Date() };
+            entries.push(entry);
+
+            // Execute immediate action if the client is connected
+            if (context.client && context.guildId && (payload.type === 'user' || payload.type === 'bot')) {
+              context.client.guilds.fetch(context.guildId).then(async (guild: any) => {
+                if (guild) {
+                  const member = await guild.members.fetch(payload.value).catch(() => null);
+                  if (member) {
+                    if (payload.type === 'bot') {
+                      await member.kick('Blacklisted bot').catch(() => {});
+                      context.logSyncEvent(`[Blacklist] Kicked blacklisted bot ${member.user.username} immediately (via dashboard).`, 'warn');
+                    } else {
+                      const act = payload.action || 'ban';
+                      if (act === 'ban') {
+                        await member.ban({ reason: payload.reason || 'Blacklisted user' }).catch(() => {});
+                        context.logSyncEvent(`[Blacklist] Banned blacklisted user ${member.user.username} immediately (via dashboard).`, 'warn');
+                      } else if (act === 'kick') {
+                        await member.kick(payload.reason || 'Blacklisted user').catch(() => {});
+                        context.logSyncEvent(`[Blacklist] Kicked blacklisted user ${member.user.username} immediately (via dashboard).`, 'warn');
+                      } else if (act === 'timeout') {
+                        await member.timeout(5 * 60 * 1000, payload.reason || 'Blacklisted user').catch(() => {});
+                        context.logSyncEvent(`[Blacklist] Timed out blacklisted user ${member.user.username} immediately (via dashboard).`, 'warn');
+                      }
+                    }
+                  }
+                }
+              }).catch((e: any) => console.error('[Blacklist] Dashboard fetch guild error:', e));
+            }
           }
         } else if (action === 'remove') {
           entries = entries.filter(e => e.id !== payload.id);

@@ -13,7 +13,7 @@ export interface VoiceProtectionConfig {
   duration: number;              // Continuous duration (seconds) before action
   sampleInterval: number;        // Interval (ms) to check audio buffers (default 150)
   rollingAverageWindow: number;  // Number of sample intervals to average (default 20)
-  punishment: 'warn' | 'servermute' | 'tempmute';
+  punishment: 'warn' | 'servermute' | 'tempmute' | 'disconnect' | 'timeout' | 'quarantine' | 'ban' | 'escalate';
   muteDuration: number;          // Mute duration (seconds) for tempmute
   cooldown: number;              // Action cooldown (seconds) per user
   autoUnmute: boolean;           // Auto unmute when tempmute duration expires
@@ -28,6 +28,11 @@ export interface VoiceProtectionConfig {
     userId: string;
     unmuteAt: number;
   }>;
+  currentVoiceChannelId: string | null;
+  monitoringStatus: 'monitoring' | 'suspended' | 'disabled' | null;
+  connectedSince: number | null;
+  lastSwitched: number | null;
+  switchedBy: string | null;
 }
 
 export const DEFAULT_CONFIG: VoiceProtectionConfig = {
@@ -54,5 +59,10 @@ export const DEFAULT_CONFIG: VoiceProtectionConfig = {
     mostDetectedUsers: {},
     history: []
   },
-  activeMutes: []
+  activeMutes: [],
+  currentVoiceChannelId: null,
+  monitoringStatus: null,
+  connectedSince: null,
+  lastSwitched: null,
+  switchedBy: null
 };

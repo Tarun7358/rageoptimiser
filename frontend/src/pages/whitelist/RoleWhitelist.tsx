@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config';
 import React, { useState } from 'react';
 import type { ModuleState, DiscordRole, DiscordChannel } from '../../hooks/useDiscordSync';
 import { Shield, Plus, Trash2, Settings2 } from 'lucide-react';
@@ -36,7 +37,7 @@ export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhiteli
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/role_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/role_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhiteli
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/role_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/role_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,7 +86,7 @@ export function RoleWhitelist({ modules, registry, onUpdateConfig }: RoleWhiteli
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      await fetch('http://localhost:5000/api/modules/role_whitelist/action', {
+      await fetch(`${API_BASE}/api/modules/role_whitelist/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

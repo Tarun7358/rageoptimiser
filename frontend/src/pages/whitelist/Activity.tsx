@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Filter, Download, RefreshCw, Shield, Plus, Minus, Edit3, Clock, Bot, Users, ChevronDown } from 'lucide-react';
 
@@ -42,7 +43,7 @@ export function WhitelistActivity() {
     try {
       const token = localStorage.getItem('cn_token');
       const guildId = localStorage.getItem('cn_active_guild') || '';
-      const res = await fetch('http://localhost:5000/api/whitelist/activity', {
+      const res = await fetch(`${API_BASE}/api/whitelist/activity`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'X-Guild-Id': guildId

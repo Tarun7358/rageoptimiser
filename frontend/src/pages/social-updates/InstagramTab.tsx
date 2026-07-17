@@ -1,3 +1,4 @@
+import { API_BASE } from '../../config';
 /**
  * Social Updates — InstagramTab
  * Instagram subscription management panel.
@@ -53,7 +54,7 @@ const SAMPLE_DATA_INSTAGRAM: Record<string, string> = {
 };
 
 const POLLING_MODES = [
-  { value: 'fast', label: '⚡ Fast', desc: 'Every 2 min — High API usage' },
+  { value: 'fast', label: '⚡ Fast', desc: 'Every 30 sec — Real-time (Koya Speed)' },
   { value: 'normal', label: '⚖️ Normal', desc: 'Every 10 min — Balanced' },
   { value: 'slow', label: '🐢 Slow', desc: 'Every 30 min — Minimal usage' }
 ];
@@ -107,7 +108,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
   const loadSubscriptions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/status', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/status`, {
         headers: apiHeaders()
       });
       if (res.ok) {
@@ -128,7 +129,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
     setValidating(true);
     setValidationError('');
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/validate', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/validate`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ provider: 'instagram', input: instagramInput.trim() })
@@ -140,7 +141,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
         return;
       }
 
-      const subRes = await fetch('http://localhost:5000/api/modules/social_updates/subscribe', {
+      const subRes = await fetch(`${API_BASE}/api/modules/social_updates/subscribe`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({
@@ -151,7 +152,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
           discordChannelId: (channels.find(c => c.type === 'text') || channels[0])?.id || '',
           embedConfig: DEFAULT_EMBED,
           mentionRoles: [],
-          pollingMode: 'normal',
+          pollingMode: 'fast',
           contentTypes: { posts: true, reels: true, stories: false }
         })
       });
@@ -174,7 +175,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
 
   const handleUpdate = async (id: string, patch: Partial<Subscription>) => {
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/update', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/update`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id, ...patch })
@@ -189,7 +190,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
   const handleRemove = async (id: string) => {
     if (!confirm('Remove this Instagram subscription?')) return;
     try {
-      await fetch('http://localhost:5000/api/modules/social_updates/unsubscribe', {
+      await fetch(`${API_BASE}/api/modules/social_updates/unsubscribe`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id })
@@ -202,7 +203,7 @@ export function InstagramTab({ guildId, token, channels, roles, onSaveConfig }: 
   const handleTest = async (id: string) => {
     setTestingId(id);
     try {
-      const res = await fetch('http://localhost:5000/api/modules/social_updates/test', {
+      const res = await fetch(`${API_BASE}/api/modules/social_updates/test`, {
         method: 'POST',
         headers: apiHeaders(),
         body: JSON.stringify({ id })

@@ -191,15 +191,28 @@ export interface IBlacklistEntry {
 }
 
 // ---- Join To Create Voice ----
+export interface IJoinToCreateTrigger {
+  id: string;                    // Unique trigger ID (e.g. "trigger_<channelId>")
+  label: string;                 // Friendly name shown in dashboard
+  triggerChannelId: string;      // The voice channel users join to create a room
+  categoryId?: string | null;    // Category to spawn new channels in
+  defaultName: string;           // Name template e.g. "{username}'s Channel"
+  defaultLimit: number;          // User limit (0 = unlimited)
+  privacy: 'public' | 'private' | 'locked' | 'invisible' | 'stage' | 'sync';
+}
+
 export interface IJoinToCreate {
   id: string;
   guildId: string;
-  triggerChannelId: string;      // The channel users join to create a new one
-  categoryId?: string;           // Category to create new channels in
-  defaultName: string;           // e.g. "{username}'s Channel"
-  defaultLimit?: number;         // Default user limit
+  // Multi-trigger system (primary)
+  triggers: IJoinToCreateTrigger[];
+  // Legacy single-trigger fields (kept for backward compat — migrated on first save)
+  triggerChannelId?: string;
+  categoryId?: string | null;
+  defaultName?: string;
+  defaultLimit?: number;
   defaultBitrate?: number;
-  privacy: 'public' | 'private' | 'locked';
+  privacy?: 'public' | 'private' | 'locked' | 'invisible' | 'stage' | 'sync';
   allowOwnerRename: boolean;
   allowOwnerLimit: boolean;
   allowOwnerLock: boolean;
@@ -209,6 +222,8 @@ export interface IJoinToCreate {
     ownerTag: string;
     name: string;
     locked: boolean;
+    limit?: number;
+    triggerId?: string;
     createdAt: Date;
   }>;
   createdAt: Date;
