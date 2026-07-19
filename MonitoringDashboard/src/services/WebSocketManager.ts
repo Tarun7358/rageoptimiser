@@ -19,16 +19,7 @@ export class TelemetryWebSocketManager {
   private lastProcessedSequence = 0;
 
   private constructor() {
-    // Determine target URL based on current context
-    const configuredUrl = import.meta.env.VITE_MONITORING_URL;
-    if (configuredUrl) {
-      this.url = configuredUrl;
-    } else if (typeof window !== 'undefined') {
-      // Fallback relative to host
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      this.url = `${protocol}//${host}:6002/telemetry`;
-    }
+    this.url = import.meta.env.VITE_MONITORING_GATEWAY || 'ws://localhost:6002/telemetry';
   }
 
   public static getInstance(): TelemetryWebSocketManager {
