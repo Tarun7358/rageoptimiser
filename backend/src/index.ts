@@ -171,6 +171,14 @@ async function bootstrap() {
 
     gateway.connect();
     console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules registered.`);
+
+    // Start Monitoring Agent asynchronously to protect the boot lifecycle
+    try {
+      const { MonitoringAgent } = await import('./monitoring/agent/index.js');
+      MonitoringAgent.start(gateway, registry, webServer);
+    } catch (monError) {
+      console.error('⚠️ Failed to start Monitoring Agent:', monError);
+    }
   } catch (error) {
     console.error('❌ Critical bootstrap error:', error);
     process.exit(1);
