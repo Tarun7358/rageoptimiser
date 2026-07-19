@@ -86,6 +86,7 @@ export class MonitoringAgent {
 
     // 6. Setup periodic statistics & health heartbeat
     this.startHeartbeatLoop();
+    this.triggerInitialHeartbeat();
 
     // Emit initial successful start event
     this.publishEvent({
@@ -355,6 +356,26 @@ export class MonitoringAgent {
       }
     }, 5000); // Poll and heartbeat every 5 seconds
   }
+
+  private async triggerInitialHeartbeat(): Promise<void> {
+    try {
+      const systemMetrics = await this.systemCollector.collect();
+      const discordMetrics = await this.discordCollector.collect();
+      const healthStatus = this.healthService.check();
+
+      this.wsClient.sendHeartbeat({
+        timestamp: new Date().toISOString(),
+        metrics: {
+          system: systemMetrics,
+          discord: discordMetrics,
+        },
+        health: healthStatus,
+      });
+    } catch (err) {
+      // Ignore initial boot telemetry failures
+    }
+  }
+
 
   private mirrorToConsole(event: MonitoringEvent): void {
     const formattedMsg = `${event.title} - ${event.description}`;
