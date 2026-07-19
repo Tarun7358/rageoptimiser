@@ -81,6 +81,8 @@ export class WebSocketService {
         return;
       }
 
+      logger.info(`Agent → Gateway: ${packet.type} | sessionId: ${sessionId || 'unknown'} | timestamp: ${new Date().toISOString()}`);
+
       try {
         if (packet.type === 'PING') {
           // Reply PONG
@@ -418,6 +420,7 @@ export class WebSocketService {
     };
 
     const serialized = JSON.stringify(packet);
+    logger.info(`Gateway → Dashboard: ${type} | sessionId: ${sessionId} | sequence: ${sequence || 0} | timestamp: ${packet.timestamp}`);
     for (const client of this.dashboardClients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(serialized);

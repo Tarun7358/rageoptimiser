@@ -162,6 +162,7 @@ export class TelemetryWebSocketClient {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
     try {
       this.ws.send(JSON.stringify(data));
+      console.log(`Agent → Gateway: ${data.type} | timestamp: ${new Date().toISOString()}`);
     } catch (err) {
       // Ignore websocket write issues
     }

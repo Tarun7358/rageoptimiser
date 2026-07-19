@@ -101,12 +101,20 @@ export class TelemetryWebSocketManager {
         this.lastProcessedSequence = packet.sequence;
       }
 
+      console.log(`Received packet:
+type: ${packet.type}
+sequence: ${packet.sequence || 0}
+sessionId: ${packet.sessionId || 'global'}
+timestamp: ${packet.timestamp || new Date().toISOString()}
+payload: ${JSON.stringify(packet.payload)}`);
+
       switch (packet.type) {
         case 'HELLO':
           useConnectionStore.getState().setHello({
             ...packet.payload,
             sessionId: packet.sessionId
           });
+          console.log('[Dashboard] Zustand store updated for type: HELLO');
           useNotificationStore.getState().addNotification({
             title: 'Monitoring Gateway Connected',
             message: `Established connection to agent on host ${packet.payload.machineIdentity.hostname}`,
@@ -117,6 +125,7 @@ export class TelemetryWebSocketManager {
         case 'HEARTBEAT':
           this.lastPingTime = Date.now();
           useConnectionStore.getState().setHeartbeat(packet.payload);
+          console.log('[Dashboard] Zustand store updated for type: HEARTBEAT');
           // Auto reply pong to agent
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify({
@@ -132,10 +141,12 @@ export class TelemetryWebSocketManager {
 
         case 'HEALTH':
           useMetricsStore.getState().setSystemMetrics(packet.payload);
+          console.log('[Dashboard] Zustand store updated for type: HEALTH');
           break;
 
         case 'EVENT':
           useConsoleStore.getState().addEvent(packet.payload);
+          console.log('[Dashboard] Zustand store updated for type: EVENT');
           if (packet.payload.guildId) {
             useServerStore.getState().recordServerActivity(
               packet.payload.guildId,
@@ -147,6 +158,7 @@ export class TelemetryWebSocketManager {
 
         case 'ALERT':
           useAlertStore.getState().addAlert(packet.payload);
+          console.log('[Dashboard] Zustand store updated for type: ALERT');
           useNotificationStore.getState().addNotification({
             title: `[ALERT] ${packet.payload.title}`,
             message: packet.payload.description,
@@ -157,6 +169,7 @@ export class TelemetryWebSocketManager {
 
         case 'METRICS':
           useMetricsStore.getState().setBotMetrics(packet.payload);
+          console.log('[Dashboard] Zustand store updated for type: METRICS');
           break;
 
         case 'ERROR':
