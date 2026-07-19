@@ -84,14 +84,21 @@ export class SocialSubscriptionRepository {
       )
     `);
 
-    // 2. Add columns if upgrading from old schema
-    await Database.exec(`
-      ALTER TABLE social_subscriptions ADD COLUMN validationStatus TEXT NOT NULL DEFAULT 'valid'
-    `).catch(() => {});
+    // 2. Add columns if upgrading from old schema (guarded to avoid telemetry-intercepted SQLite errors)
+    const tableInfo = await Database.all(`PRAGMA table_info(social_subscriptions)`).catch(() => []);
+    const columnNames = (tableInfo || []).map((col: any) => col.name);
 
-    await Database.exec(`
-      ALTER TABLE social_subscriptions ADD COLUMN validationError TEXT
-    `).catch(() => {});
+    if (!columnNames.includes('validationStatus')) {
+      await Database.exec(`
+        ALTER TABLE social_subscriptions ADD COLUMN validationStatus TEXT NOT NULL DEFAULT 'valid'
+      `).catch(() => {});
+    }
+
+    if (!columnNames.includes('validationError')) {
+      await Database.exec(`
+        ALTER TABLE social_subscriptions ADD COLUMN validationError TEXT
+      `).catch(() => {});
+    }
 
     await Database.exec(`
       CREATE INDEX IF NOT EXISTS idx_social_guild ON social_subscriptions (guildId)
