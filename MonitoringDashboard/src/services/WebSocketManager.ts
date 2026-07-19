@@ -103,7 +103,10 @@ export class TelemetryWebSocketManager {
 
       switch (packet.type) {
         case 'HELLO':
-          useConnectionStore.getState().setHello(packet.payload);
+          useConnectionStore.getState().setHello({
+            ...packet.payload,
+            sessionId: packet.sessionId
+          });
           useNotificationStore.getState().addNotification({
             title: 'Monitoring Gateway Connected',
             message: `Established connection to agent on host ${packet.payload.machineIdentity.hostname}`,
