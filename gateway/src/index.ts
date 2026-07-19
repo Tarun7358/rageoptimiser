@@ -17,10 +17,14 @@ const fastify = Fastify({
 
 async function bootstrap() {
   try {
-    logger.info('Starting Rage Optimiser Enterprise Monitoring Gateway...');
+    logger.info('Gateway Starting...');
+    logger.info('Loading Configuration...');
+    logger.info('Connecting Database...');
 
     // 1. Establish Database Connection & Initialize schemas
     await Storage.connect();
+
+    logger.info('Starting WebSocket Server...');
 
     // 2. Initialize Internal Services
     await SessionManager.initialize();
@@ -51,8 +55,8 @@ async function bootstrap() {
 
     // 6. Bind Server Listener
     await fastify.listen({ port: config.PORT, host: config.HOST });
-    logger.info(`Monitoring Gateway server listening on http://${config.HOST}:${config.PORT}`);
-    logger.info(`WebSocket telemetry gateway exposed at ws://${config.HOST}:${config.PORT}/telemetry`);
+    logger.info(`Listening on PORT ${config.PORT}...`);
+    logger.info('Gateway Ready.');
   } catch (err) {
     logger.fatal({ err }, 'Gateway bootstrap crash failure');
     process.exit(1);

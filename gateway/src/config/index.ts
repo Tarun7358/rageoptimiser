@@ -14,7 +14,7 @@ export interface GatewayConfig {
 export const config: GatewayConfig = {
   PORT: parseInt(process.env.PORT || '6002', 10),
   HOST: process.env.HOST || '0.0.0.0',
-  GATEWAY_AGENT_TOKEN: process.env.GATEWAY_AGENT_TOKEN || 'default_telemetry_token',
+  GATEWAY_AGENT_TOKEN: process.env.MONITORING_AUTH_TOKEN || process.env.GATEWAY_AGENT_TOKEN || 'default_telemetry_token',
   JWT_SECRET: process.env.JWT_SECRET || 'super_secret_dashboard_jwt',
-  DATABASE_PATH: process.env.DATABASE_PATH || './gateway.sqlite',
+  DATABASE_PATH: process.env.SQLITE_PATH || process.env.DATABASE_PATH || './gateway.sqlite',
 };
