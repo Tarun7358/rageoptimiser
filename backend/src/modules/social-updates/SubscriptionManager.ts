@@ -77,7 +77,7 @@ export class SubscriptionManager {
         provider,
         sourceId: validation.sourceId,
         sourceName: validation.sourceName || validation.sourceId,
-        sourceAvatar: validation.sourceAvatar || null,
+        sourceAvatar: validation.sourceAvatar || undefined,
         discordChannelId,
         embedConfig: JSON.stringify(defaultEmbed),
         mentionRoles: JSON.stringify(options.mentionRoles || []),

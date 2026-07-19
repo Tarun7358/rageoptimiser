@@ -47,7 +47,7 @@ export class YouTubeProvider extends BaseProvider {
 
   async fetchLatest(channelId: string, limit = 15): Promise<ContentItem[]> {
     // 1. Fetch standard upload RSS feed
-    const items = await YouTubeFetcher.fetchRssFeed(channelId, limit).catch(() => []);
+    const items: ContentItem[] = await YouTubeFetcher.fetchRssFeed(channelId, limit).catch(() => []);
 
     // 2. Scrape live stream and premiere status
     const liveItem = await YouTubeFetcher.scrapeLiveStatus(channelId).catch(() => null);
