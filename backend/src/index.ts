@@ -2,9 +2,39 @@
 // that reads process.env. Using createRequire so it runs synchronously
 // at the very top before any other imports resolve their env reads.
 import { createRequire } from 'module';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
 const _require = createRequire(import.meta.url);
 const _dotenv = _require('dotenv');
-_dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Find first existing .env file
+const possibleEnvPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), 'backend', '.env'),
+  path.resolve(__dirname, '..', '.env'),
+  path.resolve(__dirname, '..', '..', '.env'),
+];
+
+let loadedPath = '';
+for (const envPath of possibleEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    _dotenv.config({ path: envPath });
+    loadedPath = envPath;
+    break;
+  }
+}
+
+if (loadedPath) {
+  console.log(`Environment Loaded`);
+  console.log(`Loaded environment from: ${loadedPath}`);
+} else {
+  console.warn('⚠️ No .env file could be resolved.');
+}
 
 if (process.stdout && (process.stdout as any)._handle && typeof (process.stdout as any)._handle.setBlocking === 'function') {
   (process.stdout as any)._handle.setBlocking(true);
@@ -185,8 +215,7 @@ async function bootstrap() {
   }
 }
 
-import { fileURLToPath } from 'url';
-import path from 'path';
+
 
 process.on('uncaughtException', (err) => {
   console.error('🔥 CRITICAL: Uncaught Exception caught by global handler:', err);

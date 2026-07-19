@@ -16,18 +16,37 @@ export class TelemetryWebSocketClient {
   private isConnecting = false;
 
   constructor() {
-    this.url = process.env.MONITORING_DASHBOARD_URL || 'ws://localhost:6002/telemetry';
+    this.url = process.env.MONITORING_GATEWAY_URL || process.env.MONITORING_DASHBOARD_URL || 'ws://localhost:6002/telemetry';
     this.token = process.env.MONITORING_AUTH_TOKEN || 'default_telemetry_token';
   }
 
   public connect(): void {
     if (this.isConnected || this.isConnecting) return;
 
-    // Check if dashboard monitoring is enabled (could check environment)
-    if (!process.env.MONITORING_DASHBOARD_URL) {
-      ConsoleMirror.info('MONITORING_DASHBOARD_URL not set. Telemetry client running in silent/buffer mode.');
+    const hasDashboardUrl = !!process.env.MONITORING_DASHBOARD_URL;
+    const hasGatewayUrl = !!process.env.MONITORING_GATEWAY_URL;
+    const hasToken = !!process.env.MONITORING_AUTH_TOKEN;
+
+    console.log('Configuration Loaded');
+    console.log('Monitoring Agent Initializing');
+    console.log(`Gateway URL: ${this.url}`);
+    console.log(`Authentication Token: ${hasToken ? 'Loaded' : 'Missing'}`);
+
+    // Temporary diagnostics (Phase 5)
+    console.log('Telemetry Configuration');
+    const maskedToken = this.token ? (this.token.substring(0, 4) + '*'.repeat(Math.max(0, this.token.length - 4))) : 'Missing';
+    console.log(`Gateway URL: ${this.url ? 'Loaded' : 'Missing'}`);
+    console.log(`Token: ${maskedToken}`);
+    console.log(`Protocol: 1.0.0`);
+    console.log(`Dashboard URL Alias: ${hasDashboardUrl ? 'Loaded' : 'Missing'}`);
+
+    if ((!hasGatewayUrl && !hasDashboardUrl) || !hasToken) {
+      ConsoleMirror.warn('⚠️ Telemetry Configuration Validation FAILED: Missing MONITORING_GATEWAY_URL/MONITORING_DASHBOARD_URL or MONITORING_AUTH_TOKEN in environment.');
+      ConsoleMirror.info('Telemetry client running in silent/buffer mode.');
+      return;
     }
 
+    console.log('Connecting...');
     this.isConnecting = true;
     const finalUrl = `${this.url}?token=${encodeURIComponent(this.token)}`;
 
@@ -41,7 +60,8 @@ export class TelemetryWebSocketClient {
         this.isConnected = true;
         this.isConnecting = false;
         this.reconnectAttempts = 0;
-        ConsoleMirror.success('Gateway Connected - Established connection to Telemetry Dashboard.');
+        console.log('Connected');
+        console.log('Authentication Successful');
         this.startHeartbeat();
         this.flushOfflineQueue();
       });
@@ -49,7 +69,11 @@ export class TelemetryWebSocketClient {
       this.ws.on('message', (data) => {
         try {
           const message = JSON.parse(data.toString());
-          if (message.type === 'PONG') {
+          if (message.type === 'HELLO') {
+            console.log('HELLO exchanged');
+            console.log('Heartbeat Started');
+            console.log('Monitoring Gateway Connected');
+          } else if (message.type === 'PONG') {
             // Heartbeat acknowledged
           }
         } catch {
@@ -62,9 +86,7 @@ export class TelemetryWebSocketClient {
       });
 
       this.ws.on('error', (err) => {
-        // Suppress print to standard console, mirror silently or log as warning
         ConsoleMirror.warn(`Telemetry connection error: ${err.message}`);
-        // Let close event trigger reconnection
       });
     } catch (err: any) {
       this.isConnecting = false;
