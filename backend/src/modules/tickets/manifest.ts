@@ -29,12 +29,6 @@ export const TicketsManifest: ModuleManifest = {
       return { progress, errors };
     }
   },
-  commands: [
-    {
-      name: 'setup-tickets',
-      description: 'Post the interactive Support Ticket board button.'
-    }
-  ],
   events: [
     {
       name: 'command_setup-tickets',

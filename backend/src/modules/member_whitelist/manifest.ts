@@ -20,6 +20,7 @@ function wrapInteraction(interaction: any) {
       try {
         return await originalDeferReply(options);
       } catch (err: any) {
+        interaction._defer_failed = true;
         console.warn('[wrapInteraction] deferReply failed:', err.message);
       }
     };
@@ -27,6 +28,10 @@ function wrapInteraction(interaction: any) {
 
   if (originalReply) {
     interaction.reply = async function(options?: any) {
+      if (interaction._defer_failed) {
+        console.warn('[wrapInteraction] reply skipped: interaction is dead (deferReply failed previously)');
+        return;
+      }
       if (interaction.deferred && originalEditReply) {
         try {
           return await originalEditReply(options);
@@ -65,6 +70,10 @@ function wrapInteraction(interaction: any) {
 
   if (originalEditReply) {
     interaction.editReply = async function(options?: any) {
+      if (interaction._defer_failed) {
+        console.warn('[wrapInteraction] editReply skipped: interaction is dead (deferReply failed previously)');
+        return;
+      }
       if (!interaction.deferred && !interaction.replied && originalReply) {
         try {
           return await originalReply(options);
@@ -91,6 +100,10 @@ function wrapInteraction(interaction: any) {
 
   if (originalFollowUp) {
     interaction.followUp = async function(options?: any) {
+      if (interaction._defer_failed) {
+        console.warn('[wrapInteraction] followUp skipped: interaction is dead (deferReply failed previously)');
+        return;
+      }
       try {
         return await originalFollowUp(options);
       } catch (err: any) {
@@ -101,6 +114,10 @@ function wrapInteraction(interaction: any) {
 
   if (originalUpdate) {
     interaction.update = async function(options?: any) {
+      if (interaction._defer_failed) {
+        console.warn('[wrapInteraction] update skipped: interaction is dead (deferReply failed previously)');
+        return;
+      }
       if (interaction.deferred || interaction.replied) {
         if (originalEditReply) {
           try {

@@ -1,8 +1,8 @@
 /**
  * Social Updates Module — SocialSubscriptionRepository
  *
- * All database operations for social_subscriptions table.
- * This repository is the single source of truth for subscription persistence.
+ * All database operations for social_subscriptions, social_content_cache,
+ * and social_audit_logs tables.
  */
 
 import { Database } from '../../core/Database.js';
@@ -19,20 +19,43 @@ export interface SocialSubscription {
   notificationTemplate?: string; // Plain text before embed
   mentionRoles: string;           // JSON array of role IDs
   pollingMode: string;            // 'fast' | 'normal' | 'slow'
-  contentTypes: string;           // JSON: {videos, shorts, streams, premieres, posts, reels}
+  contentTypes: string;           // JSON: {videos, shorts, streams, premieres, posts, reels, stories}
   enabled: number;                // 0 | 1
   lastProcessedId?: string;
   lastSyncTimestamp?: string;
   failedAttempts: number;
   lastError?: string;
+  validationStatus: string;       // 'valid' | 'invalid'
+  validationError?: string;
   totalNotificationsSent: number;
   totalDeliveryTimeMs: number;    // For average calculation
   createdAt: string;
   updatedAt: string;
 }
 
+export interface SocialContentCache {
+  id: string;
+  provider: string;
+  sourceId: string;
+  contentType: string;
+  publishedAt: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
+export interface SocialAuditLog {
+  id: string;
+  guildId?: string;
+  provider?: string;
+  sourceId?: string;
+  action: string;
+  details?: string;
+  createdAt: string;
+}
+
 export class SocialSubscriptionRepository {
   static async ensureTable(): Promise<void> {
+    // 1. Create subscriptions table
     await Database.exec(`
       CREATE TABLE IF NOT EXISTS social_subscriptions (
         id TEXT PRIMARY KEY,
@@ -46,21 +69,66 @@ export class SocialSubscriptionRepository {
         notificationTemplate TEXT,
         mentionRoles TEXT NOT NULL DEFAULT '[]',
         pollingMode TEXT NOT NULL DEFAULT 'normal',
-        contentTypes TEXT NOT NULL DEFAULT '{"videos":true,"shorts":true,"streams":true,"premieres":true,"communityPosts":false,"posts":true,"reels":true}',
+        contentTypes TEXT NOT NULL DEFAULT '{"videos":true,"shorts":true,"streams":true,"premieres":true,"communityPosts":false,"posts":true,"reels":true,"carousels":true,"stories":false}',
         enabled INTEGER NOT NULL DEFAULT 1,
         lastProcessedId TEXT,
         lastSyncTimestamp TEXT,
         failedAttempts INTEGER NOT NULL DEFAULT 0,
         lastError TEXT,
+        validationStatus TEXT NOT NULL DEFAULT 'valid',
+        validationError TEXT,
         totalNotificationsSent INTEGER NOT NULL DEFAULT 0,
         totalDeliveryTimeMs INTEGER NOT NULL DEFAULT 0,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       )
     `);
-    // Add analytics columns if upgrading from an older schema
+
+    // 2. Add columns if upgrading from old schema
+    await Database.exec(`
+      ALTER TABLE social_subscriptions ADD COLUMN validationStatus TEXT NOT NULL DEFAULT 'valid'
+    `).catch(() => {});
+
+    await Database.exec(`
+      ALTER TABLE social_subscriptions ADD COLUMN validationError TEXT
+    `).catch(() => {});
+
     await Database.exec(`
       CREATE INDEX IF NOT EXISTS idx_social_guild ON social_subscriptions (guildId)
+    `).catch(() => {});
+
+    // 3. Create content cache table
+    await Database.exec(`
+      CREATE TABLE IF NOT EXISTS social_content_cache (
+        id TEXT PRIMARY KEY,
+        provider TEXT NOT NULL,
+        sourceId TEXT NOT NULL,
+        contentType TEXT NOT NULL,
+        publishedAt TEXT NOT NULL,
+        expiresAt TEXT,
+        createdAt TEXT NOT NULL
+      )
+    `);
+
+    await Database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_social_cache_source ON social_content_cache (sourceId, provider)
+    `).catch(() => {});
+
+    // 4. Create audit logs table
+    await Database.exec(`
+      CREATE TABLE IF NOT EXISTS social_audit_logs (
+        id TEXT PRIMARY KEY,
+        guildId TEXT,
+        provider TEXT,
+        sourceId TEXT,
+        action TEXT NOT NULL,
+        details TEXT,
+        createdAt TEXT NOT NULL
+      )
+    `);
+
+    await Database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_social_logs_guild ON social_audit_logs (guildId)
     `).catch(() => {});
   }
 
@@ -98,7 +166,7 @@ export class SocialSubscriptionRepository {
     );
   }
 
-  static async insert(sub: Omit<SocialSubscription, 'failedAttempts' | 'totalNotificationsSent' | 'totalDeliveryTimeMs'>): Promise<void> {
+  static async insert(sub: Omit<SocialSubscription, 'failedAttempts' | 'totalNotificationsSent' | 'totalDeliveryTimeMs' | 'validationStatus' | 'validationError'>): Promise<void> {
     const now = new Date().toISOString();
     await Database.run(
       `INSERT INTO social_subscriptions (
@@ -106,8 +174,9 @@ export class SocialSubscriptionRepository {
         discordChannelId, embedConfig, notificationTemplate, mentionRoles,
         pollingMode, contentTypes, enabled,
         lastProcessedId, lastSyncTimestamp, failedAttempts, lastError,
+        validationStatus, validationError,
         totalNotificationsSent, totalDeliveryTimeMs, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, null, 0, 0, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, null, 'valid', null, 0, 0, ?, ?)`,
       [
         sub.id, sub.guildId, sub.provider, sub.sourceId, sub.sourceName,
         sub.sourceAvatar || null, sub.discordChannelId,
@@ -127,7 +196,7 @@ export class SocialSubscriptionRepository {
     const allowed = [
       'discordChannelId', 'embedConfig', 'notificationTemplate', 'mentionRoles',
       'pollingMode', 'contentTypes', 'enabled', 'lastProcessedId',
-      'lastSyncTimestamp', 'failedAttempts', 'lastError',
+      'lastSyncTimestamp', 'failedAttempts', 'lastError', 'validationStatus', 'validationError',
       'totalNotificationsSent', 'totalDeliveryTimeMs', 'sourceName', 'sourceAvatar'
     ];
 
@@ -203,5 +272,51 @@ export class SocialSubscriptionRepository {
       avgDeliveryTimeMs: totalNotifications > 0 ? Math.round(totalDelivery / totalNotifications) : 0,
       byProvider
     };
+  }
+
+  // ─── CACHE ENGINE OPERATIONS ──────────────────────────────────────────────────
+
+  static async getCache(provider: string, sourceId: string): Promise<SocialContentCache[]> {
+    return Database.all<SocialContentCache>(
+      'SELECT * FROM social_content_cache WHERE provider = ? AND sourceId = ? ORDER BY publishedAt DESC',
+      [provider, sourceId]
+    );
+  }
+
+  static async insertCache(item: SocialContentCache): Promise<void> {
+    await Database.run(
+      `INSERT OR REPLACE INTO social_content_cache (
+        id, provider, sourceId, contentType, publishedAt, expiresAt, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [item.id, item.provider, item.sourceId, item.contentType, item.publishedAt, item.expiresAt || null, item.createdAt]
+    );
+  }
+
+  static async clearExpiredCache(): Promise<void> {
+    const now = new Date().toISOString();
+    await Database.run(
+      'DELETE FROM social_content_cache WHERE expiresAt IS NOT NULL AND expiresAt < ?',
+      [now]
+    );
+  }
+
+  // ─── AUDIT LOGGING OPERATIONS ─────────────────────────────────────────────────
+
+  static async insertAuditLog(log: Omit<SocialAuditLog, 'id' | 'createdAt'>): Promise<void> {
+    const id = `sal_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
+    const now = new Date().toISOString();
+    await Database.run(
+      `INSERT INTO social_audit_logs (
+        id, guildId, provider, sourceId, action, details, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, log.guildId || null, log.provider || null, log.sourceId || null, log.action, log.details || null, now]
+    );
+  }
+
+  static async getAuditLogs(guildId: string, limit = 50): Promise<SocialAuditLog[]> {
+    return Database.all<SocialAuditLog>(
+      'SELECT * FROM social_audit_logs WHERE guildId = ? ORDER BY createdAt DESC LIMIT ?',
+      [guildId, limit]
+    );
   }
 }

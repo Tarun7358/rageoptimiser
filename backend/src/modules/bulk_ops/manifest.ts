@@ -83,7 +83,7 @@ export const BulkOpsManifest: ModuleManifest = {
           description: 'Bulk delete messages in a channel',
           type: 1,
           options: [
-            { name: 'amount', type: 4, description: 'Number of messages (1-100)', required: true },
+            { name: 'amount', type: 4, description: 'Number of messages to delete', required: true },
             { name: 'channel', type: 7, description: 'Channel (defaults to current)', required: false, channel_types: [0, 5] },
             { name: 'user', type: 6, description: 'Only delete messages from this user', required: false }
           ]
@@ -285,14 +285,84 @@ export const BulkOpsManifest: ModuleManifest = {
 
         // PURGE
         if (sub === 'purge') {
-          const amount = Math.min(Math.max(interaction.options.getInteger('amount'), 1), 100);
+          const amount = Math.max(interaction.options.getInteger('amount'), 1);
           const target = interaction.options.getChannel('channel') || interaction.channel;
           const user = interaction.options.getUser('user');
-          let messages = await target.messages.fetch({ limit: user ? 100 : amount });
-          if (user) messages = messages.filter((m: any) => m.author.id === user.id).first(amount);
-          const deleted = await target.bulkDelete(messages, true).catch(() => new Map());
-          logBulk('Purge', deleted.size);
-          return interaction.editReply({ content: `🗑️ Deleted **${deleted.size}** messages in ${target}.` });
+          
+          let remaining = amount;
+          let totalDeleted = 0;
+          let beforeId: string | undefined = undefined;
+
+          if (amount > 100) {
+            const initEmbed = new EmbedBuilder()
+              .setTitle('⚙️ System Operations: Initializing Purge')
+              .setDescription(`Bulk deletion request of up to **${amount}** messages is currently in progress.\nPlease wait as the security engine clears the channel history in compliance with rate limits.`)
+              .setColor('#eab308')
+              .setFooter({ text: 'Rage Optimiser • Operations Queue' });
+            await interaction.editReply({ embeds: [initEmbed] });
+          }
+
+          while (remaining > 0) {
+            const fetchLimit = Math.min(remaining, 100);
+            const limitToFetch = user ? 100 : fetchLimit;
+            
+            const fetchOptions: any = { limit: limitToFetch };
+            if (beforeId) {
+              fetchOptions.before = beforeId;
+            }
+
+            const messages = await target.messages.fetch(fetchOptions).catch(() => null);
+            if (!messages || messages.size === 0) {
+              break;
+            }
+
+            beforeId = messages.lastKey();
+
+            let targetMessages = messages;
+            if (user) {
+              targetMessages = messages.filter((m: any) => m.author.id === user.id);
+              if (targetMessages.size > remaining) {
+                targetMessages = targetMessages.first(remaining);
+              }
+            }
+
+            if (targetMessages.size === 0) {
+              continue;
+            }
+
+            const deleted = await target.bulkDelete(targetMessages, true).catch(() => new Map());
+            totalDeleted += deleted.size;
+
+            if (user) {
+              remaining -= deleted.size;
+            } else {
+              remaining -= limitToFetch;
+            }
+
+            if (deleted.size === 0) {
+              break; // Messages are likely too old (> 14 days) or deleted failed
+            }
+
+            if (remaining > 0) {
+              await new Promise(r => setTimeout(r, 1000)); // Sleep 1s to respect API limits
+            }
+          }
+
+          const successEmbed = new EmbedBuilder()
+            .setTitle('🗑️ Security Action: Bulk Message Purge Protocol')
+            .setDescription(`A bulk deletion request was successfully executed and processed by the operations module.`)
+            .addFields(
+              { name: 'Target Channel', value: `${target}`, inline: true },
+              { name: 'Messages Purged', value: `\`${totalDeleted}\` messages`, inline: true },
+              { name: 'Target Filter', value: user ? `${user} (${user.id})` : 'None (All Users)', inline: false },
+              { name: 'Authorized Administrator', value: `${interaction.user}`, inline: true }
+            )
+            .setColor('#10b981')
+            .setTimestamp()
+            .setFooter({ text: 'Rage Optimiser • System Operations Engine' });
+
+          logBulk('Purge', totalDeleted);
+          return interaction.editReply({ embeds: [successEmbed] });
         }
 
         // BAN LIST

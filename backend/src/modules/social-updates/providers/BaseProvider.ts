@@ -40,6 +40,8 @@ export interface ContentTypeFilter {
   communityPosts: boolean;
   posts?: boolean;        // Instagram posts
   reels?: boolean;        // Instagram reels
+  carousels?: boolean;    // Instagram carousels
+  stories?: boolean;      // Instagram stories
 }
 
 export type ProviderType = 'youtube' | 'instagram' | 'twitch' | 'tiktok' | 'x' | 'rss';
@@ -61,10 +63,22 @@ export abstract class BaseProvider {
   /**
    * Given the latest fetched items and the last known processed ID, return new items only.
    */
-  detectNew(items: ContentItem[], lastProcessedId: string | null): ContentItem[] {
+  detectNew(items: ContentItem[], lastProcessedId: string | null, lastSyncTimestamp?: string | null): ContentItem[] {
     if (!lastProcessedId) return items.slice(0, 1); // Only return the most recent on first run
     const idx = items.findIndex(i => i.id === lastProcessedId);
-    if (idx === -1) return items; // All are new
+    if (idx === -1) {
+      if (lastSyncTimestamp) {
+        const lastSyncTime = new Date(lastSyncTimestamp).getTime();
+        if (!isNaN(lastSyncTime)) {
+          // Only return items published after the last sync timestamp to prevent flooding
+          return items.filter(item => {
+            const pubTime = new Date(item.publishedAt).getTime();
+            return !isNaN(pubTime) && pubTime > lastSyncTime;
+          });
+        }
+      }
+      return []; // Safe fallback: return nothing if we can't determine new items
+    }
     return items.slice(0, idx);   // Items before the known one are new
   }
 

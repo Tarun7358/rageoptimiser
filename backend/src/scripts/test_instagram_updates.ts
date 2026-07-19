@@ -46,6 +46,40 @@ async function run() {
     throw new Error(`Instagram validation failed: ${valData.error}`);
   }
 
+  // Fetch status and unsubscribe from existing "nasa" subscription if it exists
+  console.log('\nChecking for existing "nasa" subscription...');
+  const statusRes = await fetch(`${BASE_URL}/api/modules/social_updates/status`, {
+    headers: {
+      'Authorization': `Bearer ${TOKEN}`,
+      'X-Guild-Id': GUILD_ID
+    }
+  });
+  if (statusRes.ok) {
+    const statusData = await statusRes.json();
+    const existing = (statusData.subscriptions || []).find(
+      (s: any) => s.provider === 'instagram' && s.sourceId === valData.sourceId
+    );
+    if (existing) {
+      console.log(`Found existing subscription for "@nasa" (ID: ${existing.id}). Unsubscribing first...`);
+      const unsubRes = await fetch(`${BASE_URL}/api/modules/social_updates/unsubscribe`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TOKEN}`,
+          'Content-Type': 'application/json',
+          'X-Guild-Id': GUILD_ID
+        },
+        body: JSON.stringify({ id: existing.id })
+      });
+      if (unsubRes.ok) {
+        console.log('Successfully unsubscribed existing subscription.');
+      } else {
+        console.warn(`Unsubscribe failed: ${unsubRes.status} ${await unsubRes.text()}`);
+      }
+    } else {
+      console.log('No existing subscription found for "@nasa".');
+    }
+  }
+
   console.log('\n3. Creating Instagram subscription for "@nasa"...');
   const subRes = await fetch(`${BASE_URL}/api/modules/social_updates/subscribe`, {
     method: 'POST',

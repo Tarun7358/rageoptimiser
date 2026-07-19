@@ -1,4 +1,4 @@
-import { ModuleRegistry } from '../src/core/ModuleRegistry';
+import { ModuleRegistry } from './ModuleRegistry.js';
 
 describe('ModuleRegistry', () => {
   it('should instantiate successfully', () => {

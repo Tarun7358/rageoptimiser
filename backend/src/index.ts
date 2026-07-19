@@ -13,6 +13,9 @@ if (process.stderr && (process.stderr as any)._handle && typeof (process.stderr 
   (process.stderr as any)._handle.setBlocking(true);
 }
 
+import { EventEmitter } from 'events';
+EventEmitter.defaultMaxListeners = 100;
+
 import dotenv from 'dotenv';
 import { ModuleRegistry } from './core/ModuleRegistry.js';
 import { WebServer } from './core/WebServer.js';

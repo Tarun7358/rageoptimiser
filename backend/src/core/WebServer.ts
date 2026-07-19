@@ -114,7 +114,6 @@ export class WebServer {
       max: 20,
       standardHeaders: true,
       legacyHeaders: false,
-      keyGenerator: (req) => req.ip || 'unknown',
       message: { error: 'Too many authentication requests. Please try again later.' }
     });
     this.app.use('/api/auth/', authLimiter);
