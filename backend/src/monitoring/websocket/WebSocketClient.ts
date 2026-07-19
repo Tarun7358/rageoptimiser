@@ -16,8 +16,8 @@ export class TelemetryWebSocketClient {
   private isConnecting = false;
 
   constructor() {
-    this.url = process.env.MONITORING_GATEWAY_URL || process.env.MONITORING_DASHBOARD_URL || 'ws://localhost:6002/telemetry';
-    this.token = process.env.MONITORING_AUTH_TOKEN || 'default_telemetry_token';
+    this.url = process.env.MONITORING_GATEWAY_URL || process.env.MONITORING_DASHBOARD_URL || '';
+    this.token = process.env.MONITORING_AUTH_TOKEN || '';
   }
 
   public connect(): void {
@@ -27,25 +27,36 @@ export class TelemetryWebSocketClient {
     const hasGatewayUrl = !!process.env.MONITORING_GATEWAY_URL;
     const hasToken = !!process.env.MONITORING_AUTH_TOKEN;
 
-    console.log('Configuration Loaded');
-    console.log('Monitoring Agent Initializing');
-    console.log(`Gateway URL: ${this.url}`);
-    console.log(`Authentication Token: ${hasToken ? 'Loaded' : 'Missing'}`);
+    const urlSource = hasGatewayUrl 
+      ? 'MONITORING_GATEWAY_URL' 
+      : (hasDashboardUrl ? 'MONITORING_DASHBOARD_URL' : 'None');
 
-    // Temporary diagnostics (Phase 5)
-    console.log('Telemetry Configuration');
-    const maskedToken = this.token ? (this.token.substring(0, 4) + '*'.repeat(Math.max(0, this.token.length - 4))) : 'Missing';
-    console.log(`Gateway URL: ${this.url ? 'Loaded' : 'Missing'}`);
-    console.log(`Token: ${maskedToken}`);
-    console.log(`Protocol: 1.0.0`);
-    console.log(`Dashboard URL Alias: ${hasDashboardUrl ? 'Loaded' : 'Missing'}`);
+    const isValidUrl = this.url && (this.url.startsWith('ws://') || this.url.startsWith('wss://'));
 
-    if ((!hasGatewayUrl && !hasDashboardUrl) || !hasToken) {
-      ConsoleMirror.warn('⚠️ Telemetry Configuration Validation FAILED: Missing MONITORING_GATEWAY_URL/MONITORING_DASHBOARD_URL or MONITORING_AUTH_TOKEN in environment.');
-      ConsoleMirror.info('Telemetry client running in silent/buffer mode.');
+    if (!this.url || !this.token || !isValidUrl) {
+      console.warn('Gateway URL not set.');
+      ConsoleMirror.warn('Telemetry client running in silent/buffer mode.');
+      
+      console.log('Telemetry Configuration');
+      const maskedToken = this.token ? (this.token.substring(0, 4) + '*'.repeat(Math.max(0, this.token.length - 4))) : 'Missing';
+      console.log(`Gateway URL: ${this.url || 'Missing'}`);
+      console.log(`Gateway URL Source: ${urlSource}`);
+      console.log(`Dashboard URL Alias: ${hasDashboardUrl ? 'Found' : 'Missing'}`);
+      console.log(`Authentication Token: ${hasToken ? 'Loaded' : 'Missing'}`);
+      console.log(`Protocol: 1.0.0`);
       return;
     }
 
+    console.log('Configuration Loaded');
+    console.log('Telemetry Configuration');
+    const maskedToken = this.token ? (this.token.substring(0, 4) + '*'.repeat(Math.max(0, this.token.length - 4))) : 'Missing';
+    console.log(`Gateway URL: ${this.url}`);
+    console.log(`Gateway URL Source: ${urlSource}`);
+    console.log(`Dashboard URL Alias: ${hasDashboardUrl ? 'Found' : 'Missing'}`);
+    console.log(`Authentication Token: ${hasToken ? 'Loaded' : 'Missing'}`);
+    console.log(`Protocol: 1.0.0`);
+
+    console.log('Gateway URL Loaded');
     console.log('Connecting...');
     this.isConnecting = true;
     const finalUrl = `${this.url}?token=${encodeURIComponent(this.token)}`;
@@ -60,8 +71,8 @@ export class TelemetryWebSocketClient {
         this.isConnected = true;
         this.isConnecting = false;
         this.reconnectAttempts = 0;
-        console.log('Connected');
-        console.log('Authentication Successful');
+        console.log('WebSocket Open');
+        console.log('Authentication Sent');
         this.startHeartbeat();
         this.flushOfflineQueue();
       });
@@ -70,7 +81,9 @@ export class TelemetryWebSocketClient {
         try {
           const message = JSON.parse(data.toString());
           if (message.type === 'HELLO') {
-            console.log('HELLO exchanged');
+            console.log('Authentication Accepted');
+            console.log('HELLO Sent');
+            console.log('HELLO Accepted');
             console.log('Heartbeat Started');
             console.log('Monitoring Gateway Connected');
           } else if (message.type === 'PONG') {
