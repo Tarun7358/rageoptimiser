@@ -7,9 +7,14 @@ import { LiveConsole } from '../components/LiveConsole/index.js';
 
 export const DashboardView: React.FC = () => {
   const botMetrics = useMetricsStore((state) => state.botMetrics);
-  const { isConnected, sessionId } = useConnectionStore();
+  const systemMetrics = useMetricsStore((state) => state.systemMetrics);
 
-  const hasAgent = isConnected && sessionId && sessionId !== 'no_active_agent';
+  const isConnected = useConnectionStore((state) => state.isConnected);
+  const sessionId = useConnectionStore((state) => state.sessionId);
+
+  const hasValidHandshake = isConnected && sessionId && sessionId !== 'no_active_agent';
+  const isTelemetryStreaming = isConnected && (botMetrics !== null || systemMetrics !== null);
+  const hasAgent = hasValidHandshake || isTelemetryStreaming;
 
   if (!hasAgent) {
     return (
