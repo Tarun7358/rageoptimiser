@@ -21,7 +21,7 @@ import { SettingsView } from './pages/SettingsView.js';
 
 export const App: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
-  const { isConnected } = useConnectionStore();
+  const isConnected = useConnectionStore((state) => state.isConnected);
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
 
   // Trigger WebSocket connection once authenticated
@@ -73,7 +73,7 @@ export const App: React.FC = () => {
         <main className="flex-1 p-6 overflow-y-auto space-y-6 bg-slate-950/20">
           {!isConnected && (
             <div className="p-3 bg-blue-600/10 border border-blue-500/20 rounded-xl flex items-center justify-between text-xs font-mono text-blue-400 glow-blue animate-pulse">
-              <span>⚠️ Local telemetry server offline. Dashboard running in simulation mode.</span>
+              <span>⚠️ Gateway Telemetry server offline. Attempting to establish link...</span>
               <button
                 onClick={() => telemetryWS.connect()}
                 className="px-2 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-[10px] uppercase font-bold hover:bg-blue-500/40"

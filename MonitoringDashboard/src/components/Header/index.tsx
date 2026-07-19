@@ -5,7 +5,11 @@ import { useAuthStore } from '../../stores/authStore.js';
 import { NotificationCenter } from '../NotificationCenter/index.js';
 
 export const Header: React.FC = () => {
-  const { isConnected, isConnecting, botVersion, botName, gatewayPing } = useConnectionStore();
+  const isConnected = useConnectionStore((state) => state.isConnected);
+  const isConnecting = useConnectionStore((state) => state.isConnecting);
+  const botVersion = useConnectionStore((state) => state.botVersion);
+  const botName = useConnectionStore((state) => state.botName);
+  const gatewayPing = useConnectionStore((state) => state.gatewayPing);
   const logout = useAuthStore((state) => state.logout);
 
   return (

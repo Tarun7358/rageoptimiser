@@ -6,8 +6,12 @@ import { HealthCard } from '../HealthCard/index.js';
 import { StatusBadge } from '../StatusBadge/index.js';
 
 export const RightStatusPanel: React.FC = () => {
-  const { isConnected, uptime, gatewayPing } = useConnectionStore();
-  const { systemMetrics, botMetrics } = useMetricsStore();
+  const isConnected = useConnectionStore((state) => state.isConnected);
+  const uptime = useConnectionStore((state) => state.uptime);
+  const gatewayPing = useConnectionStore((state) => state.gatewayPing);
+
+  const systemMetrics = useMetricsStore((state) => state.systemMetrics);
+  const botMetrics = useMetricsStore((state) => state.botMetrics);
 
   const formatUptime = (seconds: number) => {
     if (seconds <= 0) return '0s';
