@@ -19,7 +19,18 @@ export class TelemetryWebSocketManager {
   private lastProcessedSequence = 0;
 
   private constructor() {
-    this.url = import.meta.env.VITE_MONITORING_GATEWAY || 'ws://localhost:6002/telemetry';
+    console.log('Dashboard booting...');
+    console.log('Creating WebSocketManager...');
+    
+    const gatewayUrl = import.meta.env.VITE_MONITORING_GATEWAY;
+    console.log(`Using Gateway URL: ${gatewayUrl || 'Undefined'}`);
+
+    if (!gatewayUrl) {
+      console.error('❌ WebSocket Startup Failed: import.meta.env.VITE_MONITORING_GATEWAY is undefined or empty!');
+      this.url = '';
+    } else {
+      this.url = gatewayUrl;
+    }
   }
 
   public static getInstance(): TelemetryWebSocketManager {
@@ -35,15 +46,23 @@ export class TelemetryWebSocketManager {
 
     if (isConnected || isConnecting) return;
 
+    if (!this.url) {
+      console.error('❌ Cannot connect: Gateway URL is not configured.');
+      return;
+    }
+
     useConnectionStore.getState().setConnecting(true);
 
     const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
     const wsUrl = `${this.url}${tokenParam}`;
 
+    console.log('Attempting WebSocket connection...');
+
     try {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
+        console.log('WebSocket opened');
         this.handleOpen();
       };
 
@@ -52,13 +71,15 @@ export class TelemetryWebSocketManager {
       };
 
       this.ws.onclose = () => {
+        console.log('WebSocket closed');
         this.handleClose();
       };
 
-      this.ws.onerror = () => {
-        // Handled via onclose
+      this.ws.onerror = (err) => {
+        console.error('WebSocket error:', err);
       };
     } catch (err) {
+      console.error('WebSocket creation threw error:', err);
       this.handleClose();
     }
   }
