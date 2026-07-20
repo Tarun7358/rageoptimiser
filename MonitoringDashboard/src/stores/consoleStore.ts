@@ -9,6 +9,7 @@ interface ConsoleState {
   selectedSeverities: Set<SeverityLevel>;
   isPaused: boolean;
   addEvent: (event: TelemetryEvent) => void;
+  setEvents: (events: TelemetryEvent[]) => void;
   togglePin: (eventId: string) => void;
   setPaused: (paused: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -21,13 +22,17 @@ interface ConsoleState {
 
 const MAX_EVENTS_BUFFER = 10000;
 
+const SEVERITIES: SeverityLevel[] = ['INFO', 'SUCCESS', 'WARNING', 'ERROR', 'CRITICAL', 'EMERGENCY'];
+const CATEGORIES: EventCategory[] = ['SYSTEM', 'DISCORD', 'GATEWAY', 'DATABASE', 'COMMAND', 'MUSIC', 'SECURITY', 'TICKETS'];
+
 export const useConsoleStore = create<ConsoleState>((set, get) => ({
   events: [],
   pinnedEvents: [],
   searchQuery: '',
-  selectedCategories: new Set<EventCategory>(),
-  selectedSeverities: new Set<SeverityLevel>(),
+  selectedCategories: new Set<EventCategory>(CATEGORIES),
+  selectedSeverities: new Set<SeverityLevel>(SEVERITIES),
   isPaused: false,
+  setEvents: (events) => set({ events }),
   addEvent: (event) => {
     const { isPaused } = get();
     if (isPaused) return;
@@ -84,16 +89,20 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
     });
   },
   clearConsole: () => set({ events: [], pinnedEvents: [] }),
-  clearFilters: () => set({ selectedCategories: new Set(), selectedSeverities: new Set(), searchQuery: '' }),
+  clearFilters: () => set({
+    selectedCategories: new Set(CATEGORIES),
+    selectedSeverities: new Set(SEVERITIES),
+    searchQuery: ''
+  }),
   getFilteredEvents: () => {
     const { events, searchQuery, selectedCategories, selectedSeverities } = get();
     return events.filter((e) => {
       // Category filter
-      if (selectedCategories.size > 0 && !selectedCategories.has(e.category)) {
+      if (!selectedCategories.has(e.category as EventCategory)) {
         return false;
       }
       // Severity filter
-      if (selectedSeverities.size > 0 && !selectedSeverities.has(e.severity)) {
+      if (!selectedSeverities.has(e.severity as SeverityLevel)) {
         return false;
       }
       // Search filter

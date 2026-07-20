@@ -63,6 +63,36 @@ export class TelemetryWebSocketManager {
 
     console.log('Attempting WebSocket connection...');
 
+    // Fetch historical events asynchronously to populate the console on boot
+    const httpUrl = this.url.replace(/^ws/, 'http').replace(/\/telemetry$/, '') + '/api/events?limit=100';
+    fetch(httpUrl)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const formatted = data.map((e: any) => ({
+            eventId: `ev_${e.sequence}`,
+            sequence: e.sequence,
+            timestamp: e.timestamp,
+            category: e.payload.category?.toUpperCase() || 'SYSTEM',
+            severity: e.payload.severity?.toUpperCase() || 'INFO',
+            sourceModule: e.payload.category || 'system',
+            guildId: e.payload.guildId,
+            guildName: e.payload.guildName,
+            action: e.payload.title || 'Telemetry Event',
+            description: e.payload.description || '',
+            metadata: e.payload.metadata || {}
+          }));
+          useConsoleStore.getState().setEvents(formatted);
+          console.log(`[Dashboard] Loaded ${formatted.length} historical events from REST API.`);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load historical events:', err);
+      });
+
     try {
       this.ws = new WebSocket(wsUrl);
 
