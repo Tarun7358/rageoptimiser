@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Key, ShieldAlert } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore.js';
-import { telemetryWS } from '../services/WebSocketManager.js';
 
 export const LoginView: React.FC = () => {
   const [inputToken, setInputToken] = useState('');
@@ -15,11 +14,12 @@ export const LoginView: React.FC = () => {
       return;
     }
     
-    // Save token
+    // BUG FIX: Save token to store FIRST. The App.tsx useEffect on isAuthenticated
+    // will call telemetryWS.connect() once the store update propagates, ensuring
+    // the WS manager reads the token from the store (not null) when it connects.
     login(inputToken);
-    
-    // Trigger WebSocket connection
-    telemetryWS.connect();
+    // Do NOT call telemetryWS.connect() here — it would read a null token from the
+    // store since Zustand state updates are async from this call frame.
   };
 
   return (

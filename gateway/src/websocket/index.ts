@@ -433,8 +433,17 @@ export class WebSocketService {
     const staleSessionIds = await SessionManager.clearStaleSessions(heartbeatTimeoutMs);
     
     for (const sessionId of staleSessionIds) {
-      // Find matching session information to trigger the offline alert
-      const botId = `bot_main`; // Fallback botId
+      // BUG FIX: Look up the real botId from agentSessions instead of using a
+      // hardcoded fallback. Previously all liveness alerts were sent as 'bot_main'
+      // regardless of which bot actually timed out.
+      const agentEntry = this.agentSessions.get(sessionId);
+      const botId = agentEntry?.botId ?? 'bot_main';
+      
+      // BUG FIX: Clean up the agentSessions entry to prevent memory leak.
+      // The socket is already dead (heartbeat timed out) so we only need to
+      // remove the tracking entry.
+      this.agentSessions.delete(sessionId);
+      
       this.triggerBotOfflineAlert(botId);
     }
   }

@@ -53,8 +53,13 @@ export class TelemetryWebSocketManager {
 
     useConnectionStore.getState().setConnecting(true);
 
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+    // Token priority: Zustand store (user login) → VITE env var → empty (rejected by gateway)
+    const envToken = import.meta.env.VITE_MONITORING_AUTH_TOKEN as string | undefined;
+    const resolvedToken = token || envToken || '';
+
+    const tokenParam = resolvedToken ? `?token=${encodeURIComponent(resolvedToken)}` : '';
     const wsUrl = `${this.url}${tokenParam}`;
+
 
     console.log('Attempting WebSocket connection...');
 

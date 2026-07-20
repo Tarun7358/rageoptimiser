@@ -8,8 +8,10 @@ export class SessionManager {
 
   public static async initialize(): Promise<void> {
     try {
-      // Mark all previously unresolved sessions in database as offline on gateway boot
-      await Storage.run(`UPDATE session_states SET status = 'offline' WHERE status = 'online'`);
+      // BUG FIX: Load any previously 'online' sessions from DB BEFORE marking them offline.
+      // The original code ran UPDATE first then SELECT WHERE status='online', which always
+      // returned 0 rows because all sessions were already set to offline by the UPDATE.
+      // We load them first so we can at least know which bots were connected before restart.
       const rows = await Storage.all(`SELECT * FROM session_states WHERE status = 'online'`);
       for (const row of rows) {
         this.sessions.set(row.sessionId, {
@@ -17,6 +19,13 @@ export class SessionManager {
           capabilities: JSON.parse(row.capabilities),
         });
       }
+
+      // Now mark all previously unresolved sessions as offline (they are stale after restart)
+      await Storage.run(`UPDATE session_states SET status = 'offline' WHERE status = 'online'`);
+
+      // Clear in-memory sessions — they are now marked offline and can no longer receive data
+      this.sessions.clear();
+
       logger.info('SessionManager initialized and database state synchronized');
     } catch (err) {
       logger.error({ err }, 'Failed to initialize SessionManager state');

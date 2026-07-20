@@ -65,3 +65,7 @@ backend/src/verifications.json
 clutch-music/src/public-feed.json
 clutch-music/src/afk.json
 clutch-music/src/verifications.json
+# SQLite runtime databases
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

@@ -295,6 +295,13 @@ async function isExecutorBypassed(guild: any, executorId: string, config: any, c
 }
 
 async function punishViolator(client: any, guild: any, executorId: string, executorUsername: string, reason: string, ruleAction: string, config: any, context: any, ruleId?: string) {
+  // BUG FIX: Check activeQuarantines FIRST before any async whitelist lookup to
+  // prevent double-processing when concurrent events fire for the same executor.
+  if (activeQuarantines.has(executorId)) {
+    console.log(`[Anti-Nuke Safety] Skipping punishment for ${executorUsername} — already in activeQuarantines cooldown.`);
+    return;
+  }
+
   let bypassed = await isExecutorBypassed(guild, executorId, config, context, ruleId);
   if (ruleId === 'anti_role_grant') {
     bypassed = bypassed || await isExecutorBypassed(guild, executorId, config, context, 'anti_member_update');
@@ -304,30 +311,54 @@ async function punishViolator(client: any, guild: any, executorId: string, execu
     return;
   }
 
-  if (activeQuarantines.has(executorId)) return;
+  // Re-check after async whitelist lookup to handle race between concurrent events
+  if (activeQuarantines.has(executorId)) {
+    console.log(`[Anti-Nuke Safety] Skipping punishment for ${executorUsername} — quarantine race condition detected.`);
+    return;
+  }
   activeQuarantines.add(executorId);
-  setTimeout(() => activeQuarantines.delete(executorId), 10000); // 10s cooldown to mitigate race conditions
+  setTimeout(() => activeQuarantines.delete(executorId), 15000); // 15s cooldown to cover audit log delays
 
   try {
     const member = await guild.members.fetch(executorId).catch(() => null);
     if (!member) return;
 
+    // BUG FIX: Snapshot original roles BEFORE stripping admin roles so that the
+    // quarantine originalRoles list is accurate (includes admin roles that are
+    // about to be removed). Previously the snapshot happened AFTER strips, causing
+    // already-removed roles to sometimes still appear due to stale cache.
+    const originalRoleIds = Array.from(
+      member.roles.cache
+        .filter((r: any) => r.id !== guild.id && !r.managed && r.id !== config.quarantineRoleId)
+        .keys()
+    );
+
     // 1. Identify and strip ALL administrative roles (roles with Administrator permission)
-    const adminRoles = member.roles.cache.filter((r: any) => r.permissions.has(PermissionFlagsBits.Administrator) && r.id !== guild.id);
-    for (const [roleId] of adminRoles) {
+    const adminRoleIds = member.roles.cache
+      .filter((r: any) => r.permissions.has(PermissionFlagsBits.Administrator) && r.id !== guild.id)
+      .map((r: any) => r.id);
+    for (const roleId of adminRoleIds) {
       await member.roles.remove(roleId).catch(() => {});
     }
 
     // 2. Apply action punishment
     if (ruleAction === 'quarantine' && config.quarantineRoleId) {
-      const rolesToRemove = member.roles.cache.filter((r: any) => r.id !== guild.id && !r.managed && r.id !== config.quarantineRoleId);
-      const originalRoleIds = Array.from(rolesToRemove.keys());
-      
-      await member.roles.add(config.quarantineRoleId).catch(console.error);
-      for (const roleId of originalRoleIds) {
-        await member.roles.remove(roleId).catch(() => {});
+      // BUG FIX: Re-fetch member after admin role strips so we get a fresh cache
+      // before computing the remaining roles to remove. Without this, Discord.js
+      // cache may still show already-removed admin roles, leading to redundant
+      // remove calls that silently fail and log confusing errors.
+      const freshMember = await guild.members.fetch(executorId).catch(() => member);
+      const remainingRoleIds = Array.from(
+        freshMember.roles.cache
+          .filter((r: any) => r.id !== guild.id && !r.managed && r.id !== config.quarantineRoleId)
+          .keys()
+      );
+
+      await freshMember.roles.add(config.quarantineRoleId).catch(console.error);
+      for (const roleId of remainingRoleIds) {
+        await freshMember.roles.remove(roleId).catch(() => {});
       }
-      
+
       const quarantinedUsers = config.quarantinedUsers || [];
       if (!quarantinedUsers.some((u: any) => u.userId === executorId)) {
         quarantinedUsers.push({
@@ -338,7 +369,7 @@ async function punishViolator(client: any, guild: any, executorId: string, execu
           time: new Date().toISOString(),
           status: 'Quarantined',
           risk: 'danger',
-          originalRoles: originalRoleIds
+          originalRoles: originalRoleIds  // Uses pre-strip snapshot for accurate restore list
         });
         context.updateModuleConfig('security', { quarantinedUsers });
       }
@@ -1335,7 +1366,6 @@ export const SecurityManifest: ModuleManifest = {
 
             console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role grant detected for ${newMember.user.username}: added ${addedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
 
-
             if (hasAdmin || isMonitored || monitorAll) {
               const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
                 console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberRoleUpdate logs:`, err);
@@ -1351,27 +1381,35 @@ export const SecurityManifest: ModuleManifest = {
               if (logEntry) {
                 const executor = logEntry.executor;
                 if (executor && executor.id !== client.user.id) {
-                  const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant');
-                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
-                  if (!isBypassed) {
-                    if (config.roleMonitorMode !== 'Custom Selection' || isMonitored) {
-                      const rules = config.rules || {};
-                      const rule = rules.anti_role_grant || rules.anti_member_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
-                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_grant:`, rule);
-                      if (rule.enabled) {
-                        const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
-                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
-                        if (triggered) {
-                          context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.username} by ${executor.username}.`, 'warn');
-                          if (rule.recovery) {
-                            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing granted roles)`);
-                            for (const [roleId] of addedRoles) {
-                              await newMember.roles.remove(roleId).catch(console.error);
+                  // BUG FIX: If the executor is currently in activeQuarantines it means the bot
+                  // itself triggered this role grant as part of a quarantine restore or the
+                  // executor was just punished. Audit logs sometimes still show their ID as
+                  // the actor instead of the bot's. Skip to prevent false positives.
+                  if (activeQuarantines.has(executor.id)) {
+                    console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Skipping role grant check — executor ${executor.username} is in activeQuarantines (bot-initiated action or recent punishment).`);
+                  } else {
+                    const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_grant');
+                    console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
+                    if (!isBypassed) {
+                      if (config.roleMonitorMode !== 'Custom Selection' || isMonitored) {
+                        const rules = config.rules || {};
+                        const rule = rules.anti_role_grant || rules.anti_member_update || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_grant:`, rule);
+                        if (rule.enabled) {
+                          const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_grant', rule.limit, rule.window);
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
+                          if (triggered) {
+                            context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role grant to ${newMember.user.username} by ${executor.username}.`, 'warn');
+                            if (rule.recovery) {
+                              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (removing granted roles)`);
+                              for (const [roleId] of addedRoles) {
+                                await newMember.roles.remove(roleId).catch(console.error);
+                              }
                             }
+                            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+                            await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.username}`, rule.action, config, context, 'anti_role_grant');
+                            return;
                           }
-                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
-                          await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Grant to ${newMember.user.username}`, rule.action, config, context, 'anti_role_grant');
-                          return;
                         }
                       }
                     }
@@ -1386,51 +1424,66 @@ export const SecurityManifest: ModuleManifest = {
           // 2. Role Remove Checks
           const removedRoles = oldRoles.filter((r: any) => !newRoles.has(r.id));
           if (removedRoles.size > 0) {
-            const hasAdmin = removedRoles.some((r: any) => r.permissions?.has?.(PermissionFlagsBits.Administrator));
-            const isMonitored = removedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
-            const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
+            // BUG FIX: If the TARGET member is currently in activeQuarantines it means the bot
+            // is in the process of stripping their roles as punishment. Discord's audit log may
+            // still attribute these removals to the original attacker rather than the bot,
+            // causing a false-positive that tries to punish the attacker again (double-punishment)
+            // or — in the worst case — misidentifies a whitelisted user's ID in a stale log entry.
+            if (activeQuarantines.has(newMember.id)) {
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Skipping role remove check for ${newMember.user.username} — target is in activeQuarantines (bot-initiated quarantine in progress).`);
+            } else {
+              const hasAdmin = removedRoles.some((r: any) => r.permissions?.has?.(PermissionFlagsBits.Administrator));
+              const isMonitored = removedRoles.some((r: any) => (config.monitoredRoleIds || []).includes(r.id));
+              const monitorAll = !config.roleMonitorMode || config.roleMonitorMode === 'All Roles';
 
-            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role removal detected for ${newMember.user.username}: removed ${removedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
+              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Role removal detected for ${newMember.user.username}: removed ${removedRoles.map((r: any) => r.name).join(', ')}. hasAdmin=${hasAdmin}, isMonitored=${isMonitored}, monitorAll=${monitorAll}`);
 
-            if (hasAdmin || isMonitored || monitorAll) {
-              const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
-                console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberRoleUpdate logs:`, err);
-                return null;
-              });
-              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Fetched ${fetchedLogs?.entries.size || 0} MemberRoleUpdate audit entries`);
-              const logEntry = fetchedLogs?.entries.find((e: any) => {
-                const matches = e.targetId === newMember.id && isRecentEntry(e);
-                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
-                return matches;
-              });
+              if (hasAdmin || isMonitored || monitorAll) {
+                const fetchedLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch((err: any) => {
+                  console.error(`[Anti-Nuke Debug] [guildMemberUpdate] Failed to fetch MemberRoleUpdate logs:`, err);
+                  return null;
+                });
+                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Fetched ${fetchedLogs?.entries.size || 0} MemberRoleUpdate audit entries`);
+                const logEntry = fetchedLogs?.entries.find((e: any) => {
+                  const matches = e.targetId === newMember.id && isRecentEntry(e);
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Checking entry ${e.id} by ${e.executor?.tag} (targetId: ${e.targetId}, createdTimestamp: ${e.createdTimestamp}): matches target and recent = ${matches}`);
+                  return matches;
+                });
 
-              if (logEntry) {
-                const executor = logEntry.executor;
-                if (executor && executor.id !== client.user.id) {
-                  const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_remove');
-                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
-                  if (!isBypassed) {
-                    const rules = config.rules || {};
-                    const rule = rules.anti_role_remove || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
-                    console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_remove:`, rule);
-                    if (rule.enabled) {
-                      const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_remove', rule.limit, rule.window);
-                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
-                      if (triggered) {
-                        context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role removal from ${newMember.user.username} by ${executor.username}.`, 'warn');
-                        if (rule.recovery) {
-                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (adding back removed roles)`);
-                          await newMember.roles.add(Array.from(removedRoles.keys())).catch(console.error);
+                if (logEntry) {
+                  const executor = logEntry.executor;
+                  if (executor && executor.id !== client.user.id) {
+                    // BUG FIX: Also guard against the executor being in activeQuarantines —
+                    // the same audit log race that affects role-grant can appear here too.
+                    if (activeQuarantines.has(executor.id)) {
+                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Skipping role remove check — executor ${executor.username} is in activeQuarantines.`);
+                    } else {
+                      const isBypassed = await isExecutorBypassed(guild, executor.id, config, context, 'anti_role_remove');
+                      console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executor ${executor.username} bypassed status: ${isBypassed}`);
+                      if (!isBypassed) {
+                        const rules = config.rules || {};
+                        const rule = rules.anti_role_remove || { enabled: true, limit: 3, window: 10, action: 'quarantine', recovery: true };
+                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rule config for anti_role_remove:`, rule);
+                        if (rule.enabled) {
+                          const triggered = checkRateLimit(guild.id, executor.id, 'anti_role_remove', rule.limit, rule.window);
+                          console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Rate limit triggered: ${triggered} (limit: ${rule.limit}, window: ${rule.window})`);
+                          if (triggered) {
+                            context.logSyncEvent(guild.id, `🚨 [Anti-Nuke Triggered]: Unauthorized role removal from ${newMember.user.username} by ${executor.username}.`, 'warn');
+                            if (rule.recovery) {
+                              console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Executing recovery (adding back removed roles)`);
+                              await newMember.roles.add(Array.from(removedRoles.keys())).catch(console.error);
+                            }
+                            console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
+                            await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Removal from ${newMember.user.username}`, rule.action, config, context, 'anti_role_remove');
+                            return;
+                          }
                         }
-                        console.log(`[Anti-Nuke Debug] [guildMemberUpdate] Punishing violator ${executor.username} with action ${rule.action}`);
-                        await punishViolator(client, guild, executor.id, executor.username, `Anti-Nuke: Unauthorized Role Removal from ${newMember.user.username}`, rule.action, config, context, 'anti_role_remove');
-                        return;
                       }
                     }
                   }
+                } else {
+                  console.log(`[Anti-Nuke Debug] [guildMemberUpdate] No recent MemberRoleUpdate audit log entry found for target user ${newMember.id}`);
                 }
-              } else {
-                console.log(`[Anti-Nuke Debug] [guildMemberUpdate] No recent MemberRoleUpdate audit log entry found for target user ${newMember.id}`);
               }
             }
           }
