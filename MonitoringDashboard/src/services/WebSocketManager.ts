@@ -195,6 +195,9 @@ payload: ${JSON.stringify(packet.payload)}`);
 
         case 'METRICS':
           useMetricsStore.getState().setBotMetrics(packet.payload);
+          if (packet.payload.guilds) {
+            useServerStore.getState().setServers(packet.payload.guilds);
+          }
           console.log('[Dashboard] Zustand store updated for type: METRICS');
           break;
 

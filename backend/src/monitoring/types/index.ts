@@ -41,6 +41,7 @@ export interface DiscordStats {
   activeVoiceConnections: number;
   openTickets: number;
   activeMusicSessions: number;
+  guilds?: any[];
 }
 
 export interface HealthStatus {

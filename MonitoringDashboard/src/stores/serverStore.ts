@@ -23,7 +23,23 @@ const initialServers: GuildServer[] = [];
 
 export const useServerStore = create<ServerState>((set) => ({
   servers: initialServers,
-  setServers: (servers) => set({ servers }),
+  setServers: (servers) =>
+    set((state) => {
+      const merged = servers.map((newS) => {
+        const existing = state.servers.find((s) => s.id === newS.id);
+        if (existing) {
+          return {
+            ...newS,
+            commandsToday: existing.commandsToday || newS.commandsToday,
+            eventsToday: existing.eventsToday || newS.eventsToday,
+            activeAlertsCount: existing.activeAlertsCount || newS.activeAlertsCount,
+            health: existing.health || newS.health,
+          };
+        }
+        return newS;
+      });
+      return { servers: merged };
+    }),
   recordServerActivity: (guildId, guildName, isCommand) =>
     set((state) => {
       const serverExists = state.servers.some((s) => s.id === guildId);

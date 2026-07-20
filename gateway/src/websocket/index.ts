@@ -207,7 +207,8 @@ export class WebSocketService {
             eventsPerSecond: payload.metrics.discord.eventsPerSecond,
             activeVoiceSessions: payload.metrics.discord.activeVoiceConnections,
             activeMusicSessions: payload.metrics.discord.activeMusicSessions,
-            openTicketsCount: payload.metrics.discord.openTickets
+            openTicketsCount: payload.metrics.discord.openTickets,
+            guilds: payload.metrics.discord.guilds
           }, botId, sessionId);
         }
 
@@ -340,7 +341,8 @@ export class WebSocketService {
             eventsPerSecond: payload.metrics.discord.eventsPerSecond,
             activeVoiceSessions: payload.metrics.discord.activeVoiceConnections,
             activeMusicSessions: payload.metrics.discord.activeMusicSessions,
-            openTicketsCount: payload.metrics.discord.openTickets
+            openTicketsCount: payload.metrics.discord.openTickets,
+            guilds: payload.metrics.discord.guilds
           }
         }));
       }

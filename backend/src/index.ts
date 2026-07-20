@@ -12,6 +12,26 @@ const _dotenv = _require('dotenv');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Real-time debug logging hijack to bypass Windows terminal buffering
+const debugLogStream = fs.createWriteStream(path.resolve(process.cwd(), 'bot_debug.log'), { flags: 'w' });
+const origLog = console.log;
+const origWarn = console.warn;
+const origError = console.error;
+
+console.log = (...args) => {
+  debugLogStream.write(`[LOG] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}\n`);
+  origLog(...args);
+};
+console.warn = (...args) => {
+  debugLogStream.write(`[WARN] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}\n`);
+  origWarn(...args);
+};
+console.error = (...args) => {
+  debugLogStream.write(`[ERROR] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ')}\n`);
+  origError(...args);
+};
+
+
 // Find first existing .env file
 const possibleEnvPaths = [
   path.resolve(process.cwd(), '.env'),

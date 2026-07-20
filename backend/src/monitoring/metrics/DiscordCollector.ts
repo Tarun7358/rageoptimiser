@@ -29,6 +29,7 @@ export class DiscordCollector {
     let memberCount = 0;
     let onlineMembers = 0;
     let cachedRoles = 0;
+    const guildsList = [];
 
     for (const guild of guilds) {
       memberCount += guild.memberCount || 0;
@@ -39,6 +40,17 @@ export class DiscordCollector {
         m => m.presence && m.presence.status !== 'offline'
       ).size;
       onlineMembers += online;
+
+      guildsList.push({
+        id: guild.id,
+        name: guild.name,
+        memberCount: guild.memberCount || 0,
+        onlineMembers: online,
+        commandsToday: 0,
+        eventsToday: 0,
+        health: 'healthy' as const,
+        activeAlertsCount: 0
+      });
     }
 
     const cachedChannels = this.client.channels.cache.size;
@@ -117,6 +129,7 @@ export class DiscordCollector {
       activeVoiceConnections,
       openTickets,
       activeMusicSessions,
+      guilds: guildsList,
     };
   }
 }
