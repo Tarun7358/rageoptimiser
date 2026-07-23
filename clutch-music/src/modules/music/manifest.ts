@@ -410,26 +410,29 @@ export const MusicManifest: ModuleManifest = {
               await queue.updatePanel(context.client);
               break;
             case 'volume':
-              queue.volume = Math.max(0, Math.min(200, Number(value)));
+              queue.setVolume(Number(value));
               await queue.updatePanel(context.client);
               break;
             case 'speed':
+              const elapsedSpeed = queue.getElapsedSeconds();
               queue.speed = Math.max(0.5, Math.min(2.0, Number(value)));
               if (queue.currentTrack) {
                 queue.queue.unshift(queue.currentTrack);
                 queue.currentTrack = null;
               }
-              await queue.playNext();
+              await queue.playNext(elapsedSpeed);
               break;
             case 'pitch':
+              const elapsedPitch = queue.getElapsedSeconds();
               queue.pitch = Math.max(0.5, Math.min(2.0, Number(value)));
               if (queue.currentTrack) {
                 queue.queue.unshift(queue.currentTrack);
                 queue.currentTrack = null;
               }
-              await queue.playNext();
+              await queue.playNext(elapsedPitch);
               break;
             case 'filter':
+              const elapsedFilter = queue.getElapsedSeconds();
               const filter = value;
               if (queue.activeFilters.includes(filter)) {
                 queue.activeFilters = queue.activeFilters.filter(f => f !== filter);
@@ -440,7 +443,7 @@ export const MusicManifest: ModuleManifest = {
                 queue.queue.unshift(queue.currentTrack);
                 queue.currentTrack = null;
               }
-              await queue.playNext();
+              await queue.playNext(elapsedFilter);
               break;
             case 'clear':
               queue.queue = [];
@@ -890,7 +893,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guild.id);
         if (!checkVoicePermissions(interaction, queue)) return;
         const vol = interaction.options.getInteger('percent');
-        queue.volume = vol;
+        queue.setVolume(vol);
         await queue.updatePanel(client);
         await interaction.reply({ content: `🔊 Volume set to **${vol}%**`, flags: 64 });
       }
@@ -1140,6 +1143,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('bassboost')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== 'bassboost');
         } else {
@@ -1150,7 +1154,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1160,6 +1164,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('nightcore')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== 'nightcore');
         } else {
@@ -1170,7 +1175,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1180,6 +1185,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('8d')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== '8d');
         } else {
@@ -1190,7 +1196,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1200,6 +1206,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('vaporwave')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== 'vaporwave');
         } else {
@@ -1210,7 +1217,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1220,6 +1227,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('treble')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== 'treble');
         } else {
@@ -1230,7 +1238,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1240,6 +1248,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         if (queue.activeFilters.includes('reverb')) {
           queue.activeFilters = queue.activeFilters.filter(f => f !== 'reverb');
         } else {
@@ -1250,7 +1259,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1260,12 +1269,13 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         queue.speed = Math.min(2.0, queue.speed + 0.1);
         if (queue.currentTrack) {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1275,12 +1285,13 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         queue.speed = Math.max(0.5, queue.speed - 0.1);
         if (queue.currentTrack) {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1290,12 +1301,13 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         queue.pitch = Math.min(2.0, queue.pitch + 0.1);
         if (queue.currentTrack) {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1305,12 +1317,13 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         queue.pitch = Math.max(0.5, queue.pitch - 0.1);
         if (queue.currentTrack) {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1320,6 +1333,7 @@ export const MusicManifest: ModuleManifest = {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
 
+        const elapsed = queue.getElapsedSeconds();
         queue.activeFilters = [];
         queue.speed = 1.0;
         queue.pitch = 1.0;
@@ -1327,7 +1341,7 @@ export const MusicManifest: ModuleManifest = {
           queue.queue.unshift(queue.currentTrack);
           queue.currentTrack = null;
         }
-        await queue.playNext();
+        await queue.playNext(elapsed);
         await interaction.deferUpdate().catch(() => {});
       }
     },
@@ -1338,7 +1352,7 @@ export const MusicManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
-        queue.volume = Math.min(200, queue.volume + 10);
+        queue.setVolume(queue.volume + 10);
         await queue.updatePanel(client);
         await interaction.deferUpdate().catch(() => {});
       }
@@ -1348,7 +1362,7 @@ export const MusicManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
-        queue.volume = Math.max(0, queue.volume - 10);
+        queue.setVolume(queue.volume - 10);
         await queue.updatePanel(client);
         await interaction.deferUpdate().catch(() => {});
       }
@@ -1358,7 +1372,7 @@ export const MusicManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
-        queue.volume = queue.volume > 0 ? 0 : 100;
+        queue.setVolume(queue.volume > 0 ? 0 : 100);
         await queue.updatePanel(client);
         await interaction.deferUpdate().catch(() => {});
       }
@@ -1368,7 +1382,7 @@ export const MusicManifest: ModuleManifest = {
       handler: async (client: any, interaction: any, context: any) => {
         const queue = QueueManager.getQueue(interaction.guildId);
         if (!checkVoicePermissions(interaction, queue)) return;
-        queue.volume = 100;
+        queue.setVolume(100);
         await queue.updatePanel(client);
         await interaction.deferUpdate().catch(() => {});
       }

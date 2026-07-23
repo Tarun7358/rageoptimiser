@@ -122,6 +122,7 @@ export class GuildQueue {
   public client: any = null;
 
   public voiceChannel: any = null;
+  public resource: any = null;
   private queueLock = false;
   private retryCount = 0;
   private retryInProgress = false;
@@ -155,6 +156,26 @@ export class GuildQueue {
         await this.playNext();
       }
     });
+  }
+
+  public getElapsedSeconds(): number {
+    if (!this.currentTrack || !this.playbackStartTime) return 0;
+    
+    let elapsedMs = 0;
+    if (this.pausedTime) {
+      elapsedMs = this.pausedTime - this.playbackStartTime - this.totalPausedDuration;
+    } else {
+      elapsedMs = Date.now() - this.playbackStartTime - this.totalPausedDuration;
+    }
+    
+    return Math.max(0, Math.floor((elapsedMs * this.speed) / 1000));
+  }
+
+  public setVolume(vol: number) {
+    this.volume = Math.max(0, Math.min(200, vol));
+    if (this.resource?.volume) {
+      this.resource.volume.setVolume(this.volume / 100);
+    }
   }
 
   private async lockQueue() {
@@ -353,9 +374,14 @@ export class GuildQueue {
     }
   }
 
-  public async playNext() {
+  public async playNext(seekSeconds?: number) {
     await this.lockQueue();
     try {
+      if (!this.currentTrack && this.queue.length === 0) {
+        // Was stopped by user or nothing is playing — do not trigger autoplay or skip
+        return;
+      }
+
       // Bug 3/5 Fix: Always re-subscribe the player to the connection before streaming.
       // This prevents silent playback after a voice channel move.
       if (this.connection) {
@@ -363,7 +389,7 @@ export class GuildQueue {
       }
 
       if (this.loopMode === 'track' && this.currentTrack) {
-        await this.startStream(this.currentTrack);
+        await this.startStream(this.currentTrack, seekSeconds);
         return;
       }
 
@@ -374,7 +400,7 @@ export class GuildQueue {
       const nextTrack = this.queue.shift();
       if (nextTrack) {
         this.currentTrack = nextTrack;
-        await this.startStream(nextTrack);
+        await this.startStream(nextTrack, seekSeconds);
       } else {
         if (this.autoplay && this.playHistory.length > 0) {
           const lastTrack = this.playHistory[0];
@@ -478,7 +504,7 @@ export class GuildQueue {
     }
   }
 
-  private async startStream(nextTrack: Track) {
+  private async startStream(nextTrack: Track, seekSeconds: number = 0) {
     if (this.playDlStream) {
       try {
         this.playDlStream.destroy();
@@ -529,10 +555,10 @@ export class GuildQueue {
       let useYtDlp = true;
       if (audioUrl.includes('youtube.com') || audioUrl.includes('youtu.be') || audioUrl.includes('soundcloud.com')) {
         try {
-          console.log(`[Music] Attempting to stream via play-dl: ${audioUrl}`);
+          console.log(`[Music] Attempting to stream via play-dl: ${audioUrl} (seek: ${seekSeconds}s)`);
           const streamData = await play.stream(audioUrl, {
             quality: 2,
-            seek: 0
+            seek: seekSeconds
           });
           this.playDlStream = streamData.stream;
           useYtDlp = false;
@@ -612,6 +638,10 @@ export class GuildQueue {
         '-i', 'pipe:0',
       ];
 
+      if (seekSeconds > 0 && useYtDlp) {
+        ffmpegArgs.push('-ss', String(seekSeconds));
+      }
+
       if (afFilters.length > 0) {
         ffmpegArgs.push('-af', afFilters.join(','));
       }
@@ -651,14 +681,17 @@ export class GuildQueue {
       if (!this.ffmpegProcess || !this.ffmpegProcess.stdout) throw new Error('Failed to create ffmpeg stdout');
 
       const resource = createAudioResource(this.ffmpegProcess.stdout as any, {
-        inputType: StreamType.Raw
+        inputType: StreamType.Raw,
+        inlineVolume: true
       });
+      this.resource = resource;
+      resource.volume?.setVolume(this.volume / 100);
 
       this.player.play(resource);
       console.log(`[Music] Player started playing resource via yt-dlp & FFmpeg with filters: ${afFilters.join(',') || 'none'}.`);
 
       // Track playback start times
-      this.playbackStartTime = Date.now();
+      this.playbackStartTime = Date.now() - Math.floor((seekSeconds * 1000) / this.speed);
       this.totalPausedDuration = 0;
       this.pausedTime = null;
 
@@ -693,7 +726,15 @@ export class GuildQueue {
 
   public stop() {
     this.queue = [];
+    this.currentTrack = null;
     this.loopMode = 'off';
+    this.playbackStartTime = null;
+    this.totalPausedDuration = 0;
+    this.pausedTime = null;
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
     this.player.stop();
     if (this.playDlStream) {
       try {

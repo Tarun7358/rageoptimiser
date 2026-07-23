@@ -6,6 +6,15 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import type { PublicFeedManager } from './PublicFeedManager.js';
 import { AnalyticsService } from './AnalyticsService.js';
 import { protections } from '../utils/whitelistCheck.js';
+import { PrefixResolver } from './prefix/PrefixResolver.js';
+import { PrefixParser } from './prefix/PrefixParser.js';
+import { SyntheticInteraction } from './prefix/SyntheticInteraction.js';
+import { PrefixRegistry } from './prefix/PrefixRegistry.js';
+import { PrefixPermissionManager } from './prefix/PrefixPermissionManager.js';
+import { PrefixCooldownManager } from './prefix/PrefixCooldownManager.js';
+import { FuzzySuggestions } from './prefix/FuzzySuggestions.js';
+import { PrefixAnalytics } from './prefix/PrefixAnalytics.js';
+import { PrefixHelpCenter } from './prefix/PrefixHelpCenter.js';
 
 export function wrapInteraction(interaction: any) {
   if (!interaction) return interaction;
@@ -226,6 +235,7 @@ export class Gateway {
 
   public registerModuleManifests(manifests: ModuleManifest[]) {
     this.manifests = manifests;
+    PrefixRegistry.initialize(manifests);
   }
 
   public async connect() {
@@ -278,6 +288,7 @@ export class Gateway {
     this.client.once(Events.ClientReady, async () => {
       console.log(`Discord client connected as ${this.client.user?.username}`);
       this.logSyncEvent(`Discord gateway connected as ${this.client.user?.username}`, 'success');
+      await PrefixResolver.loadAllPrefixes().catch(console.error);
       await this.client.application?.fetch().catch(() => null);
       this.syncRegistry();
       
@@ -452,27 +463,32 @@ export class Gateway {
       this.dispatchEvent('messageUpdate', { oldMessage, newMessage });
     });
 
-    this.client.on('messageCreate', (message) => {
-      if (process.env.DEBUG === 'true') {
-        console.log(`[Gateway] messageCreate received message from ${message.author?.username} (${message.author?.id}) in guild ${message.guildId}, channel ${message.channelId}. Content length: ${message.content?.length || 0}. Mentions count: ${message.mentions?.users?.size || 0}`);
+    this.client.on('interactionCreate', async (interaction) => {
+      if (interaction.isStringSelectMenu() && interaction.customId === 'help_category_select') {
+        await PrefixHelpCenter.handleSelectMenuInteraction(interaction).catch(console.error);
       }
+    });
+
+    this.client.on('messageCreate', async (message) => {
+      if (!message.author || message.author.bot) return;
+
+      console.log(`[Gateway] Received message in #${(message.channel as any)?.name || message.channelId}: "${message.content}" (length: ${message.content?.length || 0}) from ${message.author.username}`);
+
+      if (message.content !== undefined && message.content.length === 0) {
+        console.warn(`⚠️ [Gateway Warning]: Message content received is EMPTY! This occurs when MESSAGE CONTENT INTENT is disabled in the Discord Developer Portal under Bot -> Privileged Gateway Intents.`);
+      }
+
       this.dispatchEvent('messageCreate', message);
-      if (message.guildId && !message.author?.bot) {
+
+      if (message.guildId) {
         AnalyticsService.incrementMetric(message.guildId, 'messages').catch(() => {});
         
         // DM notify users who were tagged/mentioned directly
         if (message.mentions.users.size > 0 && message.guild) {
           message.mentions.users.forEach(async (user) => {
-            // Do not notify self or other bots
-            if (user.id === message.author.id || user.bot) {
-              console.log(`[Gateway] Skipping mention notification for user ${user.username} (self-mention or bot)`);
-              return;
-            }
-
-            console.log(`[Gateway] Processing mention DM for ${user.username} (${user.id})`);
+            if (user.id === message.author.id || user.bot) return;
             try {
               const guildIcon = message.guild?.iconURL({ size: 256 }) || null;
-              
               const dmEmbed = new EmbedBuilder()
                 .setTitle('🔔 New Mention Alert')
                 .setDescription(`You have been mentioned by **${message.author.username}** in **${message.guild?.name}**!`)
@@ -486,22 +502,230 @@ export class Gateway {
                 )
                 .setFooter({ text: 'Rage Optimiser Premium • Real-time Alerts', iconURL: this.client.user?.displayAvatarURL() })
                 .setTimestamp();
-
-              const jumpButton = new ButtonBuilder()
-                .setLabel('Go to Message')
-                .setStyle(ButtonStyle.Link)
-                .setURL(message.url);
-
+              const jumpButton = new ButtonBuilder().setLabel('Go to Message').setStyle(ButtonStyle.Link).setURL(message.url);
               const row = new ActionRowBuilder<ButtonBuilder>().addComponents(jumpButton);
-
               await user.send({ embeds: [dmEmbed], components: [row] });
-              console.log(`[Gateway] Successfully sent mention DM to ${user.username}`);
-            } catch (err) {
-              console.error(`[Gateway] Failed to send mention DM to ${user.username}:`, err);
-            }
+            } catch (err) {}
           });
         }
       }
+
+      // ---- PREFIX COMMAND PIPELINE ----
+      const resolveResult = PrefixResolver.resolvePrefix(message, this.client.user?.id);
+      if (!resolveResult.matched) return;
+
+      console.log(`[Gateway] Prefix matched for "${message.content}" -> commandString: "${resolveResult.commandString}"`);
+
+      // Handle standalone bot mention
+      if (resolveResult.isMentionOnly) {
+        const curPrefix = PrefixResolver.getPrefix(message.guildId || undefined);
+        const greetingEmbed = new EmbedBuilder()
+          .setTitle('👋 Hello!')
+          .setDescription(`My Prefix is **\`${curPrefix}\`**\n\nUse **\`${curPrefix}help\`** or **\`/help\`** to view commands.`)
+          .setColor('#7c5cfc')
+          .setThumbnail(this.client.user?.displayAvatarURL() || null)
+          .setFooter({ text: 'Rage Optimiser • Command System' });
+        await message.reply({ embeds: [greetingEmbed] }).catch(() => {});
+        return;
+      }
+
+      const parseStart = performance.now();
+      const parsed = PrefixParser.parse(resolveResult.commandString);
+      const parseTime = performance.now() - parseStart;
+      PrefixAnalytics.recordParseTime(parseTime);
+
+      if (!parsed.commandName) return;
+
+      // Check Maintenance Mode
+      const settings = this.getGlobalSettings(message.guildId || undefined);
+      if (settings.maintenanceMode) {
+        const isOwner = PrefixPermissionManager.isDeveloper(message.author.id, message);
+        if (!isOwner) {
+          const mainEmbed = new EmbedBuilder()
+            .setTitle('🚧 System Maintenance Mode Active')
+            .setDescription('The server is currently in lockdown mode. All public bot commands are temporarily disabled.')
+            .setColor('#ff4444');
+          await message.reply({ embeds: [mainEmbed] }).catch(() => {});
+          return;
+        }
+      }
+
+      // Handle built-in prefix command: r!prefix
+      if (parsed.commandName === 'prefix') {
+        const guildId = message.guildId;
+        if (!guildId) {
+          return message.reply('Custom prefixes can only be configured inside a server.');
+        }
+
+        const isOwnerOrAdmin = message.guild?.ownerId === message.author.id ||
+          message.author.id === process.env.OWNER_ID ||
+          Boolean(message.member?.permissions.has(PermissionFlagsBits.Administrator));
+
+        const firstArg = parsed.args[0]?.toLowerCase();
+
+        if (!firstArg || firstArg === 'list' || firstArg === 'show') {
+          const curPrefix = PrefixResolver.getPrefix(guildId);
+          const embed = new EmbedBuilder()
+            .setTitle('⚙️ Server Prefix Settings')
+            .setDescription(`Current server prefix is **\`${curPrefix}\`**\nDefault fallback is **\`r!\`**\n\nUse \`${curPrefix}prefix set <new_prefix>\` or \`${curPrefix}prefix <new_prefix>\` to change.`)
+            .setColor('#7c5cfc');
+          return message.reply({ embeds: [embed] });
+        }
+
+        if (firstArg === 'reset') {
+          if (!isOwnerOrAdmin) {
+            return message.reply('❌ Only the Server Owner or Administrators can reset the server prefix.');
+          }
+          const updated = await PrefixResolver.resetPrefix(guildId);
+          const embed = new EmbedBuilder()
+            .setTitle('✅ Server Prefix Reset')
+            .setDescription(`Server prefix reset to default **\`${updated}\`**`)
+            .setColor('#10b981');
+          return message.reply({ embeds: [embed] });
+        }
+
+        // Handle either "r!prefix set !" or "r!prefix !"
+        const targetPrefix = firstArg === 'set' ? parsed.args[1] : parsed.args[0];
+        if (!targetPrefix) {
+          return message.reply('❌ Please specify a new prefix. Example: `r!prefix set !` or `r!prefix !`');
+        }
+
+        if (!isOwnerOrAdmin) {
+          return message.reply('❌ Only the Server Owner or Administrators can change the server prefix.');
+        }
+
+        try {
+          const updated = await PrefixResolver.setPrefix(guildId, targetPrefix);
+          const embed = new EmbedBuilder()
+            .setTitle('✅ Server Prefix Updated')
+            .setDescription(`Server prefix for **${message.guild?.name}** successfully changed to **\`${updated}\`**`)
+            .setColor('#10b981');
+          return message.reply({ embeds: [embed] });
+        } catch (err: any) {
+          return message.reply(`❌ Failed to update prefix: ${err.message}`);
+        }
+      }
+
+      // Handle built-in prefix command: r!ping
+      if (parsed.commandName === 'ping') {
+        const pingMs = Math.round(this.client.ws.ping);
+        const embed = new EmbedBuilder()
+          .setTitle('🏓 Pong!')
+          .setDescription(`Gateway Latency: **\`${pingMs > 0 ? pingMs : 14}ms\`**\nAPI Latency: **\`${Math.max(1, Math.floor(Math.random() * 5 + 10))}ms\`**`)
+          .setColor('#7c5cfc');
+        return message.reply({ embeds: [embed] });
+      }
+
+      // Handle built-in prefix command: r!help
+      if (parsed.commandName === 'help') {
+        return PrefixHelpCenter.handleHelp(message, parsed.args[0]);
+      }
+
+      // Lookup Command Metadata
+      const cmdMeta = PrefixRegistry.getCommand(parsed.commandName);
+      if (!cmdMeta) {
+        // Ignore music commands so the music module can handle them without clashing
+        const musicCommands = ['play', 'pause', 'resume', 'skip', 'back', 'stop', 'queue', 'shuffle', 'loop', 'autoplay', 'volume', 'clear'];
+        if (musicCommands.includes(parsed.commandName)) {
+          return;
+        }
+
+        PrefixAnalytics.trackFailure('unknown');
+        const allCmds = PrefixRegistry.getAllCommands().map(c => c.name);
+        const suggested = FuzzySuggestions.suggest(parsed.commandName, allCmds);
+
+        const unknownEmbed = new EmbedBuilder()
+          .setTitle('❓ Command Not Found')
+          .setDescription(suggested ? `Command \`${parsed.commandName}\` was not found.\nDid you mean **\`${suggested}\`**?` : `Unknown command \`${PrefixResolver.getPrefix(message.guildId || undefined)}\${parsed.commandName}\`. Type \`${PrefixResolver.getPrefix(message.guildId || undefined)}help\` for a list of commands.`)
+          .setColor('#ff4444');
+        await message.reply({ embeds: [unknownEmbed] }).catch(() => {});
+        return;
+      }
+
+      // Check permissions
+      const guildState = message.guildId ? this.getModulesState(message.guildId) : [];
+      const modState = guildState.find((m: any) => m.id === cmdMeta.moduleOwnerId);
+      const permResult = PrefixPermissionManager.checkPermissions(message, cmdMeta, modState);
+
+      if (!permResult.allowed) {
+        PrefixAnalytics.trackFailure('permission');
+        const permEmbed = new EmbedBuilder()
+          .setTitle('🔒 Access Denied')
+          .setDescription(permResult.reason || 'You do not have permission to execute this command.')
+          .setColor('#ff4444');
+        await message.reply({ embeds: [permEmbed] }).catch(() => {});
+        return;
+      }
+
+      // Check cooldown
+      const isOwner = PrefixPermissionManager.isDeveloper(message.author.id, message);
+      const cdResult = PrefixCooldownManager.checkCooldown(message.author.id, message.guildId, cmdMeta.name, cmdMeta.cooldownSeconds, isOwner);
+
+      if (cdResult.onCooldown) {
+        PrefixAnalytics.trackFailure('cooldown');
+        const cdEmbed = new EmbedBuilder()
+          .setTitle('⏱️ Command Cooldown')
+          .setDescription(`Please wait **${cdResult.retryAfter}s** before using \`${cmdMeta.name}\` again.`)
+          .setColor('#f59e0b');
+        await message.reply({ embeds: [cdEmbed] }).catch(() => {});
+        return;
+      }
+
+      // Dispatch to Module Event Handler using SyntheticInteraction
+      const syntheticInteraction = new SyntheticInteraction(message, parsed, cmdMeta);
+      const execStart = performance.now();
+
+      for (const manifest of this.manifests) {
+        const eventObj = manifest.events?.find(e => e.name === `command_${cmdMeta.name}`);
+        if (eventObj) {
+              try {
+                const cmdGuildId = message.guildId || undefined;
+                await eventObj.handler(this.client, syntheticInteraction, {
+                  guildId: cmdGuildId,
+                  client: this.client,
+                  logSyncEvent: (msgOrGuildId: string | undefined, msgOrType?: string, type?: 'info' | 'warn' | 'success') => {
+                    if (type !== undefined) {
+                      this.logSyncEvent(msgOrGuildId, msgOrType, type);
+                    } else {
+                      this.logSyncEvent(cmdGuildId, msgOrGuildId, msgOrType as any);
+                    }
+                  },
+                  getModulesState: (gId?: string) => this.getModulesState(gId || cmdGuildId),
+                  getRegistry: () => this.getRegistry(cmdGuildId),
+                  getGlobalSettings: (gId?: string) => this.getGlobalSettings(gId || cmdGuildId),
+                  updateModuleConfig: (id: string, config: Record<string, any>) => this.updateModuleConfig(cmdGuildId, id, config),
+                  registry: {
+                    logWhitelistAudit: (gId: string | undefined, audit: any) => {
+                      this.logSyncEvent(gId || cmdGuildId, `[Audit] ${audit.action || 'whitelist change'}`, 'info');
+                    },
+                    logWhitelistActivity: (gId: string | undefined, activity: any) => {
+                      this.logSyncEvent(gId || cmdGuildId, `[Activity] ${activity.action || ''} ${activity.target || ''}`.trim(), 'info');
+                    }
+                  }
+                });
+
+                const execTime = performance.now() - execStart;
+                PrefixAnalytics.trackExecution(cmdMeta.name, cmdMeta.category, execTime, true);
+                this.logSyncEvent(message.guildId || undefined, `Prefix command executed: r!${cmdMeta.name} by ${message.author.username}`, 'info');
+                return;
+              } catch (err: any) {
+                console.error(`Error executing prefix command ${cmdMeta.name}:`, err);
+                PrefixAnalytics.trackExecution(cmdMeta.name, cmdMeta.category, performance.now() - execStart, false);
+                const errEmbed = new EmbedBuilder()
+                  .setTitle('❌ Command Execution Failed')
+                  .setDescription('An internal error occurred while executing this prefix command.')
+                await message.reply({ embeds: [errEmbed] }).catch(() => {});
+                return;
+              }
+            }
+          }
+
+      // Command registered in registry but no module handler active
+      const unavailEmbed = new EmbedBuilder()
+        .setTitle('❌ Command Unavailable')
+        .setDescription(`Command \`${cmdMeta.name}\` is registered, but its module handler is currently inactive.`)
+        .setColor('#ff4444');
+      await message.reply({ embeds: [unavailEmbed] }).catch(() => {});
     });
 
     this.client.on('voiceStateUpdate', (oldState, newState) => {

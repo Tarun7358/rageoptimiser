@@ -330,6 +330,11 @@ export class Database {
         userId TEXT NOT NULL,
         birthday TEXT NOT NULL,
         PRIMARY KEY (guildId, userId)
+      );`,
+      `CREATE TABLE IF NOT EXISTS guild_prefixes (
+        guildId TEXT PRIMARY KEY,
+        prefix TEXT NOT NULL,
+        updatedAt INTEGER NOT NULL
       );`
     ];
 

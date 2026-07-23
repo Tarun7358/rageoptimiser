@@ -98,8 +98,12 @@ export class TelemetryWebSocketClient {
         this.handleDisconnect();
       });
 
-      this.ws.on('error', (err) => {
-        ConsoleMirror.warn(`Telemetry connection error: ${err.message}`);
+      this.ws.on('error', (err: any) => {
+        if (err?.code === 'ECONNREFUSED' || err?.message?.includes('ECONNREFUSED')) {
+          console.log(`[Telemetry] Waiting for Gateway to be ready at ${this.url}...`);
+        } else {
+          ConsoleMirror.warn(`Telemetry connection error: ${err.message}`);
+        }
       });
     } catch (err: any) {
       this.isConnecting = false;

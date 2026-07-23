@@ -27,7 +27,9 @@ import { BulkOpsManifest } from '../modules/bulk_ops/manifest.js';
 import { DiagnosticsManifest } from '../modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from '../modules/voice-protection/index.js';
 import { WelcomeV2Manifest } from '../modules/welcome-v2/manifest.js';
-import { TicketsV2Manifest } from '../modules/tickets-v2/manifest.js';
+import { TicketsV2Manifest } from '../modules/tickets-v2/manifest.js';import { CommunityManifest } from '../modules/community/manifest.js';
+import { JoinRoleAssignmentGuardManifest } from '../modules/join-role-guard/manifest.js';
+import { SocialUpdatesManifest } from '../modules/social-updates/manifest.js';
 
 
 dotenv.config();
@@ -59,6 +61,7 @@ const manifests = [
   AutomodManifest,
   DiscordDashboardManifest,
   MusicManifest,
+  CommunityManifest,
   BlacklistManifest,
   GiveawayManifest,
   RemindersManifest,
@@ -68,6 +71,8 @@ const manifests = [
   BulkOpsManifest,
   DiagnosticsManifest,
   VoiceProtectionManifest,
+  JoinRoleAssignmentGuardManifest,
+  SocialUpdatesManifest,
   WelcomeV2Manifest,
   TicketsV2Manifest,
 ];
@@ -108,20 +113,20 @@ const rest = new REST({ version: '10' }).setToken(token);
 
 async function deploy() {
   try {
+    console.log(`🚀 Deploying ${commands.length} application commands globally across all servers...`);
+    await rest.put(
+      Routes.applicationCommands(clientStr),
+      { body: commands }
+    );
+    console.log('✅ Slash commands successfully registered globally on Discord REST API.');
+
     if (guildStr) {
-      console.log(`🚀 Deploying ${commands.length} application commands to Guild ${guildStr}...`);
+      console.log(`🚀 Deploying ${commands.length} application commands instantly to target Guild ${guildStr}...`);
       await rest.put(
         Routes.applicationGuildCommands(clientStr, guildStr),
         { body: commands }
       );
-      console.log('✅ Slash commands successfully registered on Discord REST API for the target guild.');
-    } else {
-      console.log(`🚀 Deploying ${commands.length} application commands globally...`);
-      await rest.put(
-        Routes.applicationCommands(clientStr),
-        { body: commands }
-      );
-      console.log('✅ Slash commands successfully registered globally.');
+      console.log('✅ Slash commands successfully registered for target guild.');
     }
   } catch (error) {
     console.error('❌ Failed to deploy slash commands:', error);

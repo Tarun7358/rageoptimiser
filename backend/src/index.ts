@@ -89,6 +89,7 @@ import { LevelingManifest } from './modules/leveling/manifest.js';
 import { AutomodManifest } from './modules/automod/manifest.js';
 import { DiscordDashboardManifest } from './modules/discord-dashboard/manifest.js';
 import { MusicManifest } from './modules/music/manifest.js';
+import { CommunityManifest } from './modules/community/manifest.js';
 
 import { QueueManager } from './modules/music/QueueManager.js';
 
@@ -126,6 +127,7 @@ export const ALL_MANIFESTS = [
   AutomodManifest,
   DiscordDashboardManifest,
   MusicManifest,
+  CommunityManifest,
 
   // New
   BlacklistManifest,
