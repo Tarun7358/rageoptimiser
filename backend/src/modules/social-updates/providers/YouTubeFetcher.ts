@@ -144,13 +144,13 @@ export class YouTubeFetcher {
 
     if (!resp.ok) throw new Error(`RSS feed returned ${resp.status} for channel ${channelId}`);
     const xml = await resp.text();
-    return this.parseAtomXml(xml).slice(0, limit);
+    return this.parseAtomXml(xml, channelId).slice(0, limit);
   }
 
   /**
    * Parse RSS feed XML tags.
    */
-  private static parseAtomXml(xml: string): ContentItem[] {
+  private static parseAtomXml(xml: string, channelId: string): ContentItem[] {
     const items: ContentItem[] = [];
     const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
     let entryMatch: RegExpExecArray | null;
@@ -193,7 +193,7 @@ export class YouTubeFetcher {
           extra: { 
             'video.updated': updated,
             'provider': 'youtube',
-            'sourceId': videoId,
+            'sourceId': channelId,
             'contentType': isShort ? 'short' : 'video'
           }
         });

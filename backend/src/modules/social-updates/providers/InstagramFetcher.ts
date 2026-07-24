@@ -54,7 +54,9 @@ export class InstagramFetcher {
         'profile.username': username,
         'profile.avatar': '',
         'contentType': type,
-        'expiresAt': expiresAt || ''
+        'expiresAt': expiresAt || '',
+        'provider': 'instagram',
+        'sourceId': username
       }
     };
 
@@ -83,7 +85,9 @@ export class InstagramFetcher {
           'profile.name': username,
           'profile.username': username,
           'profile.avatar': '',
-          'contentType': 'post'
+          'contentType': 'post',
+          'provider': 'instagram',
+          'sourceId': username
         }
       },
       {
@@ -101,7 +105,9 @@ export class InstagramFetcher {
           'profile.name': username,
           'profile.username': username,
           'profile.avatar': '',
-          'contentType': 'reel'
+          'contentType': 'reel',
+          'provider': 'instagram',
+          'sourceId': username
         }
       }
     ];
