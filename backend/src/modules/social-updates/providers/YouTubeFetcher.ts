@@ -233,32 +233,49 @@ export class YouTubeFetcher {
       if (!response.ok) return null;
       const html = await response.text();
 
-      const isLive = html.includes('"isLive":true') || html.includes('"isLiveStream":true') || html.includes('style="LIVE"');
-      const isPremiere = html.includes('"isPremiere":true') || html.includes('style="PREMIERE"');
+      const playerResponseMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{[\s\S]*?\});/) ||
+                                  html.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{[\s\S]*?\});/) ||
+                                  html.match(/window\[['"]ytInitialPlayerResponse['"]\]\s*=\s*(\{[\s\S]*?\});/);
 
-      if (isLive || isPremiere) {
-        const videoIdMatch = html.match(/"videoId":"([^"]+)"/) || html.match(/\/watch\?v=([^"]+)/);
-        const videoId = videoIdMatch?.[1];
-        
-        const titleMatch = html.match(/"title":\{"runs":\[\{"text":"([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
-        const title = titleMatch?.[1]?.replace(' - YouTube', '') || 'Live Stream';
+      if (playerResponseMatch) {
+        const playerResponseStr = playerResponseMatch[1];
+        const isLive = playerResponseStr.includes('"isLive":true') || playerResponseStr.includes('"isLiveContent":true');
+        const isPremiere = playerResponseStr.includes('"isPremiere":true');
 
-        if (videoId) {
-          return {
-            id: videoId,
-            title,
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-            description: isLive ? 'Live Stream Started!' : 'Premiere Scheduled.',
-            publishedAt: new Date().toISOString(),
-            isLive,
-            isPremiere,
-            extra: {
-              provider: 'youtube',
-              sourceId: channelId,
-              contentType: isLive ? 'live' : 'premiere'
+        if (isLive || isPremiere) {
+          const videoIdMatch = playerResponseStr.match(/"videoId":"([^"]+)"/);
+          const videoId = videoIdMatch?.[1];
+
+          if (videoId) {
+            const titleMatch = playerResponseStr.match(/"videoDetails":\{[^}]*?"title":"([^"]+)"/) ||
+                               playerResponseStr.match(/"title":"([^"]+)"/) ||
+                               playerResponseStr.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
+            const title = titleMatch?.[1] || titleMatch?.[2] || titleMatch?.[3] || 'Live Stream';
+
+            const thumbMatch = playerResponseStr.match(/"playerMicroformatRenderer":[\s\S]*?"thumbnail":\{"thumbnails":\[\{"url":"([^"]+)"/) ||
+                               playerResponseStr.match(/"videoDetails":[\s\S]*?"thumbnail":\{"thumbnails":\[\{"url":"([^"]+)"/) ||
+                               playerResponseStr.match(/"thumbnails":\[\{"url":"([^"]+)"/);
+            let thumbnailUrl = thumbMatch?.[1] || thumbMatch?.[2] || thumbMatch?.[3] || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+            if (thumbnailUrl) {
+              thumbnailUrl = thumbnailUrl.replace(/&amp;/g, '&');
             }
-          };
+
+            return {
+              id: videoId,
+              title: title.replace(' - YouTube', ''),
+              url: `https://www.youtube.com/watch?v=${videoId}`,
+              thumbnailUrl,
+              description: isLive ? 'Live Stream Started!' : 'Premiere Scheduled.',
+              publishedAt: new Date().toISOString(),
+              isLive,
+              isPremiere,
+              extra: {
+                provider: 'youtube',
+                sourceId: channelId,
+                contentType: isLive ? 'live' : 'premiere'
+              }
+            };
+          }
         }
       }
       return null;

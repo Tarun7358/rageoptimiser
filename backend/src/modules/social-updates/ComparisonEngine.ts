@@ -46,25 +46,26 @@ export class ComparisonEngine {
     const cached = await SocialSubscriptionRepository.getCache(provider, sourceId);
     const cachedIds = new Set(cached.map(c => c.id));
 
-    // Helper to evaluate cached entries based on type-aware matching rules
+    // Helper to evaluate cached entries based on type-aware matching rules.
+    // For YouTube and Instagram, we block duplicates if any state/format of the video
+    // (e.g. live, premiere, short, standard video) has already been processed to prevent double-alerts.
     const hasCachedKey = (id: string, type: string) => {
-      // Standard upload types ('video', 'post') should be blocked if any state transition has already been processed
-      if (type === 'video' || type === 'post') {
-        const checkKeys = [
-          id,
-          `${id}:video`,
-          `${id}:post`,
-          `${id}:live`,
-          `${id}:premiere`,
-          `${id}:carousel`,
-          `${id}:short`,
-          `${id}:reel`
-        ];
-        return checkKeys.some(k => cachedIds.has(k));
+      // Stories are ephemeral and can have repeating or short-lived IDs, so we treat them strictly
+      if (type === 'story') {
+        return cachedIds.has(`${id}:${type}`) || cachedIds.has(id);
       }
 
-      // Specific types (e.g. 'live', 'premiere', 'story') require exact key match or bare ID match
-      return cachedIds.has(`${id}:${type}`) || cachedIds.has(id);
+      const checkKeys = [
+        id,
+        `${id}:video`,
+        `${id}:post`,
+        `${id}:live`,
+        `${id}:premiere`,
+        `${id}:carousel`,
+        `${id}:short`,
+        `${id}:reel`
+      ];
+      return checkKeys.some(k => cachedIds.has(k));
     };
 
     // If cache is entirely empty for this account (first run), initialize it with all items and return nothing
