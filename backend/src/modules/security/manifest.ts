@@ -1994,6 +1994,79 @@ export const SecurityManifest: ModuleManifest = {
           console.error(err);
         }
       }
+    },
+    {
+      name: 'messageCreate',
+      handler: async (client: any, message: any, context: any) => {
+        if (message.author?.bot) return;
+        if (!message.guild) return;
+
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const secModule = modules.find((m: any) => m.id === 'security');
+        if (!secModule || secModule.status !== 'enabled') return;
+
+        const config = secModule.config || {};
+        const rules = config.rules || {};
+        const rule = rules.anti_link || { enabled: true, limit: 3, window: 10, action: 'warn' };
+
+        if (!rule.enabled) return;
+
+        const content = message.content.toLowerCase();
+        const hasLink = content.includes('http://') || content.includes('https://') || content.includes('discord.gg/');
+
+        if (!hasLink) return;
+
+        const isBypassed = await isExecutorBypassed(message.guild, message.author.id, config, context, 'anti_link');
+        if (isBypassed) return;
+
+        const triggered = checkRateLimit(message.guild.id, message.author.id, 'anti_link', rule.limit, rule.window);
+        if (triggered) {
+          context.logSyncEvent(message.guild.id, `🚨 [Anti-Link Triggered]: Link sharing threshold exceeded by ${message.author.username}.`, 'warn');
+
+          await message.delete().catch(() => {});
+
+          if (config.alertChannelId) {
+            const alertChannel = message.guild.channels.cache.get(config.alertChannelId);
+            if (alertChannel && alertChannel.isTextBased()) {
+              const embed = new EmbedBuilder()
+                .setTitle('🛡️ Security Alert: Anti-Link Triggered')
+                .setColor('#ff4444')
+                .addFields(
+                  { name: 'User', value: `${message.author.username} (${message.author.id})` },
+                  { name: 'Channel', value: `<#${message.channel.id}>` },
+                  { name: 'Action Taken', value: rule.action },
+                  { name: 'Content Deleted', value: message.content.substring(0, 1000) }
+                )
+                .setTimestamp();
+              await alertChannel.send({ embeds: [embed] }).catch(() => {});
+            }
+          }
+
+          if (rule.action === 'warn') {
+            await message.member.send(`⚠️ **Warning from ${message.guild.name}**\nYour message was removed because you exceeded the link sharing rate limit.`).catch(() => {});
+            const warningMsg = await message.channel.send(`⚠️ ${message.author}, unauthorized link sharing threshold exceeded. Message removed.`).catch(() => null);
+            if (warningMsg) {
+              setTimeout(() => warningMsg.delete().catch(() => {}), 5000);
+            }
+          } else if (rule.action === 'timeout') {
+            const duration = (rule.timeoutDuration || 5) * 60 * 1000;
+            await message.member.timeout(duration, 'Anti-Link: Link sharing threshold exceeded').catch(console.error);
+            await message.member.send(`⚠️ **Timeout from ${message.guild.name}**\nYou have been timed out for exceeding the link sharing rate limit.`).catch(() => {});
+          } else {
+            await punishViolator(
+              client,
+              message.guild,
+              message.author.id,
+              message.author.username,
+              `Anti-Link: Exceeded link sharing rate limit (${rule.limit} links per ${rule.window}s)`,
+              rule.action,
+              config,
+              context,
+              'anti_link'
+            );
+          }
+        }
+      }
     }
   ],
   routes: [
@@ -2235,7 +2308,7 @@ export const SecurityManifest: ModuleManifest = {
           'anti_channel_create', 'anti_channel_delete', 'anti_channel_update',
           'anti_role_create', 'anti_role_delete', 'anti_role_update',
           'anti_webhook_create', 'anti_webhook_delete', 'anti_guild_update',
-          'anti_bot_add'
+          'anti_bot_add', 'anti_link'
         ];
 
         for (const rName of ruleNames) {
@@ -2243,7 +2316,7 @@ export const SecurityManifest: ModuleManifest = {
             enabled: true,
             limit: sensitivity,
             window: 10,
-            action: rName === 'anti_bot_add' ? 'ban' : action,
+            action: rName === 'anti_bot_add' ? 'ban' : (rName === 'anti_link' ? 'warn' : action),
             recovery: true
           };
         }
