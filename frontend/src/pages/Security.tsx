@@ -461,7 +461,8 @@ export function Security({
         window: editRuleData.window,
         action: editRuleData.action,
         timeoutDuration: editRuleData.timeoutDuration || 60,
-        recovery: editRuleData.recovery
+        recovery: editRuleData.recovery,
+        ignoredDomains: editRuleData.ignoredDomains || ''
       }
     };
     onUpdateConfig('security', { rules: updatedRules });
@@ -1810,6 +1811,22 @@ export function Security({
                   />
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.7 }}>
                     Max 28 days (40,320 minutes).
+                  </span>
+                </div>
+              )}
+
+              {editRuleData.key === 'anti_link' && (
+                <div className="form-group" style={{ marginTop: '12px' }}>
+                  <label className="form-label">Ignored Domains (Comma separated)</label>
+                  <input 
+                    type="text" 
+                    className="form-input-text"
+                    placeholder="e.g. youtube.com, spotify.com, tenor.com"
+                    value={editRuleData.ignoredDomains || ''}
+                    onChange={e => setEditRuleData({ ...editRuleData, ignoredDomains: e.target.value })}
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.7 }}>
+                    Links containing these domains will be ignored by everyone.
                   </span>
                 </div>
               )}

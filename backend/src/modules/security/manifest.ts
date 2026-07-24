@@ -9,6 +9,29 @@ import { checkRoleAssignment } from '../join-role-guard/manifest.js';
 export const liveSnapshots = new Map<string, any>();
 export const activeQuarantines = new Set<string>();
 
+function extractDomains(text: string): string[] {
+  const urlRegex = /(https?:\/\/[^\s]+)/gi;
+  const inviteRegex = /(discord\.gg\/[^\s]+)/gi;
+  const domains: string[] = [];
+
+  const urlMatches = text.match(urlRegex) || [];
+  for (const url of urlMatches) {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname) {
+        domains.push(parsed.hostname.toLowerCase());
+      }
+    } catch (e) {}
+  }
+
+  const inviteMatches = text.match(inviteRegex) || [];
+  for (const inv of inviteMatches) {
+    domains.push('discord.gg');
+  }
+
+  return domains;
+}
+
 // Simple in-memory tracker for rate limits
 interface ActionTracker {
   count: number;
@@ -2018,6 +2041,28 @@ export const SecurityManifest: ModuleManifest = {
 
         const isBypassed = await isExecutorBypassed(message.guild, message.author.id, config, context, 'anti_link');
         if (isBypassed) return;
+
+        // Domain Whitelist Check
+        const ignoredString = rule.ignoredDomains || '';
+        const ignoredList = ignoredString
+          .split(',')
+          .map((d: string) => d.trim().toLowerCase())
+          .filter((d: string) => d.length > 0);
+
+        if (ignoredList.length > 0) {
+          const messageDomains = extractDomains(message.content);
+          if (messageDomains.length > 0) {
+            const hasUnignoredLink = messageDomains.some(msgDomain => {
+              return !ignoredList.some((ignored: string) => {
+                return msgDomain === ignored || msgDomain.endsWith('.' + ignored);
+              });
+            });
+            if (!hasUnignoredLink) {
+              // All links are whitelisted, bypass the blocker entirely
+              return;
+            }
+          }
+        }
 
         const triggered = checkRateLimit(message.guild.id, message.author.id, 'anti_link', rule.limit, rule.window);
         if (triggered) {
