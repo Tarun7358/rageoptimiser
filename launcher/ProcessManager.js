@@ -298,7 +298,7 @@ class ProcessManager {
     this.logger.info(`Starting dashboard (port ${port}) from: ${dashPath}`);
 
     return new Promise((resolve, reject) => {
-      const proc = spawn('node', ['node_modules/vite/bin/vite.js', '--port', String(port), '--host', 'localhost'], {
+      const proc = spawn('node', ['node_modules/vite/bin/vite.js', '--port', String(port), '--host', '0.0.0.0'], {
         cwd: dashPath,
         env: { ...process.env, FORCE_COLOR: '0' },
         shell: false,
