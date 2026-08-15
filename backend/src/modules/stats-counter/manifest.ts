@@ -31,6 +31,13 @@ export function formatViews(viewsStr: string): string {
   return cleanNum.toLocaleString();
 }
 
+export function cleanSubCount(subStr: string): string {
+  if (!subStr || subStr === 'N/A') return '0';
+  let s = subStr.replace(/subscribers?/i, '').trim();
+  s = s.replace(/million/i, 'M').replace(/thousand/i, 'K').replace(/billion/i, 'B').replace(/\s+/g, '');
+  return s || '0';
+}
+
 export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ subs: string; views: string }> {
   try {
     const cleanHandle = channelHandle.replace(/^https?:\/\/(www\.)?youtube\.com\//i, '').replace(/^\/?@?/, '');
@@ -53,10 +60,10 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
                       html.match(/"viewCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"\}/) ||
                       html.match(/([\d,]+)\s+views/i);
 
-    const rawSub = subMatch ? subMatch[1].replace(/subscribers?/i, '').trim() : '0';
-    const rawViews = viewMatch ? viewMatch[1].replace(/views?/i, '').trim() : '0';
+    const rawSub = subMatch ? subMatch[1] : '0';
+    const rawViews = viewMatch ? viewMatch[1] : '0';
 
-    return { subs: rawSub, views: formatViews(rawViews) };
+    return { subs: cleanSubCount(rawSub), views: formatViews(rawViews) };
   } catch (err) {
     return { subs: 'N/A', views: 'N/A' };
   }
@@ -80,7 +87,7 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
     if (config.memberChannelId) {
       const channel = guild.channels.cache.get(config.memberChannelId);
       if (channel) {
-        const newName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoiceCount}`;
+        const newName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoiceCount}`.slice(0, 95);
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
@@ -92,7 +99,7 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
       const channel = guild.channels.cache.get(config.ytChannelId);
       if (channel) {
         const ytData = await fetchYouTubeSubscribers(config.ytHandle);
-        const newName = `${STAT_EMOJIS.YOUTUBE} Subscribers : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
+        const newName = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`.slice(0, 95);
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
@@ -237,7 +244,7 @@ export const StatsCounterManifest: ModuleManifest = {
             if (ch.isVoiceBased?.()) activeVoice += ch.members.size;
           });
 
-          const channelName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`;
+          const channelName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`.slice(0, 95);
 
           // Create locked Voice Channel (Connect: false creates padlock icon 🔒)
           const voiceChannel = await guild.channels.create({
@@ -298,7 +305,7 @@ export const StatsCounterManifest: ModuleManifest = {
           }
 
           const ytData = await fetchYouTubeSubscribers(handle);
-          const channelName = `${STAT_EMOJIS.YOUTUBE} Subscribers : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
+          const channelName = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`.slice(0, 95);
 
           // Create locked Voice Channel
           const voiceChannel = await guild.channels.create({
