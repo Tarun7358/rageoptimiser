@@ -201,6 +201,20 @@ export const StatsCounterManifest: ModuleManifest = {
   ],
   events: [
     {
+      name: 'voiceStateUpdate',
+      handler: async (client: any, oldState: any, newState: any, context: any) => {
+        const guild = newState?.guild || oldState?.guild;
+        if (!guild) return;
+
+        const modules = context.getModulesState ? context.getModulesState() : [];
+        const mod = modules.find((m: any) => m.id === 'stats-counter');
+        const config = mod?.config || {};
+        if (!config || !config.enabled) return;
+
+        await syncGuildStatCounters(guild, config, context).catch(() => {});
+      }
+    },
+    {
       name: 'command_counter',
       handler: async (client: any, interaction: any, context: any) => {
         const guild = interaction.guild;
