@@ -59,7 +59,8 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
     if (!res.ok) return { subs: 'N/A', views: 'N/A' };
     const html = await res.text();
 
-    const subMatch = html.match(/"content":"([^"]*subscribers?)"/i) ||
+    const subMatch = html.match(/"subscriberCountText":"([^"]+)"/) ||
+                     html.match(/"content":"([^"]*subscribers?)"/i) ||
                      html.match(/([\d\.]+[KMB]?)\s+subscribers/i) ||
                      html.match(/"subscriberCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
                      html.match(/"subscriberCountText":\s*\{[^\}]*"text":"([^"]+)"\}/) ||
@@ -68,7 +69,8 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
     const videoMatch = html.match(/"content":"([^"]*videos?)"/i) ||
                        html.match(/([\d,]+)\s+videos/i);
 
-    const viewMatch = html.match(/"viewCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
+    const viewMatch = html.match(/"viewCountText":"([^"]+)"/) ||
+                      html.match(/"viewCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
                       html.match(/"viewCountText":\s*\{[^\}]*"text":"([^"]+)"\}/) ||
                       html.match(/"viewCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"\}/) ||
                       html.match(/([\d,]+)\s+views/i);
