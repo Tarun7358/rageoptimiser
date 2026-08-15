@@ -1,6 +1,6 @@
 import { PermissionFlagsBits, ChannelType, Guild } from 'discord.js';
 import { ModuleManifest } from '../../core/types.js';
-import { createLimeEmbed, buildMinimalAction, buildLimeOverviewCard, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, CONFIG_ICON } from '../../core/UIFactory.js';
+import { createLimeEmbed, buildMinimalAction, buildLimeActionCard, buildLimeOverviewCard, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, CONFIG_ICON, INFO_ICON } from '../../core/UIFactory.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
 import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
@@ -330,10 +330,14 @@ export const StatsCounterManifest: ModuleManifest = {
           const statusText = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`;
           await setVoiceChannelStatusHelper(targetChannel, statusText);
 
-          const embed = buildMinimalAction({
-            user: interaction.user,
-            action: `configured Voice Channel Status for **${targetChannel.name}**`,
-            target: targetChannel
+          const embed = buildLimeActionCard({
+            title: `${CONFIG_ICON} Member Stats Counter Configured`,
+            description: `Configured live Voice Channel Status for **${targetChannel.name}**.`,
+            fields: [
+              { name: 'Target Channel', value: `<#${targetChannel.id}>`, inline: true },
+              { name: 'Live Metrics', value: `Members: **${totalMembers}** | VC: **${activeVoice}**`, inline: true },
+              { name: `${INFO_ICON} Details`, value: `Voice Channel Status updated automatically. Channel name preserved.`, inline: false }
+            ]
           });
 
           return interaction.editReply({ embeds: [embed] });
@@ -404,10 +408,15 @@ export const StatsCounterManifest: ModuleManifest = {
           const statusText = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
           await setVoiceChannelStatusHelper(targetChannel, statusText);
 
-          const embed = buildMinimalAction({
-            user: interaction.user,
-            action: `configured display-only YouTube counter for **${handle}** (${targetChannel.name})`,
-            target: targetChannel
+          const embed = buildLimeActionCard({
+            title: `${STAT_EMOJIS.YOUTUBE} YouTube Stats Counter Configured`,
+            description: `Configured display-only YouTube counter for **${handle}**.`,
+            fields: [
+              { name: 'Target Channel', value: `<#${targetChannel.id}>`, inline: true },
+              { name: 'Subscribers', value: `\`${ytData.subs}\``, inline: true },
+              { name: 'Total Views', value: `\`${ytData.views}\``, inline: true },
+              { name: `${INFO_ICON} Channel Handle`, value: `\`@${handle.replace(/^@/, '')}\``, inline: false }
+            ]
           });
 
           return interaction.editReply({ embeds: [embed] });
@@ -418,9 +427,12 @@ export const StatsCounterManifest: ModuleManifest = {
           await interaction.deferReply({ flags: 64 });
           await syncGuildStatCounters(guild, config, context);
 
-          const embed = buildMinimalAction({
-            user: interaction.user,
-            action: 'force-synced all live display counter channel names'
+          const embed = buildLimeActionCard({
+            title: `${VERIFIED_ICON} Counter Engine Force-Synced`,
+            description: `Successfully force-synced live voice channel status metrics across all counter channels.`,
+            fields: [
+              { name: 'Engine Status', value: `\`OPERATIONAL\``, inline: true }
+            ]
           });
 
           return interaction.editReply({ embeds: [embed] });
@@ -448,9 +460,12 @@ export const StatsCounterManifest: ModuleManifest = {
             ytHandle: null
           });
 
-          const embed = buildMinimalAction({
-            user: interaction.user,
-            action: 'purged all display counter channels and reset config'
+          const embed = buildLimeActionCard({
+            title: `${WRONG_ICON} Stats Counter Reset`,
+            description: `Purged all display counter channels and reset module configuration.`,
+            fields: [
+              { name: 'Status', value: `\`CLEARED\``, inline: true }
+            ]
           });
 
           return interaction.editReply({ embeds: [embed] });

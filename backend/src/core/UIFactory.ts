@@ -257,7 +257,33 @@ export function buildMinimalAction(opts: {
   }
   return new EmbedBuilder()
     .setColor(color)
-    .setDescription(text);
+    .setDescription(text)
+    .setFooter({ text: 'Rage Optimiser • Rage Optimiser • Unbypassable Security' })
+    .setTimestamp();
+}
+
+export function buildLimeActionCard(opts: {
+  title: string;
+  description: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+  footerText?: string;
+  color?: number;
+  thumbnailUrl?: string;
+}): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(opts.color ?? Colors.LIME)
+    .setTitle(opts.title)
+    .setDescription(opts.description)
+    .setFooter({ text: opts.footerText ?? 'Rage Optimiser • Rage Optimiser • Unbypassable Security' })
+    .setTimestamp();
+
+  if (opts.fields && opts.fields.length > 0) {
+    embed.addFields(opts.fields);
+  }
+  if (opts.thumbnailUrl) {
+    embed.setThumbnail(opts.thumbnailUrl);
+  }
+  return embed;
 }
 
 export function buildLimeWarnCard(opts: {

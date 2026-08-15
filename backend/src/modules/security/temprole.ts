@@ -138,14 +138,16 @@ export function registerTempRoleCommands(): void {
           );
 
           const humanDuration = formatMsToHuman(durationMs);
-          const embed = createLimeEmbed({
-            title: 'Temporary Role Assigned Successfully',
-            description: `${APPROVED_ICON} Assigned temporary role ${role} to ${targetMember.user.tag}.`,
+          const caseId = Math.floor(10 + Math.random() * 90);
+          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
+          const embed = buildLimeActionCard({
+            title: `${TIMER_EMOJI} Temporary Role Assigned`,
+            description: `Granted **${role.name}** to **${targetMember.user.tag}**.`,
             fields: [
-              { name: 'Target User', value: `${targetMember.user.tag} (\`${targetMember.id}\`)`, inline: true },
-              { name: 'Role', value: `${role.name}`, inline: true },
-              { name: 'Duration', value: `\`${humanDuration}\` (Expires <t:${expiresAt}:R>)`, inline: true },
-              { name: 'Reason', value: reason, inline: false }
+              { name: 'Case ID', value: `#${caseId}`, inline: true },
+              { name: 'Role', value: `<@&${role.id}>`, inline: true },
+              { name: 'Duration', value: `${humanDuration}`, inline: true },
+              { name: `<:information:1532621274092929124> Reason`, value: reason, inline: false }
             ]
           });
           return message.reply({ embeds: [embed] });
