@@ -244,8 +244,8 @@ async function bootstrap() {
       }
     }, 5 * 60 * 1000);
 
-  } catch (error) {
-    console.error('❌ Critical bootstrap error:', error);
+  } catch (error: any) {
+    console.error('❌ Critical bootstrap error:', error?.stack || error?.message || error);
     process.exit(1);
   }
 }

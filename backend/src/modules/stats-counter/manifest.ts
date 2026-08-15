@@ -2,6 +2,7 @@ import { PermissionFlagsBits, ChannelType, Guild } from 'discord.js';
 import { ModuleManifest } from '../../core/types.js';
 import { createLimeEmbed, buildMinimalAction, buildLimeOverviewCard, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, CONFIG_ICON } from '../../core/UIFactory.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
 // User specified server emojis
 export const STAT_EMOJIS = {
@@ -380,7 +381,6 @@ export const StatsCounterManifest: ModuleManifest = {
 };
 
 export function registerStatsCounterCommands(): void {
-  const { PrefixRegistry } = require('../../core/prefix/PrefixRegistry.js');
   PrefixRegistry.register({
     name: 'counter',
     category: 'Community',
