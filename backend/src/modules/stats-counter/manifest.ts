@@ -88,6 +88,21 @@ export function resolveTargetChannel(guild: Guild, input?: string) {
   return guild.channels.cache.find(c => c.name.toLowerCase() === lower || c.name.toLowerCase().includes(lower)) || null;
 }
 
+export async function setVoiceChannelStatusHelper(channel: any, statusText: string) {
+  if (!channel || !channel.isVoiceBased?.()) return;
+  try {
+    if (typeof channel.setVoiceChannelStatus === 'function') {
+      await channel.setVoiceChannelStatus(statusText);
+    } else if (channel.client?.rest) {
+      await channel.client.rest.put(`/channels/${channel.id}/voice-status`, {
+        body: { status: statusText }
+      });
+    }
+  } catch (err: any) {
+    // Graceful catch if endpoint not supported or missing permissions
+  }
+}
+
 export async function syncGuildStatCounters(guild: Guild, config: any, context?: any) {
   if (!config || !config.enabled) return;
 
@@ -102,7 +117,7 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
       }
     });
 
-    // 2. Update Member Stats Voice Channel
+    // 2. Update Member Stats Voice Channel & Status
     if (config.memberChannelId) {
       const channel = guild.channels.cache.get(config.memberChannelId);
       if (channel) {
@@ -110,10 +125,12 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
+        const statusText = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoiceCount}`;
+        await setVoiceChannelStatusHelper(channel, statusText);
       }
     }
 
-    // 3. Update YouTube Stats Voice Channel
+    // 3. Update YouTube Stats Voice Channel & Status
     if (config.ytChannelId && config.ytHandle) {
       const channel = guild.channels.cache.get(config.ytChannelId);
       if (channel) {
@@ -122,6 +139,8 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
+        const statusText = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
+        await setVoiceChannelStatusHelper(channel, statusText);
       }
     }
   } catch (err: any) {
@@ -299,6 +318,8 @@ export const StatsCounterManifest: ModuleManifest = {
           };
 
           await context.updateModuleConfig('stats-counter', updatedConfig);
+          const statusText = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`;
+          await setVoiceChannelStatusHelper(targetChannel, statusText);
 
           const embed = buildMinimalAction({
             user: interaction.user,
@@ -373,6 +394,8 @@ export const StatsCounterManifest: ModuleManifest = {
           };
 
           await context.updateModuleConfig('stats-counter', updatedConfig);
+          const statusText = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
+          await setVoiceChannelStatusHelper(targetChannel, statusText);
 
           const embed = buildMinimalAction({
             user: interaction.user,
