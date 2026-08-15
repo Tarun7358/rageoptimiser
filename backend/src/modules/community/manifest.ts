@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { Database } from '../../core/Database.js';
-import { buildLimeOverviewCard, buildMinimalAction, createLimeEmbed, VERIFIED_ICON, WRONG_ICON, TIMER_ICON, SHIELD_ICON, CONFIG_ICON, Colors } from '../../core/UIFactory.js';
+import { buildLimeOverviewCard, buildMinimalAction, createLimeEmbed, VERIFIED_ICON, WRONG_ICON, TIMER_ICON, SHIELD_ICON, CONFIG_ICON, MEMBER_ICON, VIP_ICON, Colors } from '../../core/UIFactory.js';
 
 // Safe display name helper
 function userTag(user: any): string {
@@ -539,10 +539,13 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_avatar',
       handler: async (client: any, interaction: any, context: any) => {
         const user = interaction.options.getUser('user') || interaction.user;
+        const avatarUrl = user.displayAvatarURL({ size: 1024, forceStatic: false });
         const embed = new EmbedBuilder()
-          .setTitle(`${user.username}'s Avatar`)
-          .setImage(user.displayAvatarURL({ size: 1024, forceStatic: false }))
-          .setColor('#4f8cff');
+          .setTitle(`${MEMBER_ICON} ${user.username}'s Avatar`)
+          .setImage(avatarUrl)
+          .setColor(0x99CC00)
+          .setFooter({ text: 'Rage Optimiser • User Profile' })
+          .setTimestamp();
         await interaction.reply({ embeds: [embed] });
       }
     },
@@ -550,23 +553,40 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_userinfo',
       handler: async (client: any, interaction: any, context: any) => {
         const user = interaction.options.getUser('user') || interaction.user;
-        const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+        const member = await interaction.guild?.members.fetch(user.id).catch(() => null);
         
-        const embed = new EmbedBuilder()
-          .setAuthor({ name: userTag(user), iconURL: user.displayAvatarURL() })
-          .setThumbnail(user.displayAvatarURL())
-          .setColor('#4f8cff')
-          .addFields(
-            { name: 'ID', value: user.id, inline: true },
-            { name: 'Joined Discord', value: `<t:${Math.floor(user.createdTimestamp / 1000)}:R>`, inline: true }
-          );
-        
-        if (member) {
-          embed.addFields(
-            { name: 'Joined Server', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>`, inline: true },
-            { name: 'Roles', value: member.roles.cache.filter((r: any) => r.name !== '@everyone').map((r: any) => `<@&${r.id}>`).join(', ') || 'None' }
-          );
-        }
+        const rolesList = member 
+          ? member.roles.cache
+              .filter((r: any) => r.id !== interaction.guild.id)
+              .sort((a: any, b: any) => b.position - a.position)
+              .map((r: any) => `${r}`)
+              .join(', ') || '*No assigned roles*'
+          : 'N/A';
+
+        const embed = buildLimeOverviewCard({
+          title: user.username.toUpperCase(),
+          subtitle: 'USER IDENTITY & ACCOUNT PROFILE',
+          thumbnail: user.displayAvatarURL({ size: 512, forceStatic: false }),
+          sections: [
+            {
+              title: `${MEMBER_ICON} ACCOUNT INFORMATION`,
+              items: [
+                `User Mention: <@${user.id}>`,
+                `User ID: \`${user.id}\``,
+                `Created Account: <t:${Math.floor(user.createdTimestamp / 1000)}:R>`
+              ]
+            },
+            ...(member ? [{
+              title: `${VIP_ICON} SERVER MEMBERSHIP`,
+              items: [
+                `Joined Server: <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`,
+                `Highest Role: ${member.roles.highest}`,
+                `Roles (${member.roles.cache.size - 1}): ${rolesList.length > 500 ? rolesList.substring(0, 495) + '...' : rolesList}`
+              ]
+            }] : [])
+          ],
+          footerText: 'Rage Optimiser • User Security Profile'
+        });
         await interaction.reply({ embeds: [embed] });
       }
     },
@@ -574,17 +594,39 @@ export const CommunityManifest: ModuleManifest = {
       name: 'command_serverinfo',
       handler: async (client: any, interaction: any, context: any) => {
         const guild = interaction.guild;
-        const embed = new EmbedBuilder()
-          .setTitle(guild.name)
-          .setThumbnail(guild.iconURL())
-          .setColor('#4f8cff')
-          .addFields(
-            { name: 'Owner', value: `<@${guild.ownerId}>`, inline: true },
-            { name: 'Members', value: `${guild.memberCount}`, inline: true },
-            { name: 'Created On', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: true },
-            { name: 'Roles', value: `${guild.roles.cache.size}`, inline: true },
-            { name: 'Channels', value: `${guild.channels.cache.size}`, inline: true }
-          );
+        if (!guild) return;
+        const owner = await guild.fetchOwner().catch(() => null);
+        const ownerMention = owner ? `<@${owner.id}>` : `<@${guild.ownerId}>`;
+        
+        const textChannels = guild.channels.cache.filter((c: any) => c.type === 0).size;
+        const voiceChannels = guild.channels.cache.filter((c: any) => c.type === 2).size;
+        const totalChannels = guild.channels.cache.size;
+        const rolesCount = guild.roles.cache.size - 1;
+
+        const embed = buildLimeOverviewCard({
+          title: guild.name.toUpperCase(),
+          subtitle: 'SERVER OVERVIEW & INFORMATION',
+          thumbnail: guild.iconURL({ size: 512, forceStatic: false }) || undefined,
+          sections: [
+            {
+              title: `${SHIELD_ICON} GUILD DETAILS`,
+              items: [
+                `Owner: ${ownerMention}`,
+                `Server ID: \`${guild.id}\``,
+                `Created On: <t:${Math.floor(guild.createdTimestamp / 1000)}:D> (<t:${Math.floor(guild.createdTimestamp / 1000)}:R>)`
+              ]
+            },
+            {
+              title: `${MEMBER_ICON} MEMBERS & STRUCTURE`,
+              items: [
+                `Total Members: \`${guild.memberCount.toLocaleString()}\``,
+                `Roles: \`${rolesCount}\` roles`,
+                `Channels: \`${totalChannels}\` total (${textChannels} Text, ${voiceChannels} Voice)`
+              ]
+            }
+          ],
+          footerText: 'Rage Optimiser • Server Analytics'
+        });
         await interaction.reply({ embeds: [embed] });
       }
     },
