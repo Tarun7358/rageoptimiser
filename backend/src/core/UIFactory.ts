@@ -83,7 +83,7 @@ export function createLimeEmbed(options: {
     .setTitle(options.title)
     .setColor(colorVal as any)
     .setFooter({
-      text: options.footerText || `Rage Optimiser • Rage Optimiser • Unbypassable Security • ${SHIELD_ICON}`,
+      text: options.footerText || `Rage Optimiser • Unbypassable Security`,
       iconURL: options.client?.user?.displayAvatarURL?.()
     })
     .setTimestamp();
@@ -135,7 +135,7 @@ export type ModuleKey = keyof typeof ModuleMeta;
 // ─────────────────────────────────────────────
 // FOOTER & AUTHOR HELPERS
 // ─────────────────────────────────────────────
-const BRAND_FOOTER = `Rage Optimiser • Rage Optimiser • Unbypassable Security • ${SHIELD_ICON}`;
+const BRAND_FOOTER = `Rage Optimiser • Unbypassable Security`;
 
 function moduleFooterText(module?: ModuleKey | string): string {
   if (!module) return BRAND_FOOTER;
@@ -258,7 +258,7 @@ export function buildMinimalAction(opts: {
   return new EmbedBuilder()
     .setColor(color)
     .setDescription(text)
-    .setFooter({ text: 'Rage Optimiser • Rage Optimiser • Unbypassable Security' })
+    .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
     .setTimestamp();
 }
 
@@ -274,7 +274,7 @@ export function buildLimeActionCard(opts: {
     .setColor(opts.color ?? Colors.LIME)
     .setTitle(opts.title)
     .setDescription(opts.description)
-    .setFooter({ text: opts.footerText ?? 'Rage Optimiser • Rage Optimiser • Unbypassable Security' })
+    .setFooter({ text: opts.footerText ?? 'Rage Optimiser • Unbypassable Security' })
     .setTimestamp();
 
   if (opts.fields && opts.fields.length > 0) {
