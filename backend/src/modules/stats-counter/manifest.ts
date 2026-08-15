@@ -4,7 +4,7 @@ import { createLimeEmbed, buildMinimalAction, buildLimeOverviewCard, VERIFIED_IC
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
 import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
-// User specified server emojis
+// User specified server emojis for Embeds
 export const STAT_EMOJIS = {
   YOUTUBE: '<:YouTube:1527641424169009412>',
   CANDY: '<:drmomoscandy:1511379935237902517>',
@@ -12,6 +12,14 @@ export const STAT_EMOJIS = {
   FOXY: '<:foxydealz:1511379877180215296>',
   ARROW: '<a:animatedarrowwhite:1527647357473132554>',
   DISCORD: '<:discord:1518869308162314310>'
+};
+
+// Standard Unicode Emojis for Channel Titles (Discord API only renders standard Unicode emojis in channel names)
+export const CHANNEL_EMOJIS = {
+  MEMBERS: '👥',
+  VOICE: '🎙️',
+  YOUTUBE: '🔴',
+  VIEWS: '📈'
 };
 
 export function formatViews(viewsStr: string): string {
@@ -98,7 +106,7 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
     if (config.memberChannelId) {
       const channel = guild.channels.cache.get(config.memberChannelId);
       if (channel) {
-        const newName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoiceCount}`.slice(0, 95);
+        const newName = `${CHANNEL_EMOJIS.MEMBERS} Members: ${totalMembers} ・ ${CHANNEL_EMOJIS.VOICE} VC: ${activeVoiceCount}`.slice(0, 95);
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
@@ -110,7 +118,7 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
       const channel = guild.channels.cache.get(config.ytChannelId);
       if (channel) {
         const ytData = await fetchYouTubeSubscribers(config.ytHandle);
-        const newName = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`.slice(0, 95);
+        const newName = `${CHANNEL_EMOJIS.YOUTUBE} Subs: ${ytData.subs} ・ ${CHANNEL_EMOJIS.VIEWS} Views: ${ytData.views}`.slice(0, 95);
         if (channel.name !== newName) {
           await channel.setName(newName).catch(() => {});
         }
@@ -247,7 +255,7 @@ export const StatsCounterManifest: ModuleManifest = {
             if (ch.isVoiceBased?.()) activeVoice += ch.members.size;
           });
 
-          const channelName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`.slice(0, 95);
+          const channelName = `${CHANNEL_EMOJIS.MEMBERS} Members: ${totalMembers} ・ ${CHANNEL_EMOJIS.VOICE} VC: ${activeVoice}`.slice(0, 95);
 
           let targetChannel: any = resolveTargetChannel(guild, targetInput);
 
@@ -320,7 +328,7 @@ export const StatsCounterManifest: ModuleManifest = {
           await interaction.deferReply({ flags: 64 });
 
           const ytData = await fetchYouTubeSubscribers(handle);
-          const channelName = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`.slice(0, 95);
+          const channelName = `${CHANNEL_EMOJIS.YOUTUBE} Subs: ${ytData.subs} ・ ${CHANNEL_EMOJIS.VIEWS} Views: ${ytData.views}`.slice(0, 95);
 
           let targetChannel: any = resolveTargetChannel(guild, targetInput);
 
