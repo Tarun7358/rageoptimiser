@@ -298,7 +298,7 @@ export const StatsCounterManifest: ModuleManifest = {
             let category = config.memberCategoryId ? guild.channels.cache.get(config.memberCategoryId) : null;
             if (!category) {
               category = await guild.channels.create({
-                name: '.  Secure . GG',
+                name: '.  Rage . GG',
                 type: ChannelType.GuildCategory
               }).catch(() => null);
             }
@@ -371,7 +371,7 @@ export const StatsCounterManifest: ModuleManifest = {
             let category = config.ytCategoryId ? guild.channels.cache.get(config.ytCategoryId) : null;
             if (!category) {
               category = await guild.channels.create({
-                name: '.  Secure . YT',
+                name: '.  Rage . YT',
                 type: ChannelType.GuildCategory
               }).catch(() => null);
             }
