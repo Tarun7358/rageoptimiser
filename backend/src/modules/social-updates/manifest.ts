@@ -575,6 +575,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
   ]
 };
 
+// Register social updates commands in PrefixRegistry
 export function registerSocialUpdatesCommands(): void {
   PrefixRegistry.register({
     name: 'social-updates',
