@@ -901,24 +901,30 @@ export function registerConfigCommands(): void {
         }
 
         // Fallback for invalid Anti-Nuke subcommand
-        return message.reply({
-          embeds: [createLimeEmbed({
-            title: `Invalid Subcommand: "r!config antinuke ${action || ''}"`,
-            description: [
-              `${WRONG_EMOJI} Unrecognized subcommand \`${action}\`.\n`,
-              `**Here are the valid Anti-Nuke configuration commands**:`,
-              `• \`r!config antinuke status\` — View active protection matrix`,
-              `• \`r!config antinuke threshold <event|all> <limit> [window_sec]\` — Set sensitivity limit`,
-              `• \`r!config antinuke punishment <event|all> <action>\` — Set punishment action`,
-              `• \`r!config antinuke reversion <event|all> <on|off>\` — Toggle auto-reversion rollback`,
-              `• \`r!config antinuke trustedactor <warn_at> <punish_at> [window_sec]\` — Behavioral firewall limits`,
-              `• \`r!config antinuke timeout-duration <10m|1h|1d|7d|28d>\` — Discord timeout duration`,
-              `• \`r!config antinuke quarantine-role <@role|create|view>\` — Set or auto-create quarantine role`,
-              `• \`r!config antinuke setall [category|all] <limit> <window> [punishment] [reversion]\` — Bulk update sub-modules`,
-              `• \`r!config antinuke module <event> <limit> <window> <punishment> <reversion>\` — Single module update`
-            ].join('\n')
-          })]
+        const overviewCard = buildLimeOverviewCard({
+          title: `INVALID ANTI-NUKE SUBCOMMAND: "${(action || '').toUpperCase()}"`,
+          subtitle: 'ANTI-NUKE COMMAND MATRIX & SYNTAX MANUAL',
+          color: Colors.BRAND,
+          sections: [
+            {
+              title: '<:shield:1532403012751065179> VALID ANTI-NUKE CONFIGURATION COMMANDS',
+              items: [
+                '`r!config antinuke status` — View active protection matrix',
+                '`r!config antinuke threshold <event|all> <limit> [window_sec]` — Set limit',
+                '`r!config antinuke punishment <event|all> <action>` — Set punishment action',
+                '`r!config antinuke reversion <event|all> <on|off>` — Toggle auto-reversion',
+                '`r!config antinuke trustedactor <warn_at> <punish_at> [window_sec]` — Behavioral firewall',
+                '`r!config antinuke timeout-duration <10m|1h|1d|7d|28d>` — Set timeout duration',
+                '`r!config antinuke quarantine-role <@role|create|view>` — Set quarantine role',
+                '`r!config antinuke setall [category|all] <limit> <window> [action] [revert]` — Bulk update all',
+                '`r!config antinuke module <event> <limit> <window> <action> <revert>` — Single module bulk'
+              ]
+            }
+          ],
+          footerText: 'Rage Optimiser Enterprise • Anti-Nuke Configuration'
         });
+
+        return message.reply({ embeds: [overviewCard] });
       }
 
       // PreBot Whitelist Guard Master Toggle (`r!config prebot ...`)
@@ -1223,21 +1229,27 @@ export function registerConfigCommands(): void {
         }
 
         // Fallback for invalid AutoMod subcommand
-        return message.reply({
-          embeds: [createLimeEmbed({
-            title: `Invalid Subcommand: "r!config automod ${action || ''}"`,
-            description: [
-              `${WRONG_EMOJI} Unrecognized subcommand \`${action}\`.\n`,
-              `**Here are the valid AutoMod configuration commands**:`,
-              `• \`r!config automod status\` — View AutoMod filter matrix`,
-              `• \`r!config automod antispam <on|off> [max_msgs] [window_sec] [action]\` — Configure Anti-Spam`,
-              `• \`r!config automod antilink <on|off> [allow_invites] [action]\` — Configure Anti-Link`,
-              `• \`r!config automod blacklist <add|remove|clear|list> [words]\` — Manage word blacklist`,
-              `• \`r!config automod caps <on|off> [max_percent]\` — Configure Caps limit`,
-              `• \`r!config automod emoji <on|off> [max_emojis]\` — Configure Emoji spam limit`
-            ].join('\n')
-          })]
+        const overviewCard = buildLimeOverviewCard({
+          title: `INVALID AUTOMOD SUBCOMMAND: "${(action || '').toUpperCase()}"`,
+          subtitle: 'AUTOMOD COMMAND MATRIX & SYNTAX MANUAL',
+          color: Colors.BRAND,
+          sections: [
+            {
+              title: '<:link:1532620952087826602> VALID AUTOMOD CONFIGURATION COMMANDS',
+              items: [
+                '`r!config automod status` — View AutoMod filter matrix',
+                '`r!config automod antispam <on|off> [max_msgs] [window_sec] [action]` — Anti-Spam',
+                '`r!config automod antilink <on|off> [allow_invites] [action]` — Anti-Link',
+                '`r!config automod blacklist <add|remove|clear|list> [words]` — Word blacklist',
+                '`r!config automod caps <on|off> [max_percent]` — Caps limit',
+                '`r!config automod emoji <on|off> [max_emojis]` — Emoji spam limit'
+              ]
+            }
+          ],
+          footerText: 'Rage Optimiser Enterprise • AutoMod Configuration'
         });
+
+        return message.reply({ embeds: [overviewCard] });
       }
 
       // Welcome & Onboarding Sub-Configuration (`r!config welcome ...`)
@@ -1843,28 +1855,34 @@ export function registerConfigCommands(): void {
 
       // Check if user entered an unrecognized top-level module parameter under r!config
       if (moduleName && !['status', 'view', 'panel', 'matrix', 'overview', 'help'].includes(moduleName)) {
-        return message.reply({
-          embeds: [createLimeEmbed({
-            title: `Invalid Module: "r!config ${moduleName}"`,
-            description: [
-              `${WRONG_EMOJI} Unrecognized configuration module \`${moduleName}\`.\n`,
-              `**Here are the valid master configuration commands**:`,
-              `• \`r!config antinuke <status|threshold|punishment|reversion|trustedactor>\``,
-              `• \`r!config automod <status|antispam|antilink|blacklist|caps|emoji>\``,
-              `• \`r!config welcome <status|channel|rules|roles|chat|image|autorole>\``,
-              `• \`r!config voiceprotection <status|threshold|action>\``,
-              `• \`r!config prebot <on|off|status>\``,
-              `• \`r!config logging <channel|status|enable|disable>\``,
-              `• \`r!config jtc <setup|status>\``,
-              `• \`r!config tickets <category|staff|status>\``,
-              `• \`r!config leveling <status|enable|xp|channel>\``,
-              `• \`r!config verification <status|verifiedrole|unverifiedrole|enable>\``,
-              `• \`r!config extraowner <add|remove|list|reset>\``,
-              `• \`r!config export\` — Export JSON configuration snapshot`,
-              `• \`r!config backup\` — Create SQLite backup snapshot`
-            ].join('\n')
-          })]
+        const overviewCard = buildLimeOverviewCard({
+          title: `INVALID CONFIGURATION MODULE: "${moduleName.toUpperCase()}"`,
+          subtitle: 'MASTER CONFIGURATION COMMAND MATRIX',
+          color: Colors.BRAND,
+          sections: [
+            {
+              title: '<:config:1532425712844144701> VALID CONFIGURATION MODULE COMMANDS',
+              items: [
+                '`r!config antinuke` — Anti-Nuke protection matrix & limits',
+                '`r!config automod` — AutoMod filters (spams, links, bad words)',
+                '`r!config welcome` — Onboarding cards, channel & auto-roles',
+                '`r!config voiceprotection` — Voice loudness ceiling & penalties',
+                '`r!config prebot` — Pre-Bot whitelist bot join guard',
+                '`r!config logging` — Audit & security event logging',
+                '`r!config jtc` — Join-To-Create dynamic voice hub',
+                '`r!config tickets` — Support ticket categories & staff roles',
+                '`r!config leveling` — Member ranking & XP reward engine',
+                '`r!config verification` — Member verification gateway',
+                '`r!config extraowner` — Delegated extra owner management',
+                '`r!config export` — Export JSON configuration snapshot',
+                '`r!config backup` — Create SQLite backup snapshot'
+              ]
+            }
+          ],
+          footerText: 'Rage Optimiser Enterprise • Configuration Engine'
         });
+
+        return message.reply({ embeds: [overviewCard] });
       }
 
       // Default Interactive Control Panel Card (Dynamically computed live status)
