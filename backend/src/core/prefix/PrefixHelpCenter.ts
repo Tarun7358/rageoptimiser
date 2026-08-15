@@ -16,7 +16,7 @@ const APPROVED_ICON = '<a:approved:1532390590707142956>';
 const WRONG_EMOJI = '<:wrong:1532390628330307634>';
 const SHIELD_EMOJI = '<:shield:1532403012751065179>';
 const ARROW_ICON = '<a:animatedarrowwhite:1527647357473132554>';
-export const DEFAULT_HELP_BANNER = 'https://cdn.discordapp.com/attachments/1318247749904367699/1534546572698976418/ChatGPT_Image_Aug_5_2026_06_00_23_PM.png?ex=6a74855d&is=6a7333dd&hm=cc81e1454fadaba8c9db182ebbb5b87fc6c7274da67ddd393f4f242587a4f6aa';
+export const DEFAULT_HELP_BANNER = 'https://cdn.discordapp.com/attachments/1499055667238146289/1538212292980773004/ChatGPT_Image_Aug_15_2026_09_14_48_PM.png?ex=6a81db55&is=6a8089d5&hm=4e8308bbc0423a9b1fa28776ba323ebc65e14534cf9fa9487546a50d6e172d3b';
 
 interface CategoryInfo {
   icon: string;

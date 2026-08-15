@@ -345,36 +345,41 @@ export function registerOwnerBroadcastCommands(): void {
         return message.reply({ embeds: [embed] });
       }
 
-      // 3. Test DM (`r!ownerbroadcast test <message>`)
-      if (sub === 'test') {
+      // 3. Test DM (`r!ownerbroadcast test <message>` or `r!ownerbroadcast rawtest <message>`)
+      if (sub === 'test' || sub === 'rawtest') {
+        const isRaw = sub === 'rawtest';
         const broadcastText = args.slice(1).join(' ').trim();
         if (!broadcastText) {
           return message.reply({
             embeds: [createLimeEmbed({
               title: 'Test Broadcast Syntax',
-              description: `${WRONG_EMOJI} **Syntax**: \`r!ownerbroadcast test <announcement message>\``
+              description: `${WRONG_EMOJI} **Syntax**: \`r!ownerbroadcast test <announcement message>\` or \`r!ownerbroadcast rawtest <announcement message>\``
             })]
           });
         }
 
-        const testEmbed = createLimeEmbed({
-          title: '📢 [TEST PREVIEW] Developer Announcement to Server Owners',
-          description: [
-            `> ### Message from Rage Optimiser Developers:\n`,
-            `${broadcastText}\n`,
-            `--------------------------------------------------`,
-            `• **Sent By**: Developer ${message.author.tag}`,
-            `• **Notice**: This is an official developer update regarding your Discord server.`
-          ].join('\n'),
-          footerText: 'Rage Optimiser Enterprise • Official Owner Contact Stream'
-        });
-
         try {
-          await message.author.send({ embeds: [testEmbed] });
+          if (isRaw) {
+            await message.author.send({ content: broadcastText });
+          } else {
+            const testEmbed = createLimeEmbed({
+              title: '📢 [TEST PREVIEW] Developer Announcement to Server Owners',
+              description: [
+                `> ### Message from Rage Optimiser Developers:\n`,
+                `${broadcastText}\n`,
+                `--------------------------------------------------`,
+                `• **Sent By**: Developer ${message.author.tag}`,
+                `• **Notice**: This is an official developer update regarding your Discord server.`
+              ].join('\n'),
+              footerText: 'Rage Optimiser Enterprise • Official Owner Contact Stream'
+            });
+            await message.author.send({ embeds: [testEmbed] });
+          }
+
           return message.reply({
             embeds: [createLimeEmbed({
               title: 'Test DM Delivered',
-              description: `${APPROVED_ICON} Preview DM sent to your direct messages (<@${message.author.id}>)! Verify formatting before executing \`r!ownerbroadcast send\`.`
+              description: `${APPROVED_ICON} Preview DM sent to your direct messages (<@${message.author.id}>)! Verify formatting before executing broadcast.`
             })]
           });
         } catch (e: any) {
@@ -387,14 +392,15 @@ export function registerOwnerBroadcastCommands(): void {
         }
       }
 
-      // 4. Send Live Broadcast (`r!ownerbroadcast send <message>`)
-      if (sub === 'send' || sub === 'dispatch') {
+      // 4. Send Live Broadcast (`r!ownerbroadcast send <message>` or `r!ownerbroadcast raw <message>`)
+      if (sub === 'send' || sub === 'dispatch' || sub === 'raw') {
+        const isRaw = sub === 'raw';
         const broadcastText = args.slice(1).join(' ').trim();
         if (!broadcastText) {
           return message.reply({
             embeds: [createLimeEmbed({
               title: 'Owner Broadcast Syntax',
-              description: `${WRONG_EMOJI} **Syntax**: \`r!ownerbroadcast send <announcement message>\``
+              description: `${WRONG_EMOJI} **Syntax**: \`r!ownerbroadcast send <announcement message>\` or \`r!ownerbroadcast raw <announcement message>\``
             })]
           });
         }
@@ -402,7 +408,7 @@ export function registerOwnerBroadcastCommands(): void {
         const statusMsg = await message.reply({
           embeds: [createLimeEmbed({
             title: '⏳ Initiating Server Owner Broadcast...',
-            description: 'Fetching server owners and preparing direct message channels...'
+            description: `Fetching server owners and preparing direct message channels... (${isRaw ? 'Raw Text Mode' : 'Embed Mode'})`
           })]
         });
 
@@ -419,20 +425,24 @@ export function registerOwnerBroadcastCommands(): void {
             processedOwnerIds.add(owner.id);
             totalOwners++;
 
-            const dmEmbed = createLimeEmbed({
-              title: `📢 Developer Announcement — ${guild.name}`,
-              description: [
-                `> ### Official Update for Server Owners:\n`,
-                `${broadcastText}\n`,
-                `--------------------------------------------------`,
-                `• **Server**: **${guild.name}** (\`${guild.id}\`)`,
-                `• **Sender**: Developer ${message.author.tag}`,
-                `• **Support & Contact**: If you have questions, contact bot developers.`
-              ].join('\n'),
-              footerText: 'Rage Optimiser Enterprise • Server Owner Direct Notice'
-            });
+            if (isRaw) {
+              await owner.send({ content: broadcastText });
+            } else {
+              const dmEmbed = createLimeEmbed({
+                title: `📢 Developer Announcement — ${guild.name}`,
+                description: [
+                  `> ### Official Update for Server Owners:\n`,
+                  `${broadcastText}\n`,
+                  `--------------------------------------------------`,
+                  `• **Server**: **${guild.name}** (\`${guild.id}\`)`,
+                  `• **Sender**: Developer ${message.author.tag}`,
+                  `• **Support & Contact**: If you have questions, contact bot developers.`
+                ].join('\n'),
+                footerText: 'Rage Optimiser Enterprise • Server Owner Direct Notice'
+              });
+              await owner.send({ embeds: [dmEmbed] });
+            }
 
-            await owner.send({ embeds: [dmEmbed] });
             successCount++;
 
             // Rate-limit throttle (300ms delay per DM to comply with Discord API rules)
@@ -446,6 +456,7 @@ export function registerOwnerBroadcastCommands(): void {
           title: '📢 Server Owner Broadcast Completed',
           description: [
             `${APPROVED_ICON} Direct message broadcast dispatched across all server owners!\n`,
+            `> • **Mode**: \`${isRaw ? 'Raw Text' : 'Formatted Embed'}\``,
             `> • **Total Unique Server Owners**: \`${totalOwners}\``,
             `> • **Successfully Delivered**: \`${successCount}\` DMs`,
             `> • **Failed / DMs Closed**: \`${failCount}\` users`
@@ -460,8 +471,10 @@ export function registerOwnerBroadcastCommands(): void {
         embeds: [createLimeEmbed({
           title: 'Server Owner Broadcast Utility Manual',
           description: [
-            `> ${ARROW_ICON} **\`r!ownerbroadcast send <message>\`** — Dispatch DM announcement to ALL server owners`,
-            `> ${ARROW_ICON} **\`r!ownerbroadcast test <message>\`** — Send preview DM to yourself to check formatting`,
+            `> ${ARROW_ICON} **\`r!ownerbroadcast raw <message>\`** — Dispatch RAW text announcement to ALL server owners`,
+            `> ${ARROW_ICON} **\`r!ownerbroadcast send <message>\`** — Dispatch EMBED announcement to ALL server owners`,
+            `> ${ARROW_ICON} **\`r!ownerbroadcast rawtest <message>\`** — Test raw DM to yourself`,
+            `> ${ARROW_ICON} **\`r!ownerbroadcast test <message>\`** — Test embed DM to yourself`,
             `> ${ARROW_ICON} **\`r!ownerbroadcast list\`** — Display directory of all servers & owner tags`,
             `> ${ARROW_ICON} **\`r!ownerbroadcast stats\`** — View total servers & unique owner count`
           ].join('\n')

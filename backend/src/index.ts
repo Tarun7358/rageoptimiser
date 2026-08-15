@@ -83,7 +83,7 @@ import { BulkOpsManifest } from './modules/bulk_ops/manifest.js';
 import { DiagnosticsManifest } from './modules/diagnostics/manifest.js';
 import { VoiceProtectionManifest } from './modules/voice-protection/index.js';
 import { JoinRoleAssignmentGuardManifest } from './modules/join-role-guard/manifest.js';
-import { SocialUpdatesManifest } from './modules/social-updates/manifest.js';
+import { SocialUpdatesManifest, registerSocialUpdatesCommands } from './modules/social-updates/manifest.js';
 import { registerWelcomeCommands } from './modules/community/manifest.js';
 import { AnalyticsManifest } from './modules/analytics/manifest.js';
 import { AuditManifest } from './modules/audit/manifest.js';
@@ -106,7 +106,7 @@ import { BrainStore } from './brain/BrainStore.js';
 import { BrainEventInterceptor } from './brain/BrainEventInterceptor.js';
 
 import { EmbedBuilderManifest, registerEmbedPrefixCommands } from './modules/embed_builder/manifest.js';
-import { registerSocialUpdatesCommands } from './modules/social-updates/manifest.js';
+import { StatsCounterManifest, syncGuildStatCounters, registerStatsCounterCommands } from './modules/stats-counter/manifest.js';
 
 // All manifests in one place
 export const ALL_MANIFESTS = [
@@ -142,6 +142,7 @@ export const ALL_MANIFESTS = [
   AuditManifest,
   RageEnterpriseManifest,
   BrainManifest,
+  StatsCounterManifest,
 ];
 
 let registry: ModuleRegistry;
@@ -214,6 +215,7 @@ async function bootstrap() {
     registerBrainCommands();
     registerEmbedPrefixCommands();
     registerSocialUpdatesCommands();
+    registerStatsCounterCommands();
 
     await gateway.connect();
     console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules registered.`);
@@ -228,6 +230,19 @@ async function bootstrap() {
         await checkExpiredTempRoles(gateway.client);
       }
     }, 30 * 1000);
+
+    // 6. Start 5-Minute Live Server & Social Stats Counter Sync Ticker
+    setInterval(async () => {
+      if (gateway && gateway.client && gateway.client.isReady()) {
+        gateway.client.guilds.cache.forEach((guild) => {
+          const modules = registry.getModulesState(guild.id);
+          const mod = modules.find((m) => m.id === 'stats-counter');
+          if (mod?.config?.enabled) {
+            syncGuildStatCounters(guild, mod.config).catch(() => {});
+          }
+        });
+      }
+    }, 5 * 60 * 1000);
 
   } catch (error) {
     console.error('❌ Critical bootstrap error:', error);

@@ -132,7 +132,7 @@ export class TrustedActorAbuseHandler {
     await member.send({ embeds: [dmEmbed] }).catch(() => {});
 
     // 2. Log Channel Warning Entry with Custom UI
-    const targetChanId = logChannelId || guild.systemChannelId;
+    const targetChanId = await this.resolveSecurityLogChannel(guild, logChannelId);
     if (targetChanId) {
       const channel = guild.channels.cache.get(targetChanId) as any;
       if (channel && channel.isTextBased()) {
@@ -239,7 +239,7 @@ export class TrustedActorAbuseHandler {
 
       // 6. STEP 5: LOG CHANNEL EMBED WITH CUSTOM EMOJIS & UI
       const summary = TrustedActorRateLimiter.getSummary(guild.id, member.id, 10);
-      const targetChanId = logChannelId || guild.systemChannelId;
+      const targetChanId = await this.resolveSecurityLogChannel(guild, logChannelId);
 
       const logEmbed = new EmbedBuilder()
         .setColor(0xEF4444)
@@ -287,6 +287,40 @@ export class TrustedActorAbuseHandler {
     } finally {
       this.processingLocks.delete(lockKey);
     }
+  }
+
+  private static async resolveSecurityLogChannel(guild: Guild, providedChannelId?: string): Promise<string | null> {
+    if (providedChannelId && guild.channels.cache.has(providedChannelId)) {
+      return providedChannelId;
+    }
+
+    try {
+      const db = Database.getDb();
+      if (db) {
+        // 1. Check logging module config for 'security' or 'antiNuke' category
+        const logRow = await db.get<any>('SELECT configJson FROM guild_module_configs WHERE guildId = ? AND moduleId = ?', [guild.id, 'logging']).catch(() => null);
+        if (logRow?.configJson) {
+          const logCfg = JSON.parse(logRow.configJson);
+          if (logCfg.security?.enabled !== false && logCfg.security?.channelId) {
+            if (guild.channels.cache.has(logCfg.security.channelId)) return logCfg.security.channelId;
+          }
+          if (logCfg.antiNuke?.enabled !== false && logCfg.antiNuke?.channelId) {
+            if (guild.channels.cache.has(logCfg.antiNuke.channelId)) return logCfg.antiNuke.channelId;
+          }
+        }
+
+        // 2. Check security module config for logChannelId
+        const secRow = await db.get<any>('SELECT configJson FROM guild_module_configs WHERE guildId = ? AND moduleId = ?', [guild.id, 'security']).catch(() => null);
+        if (secRow?.configJson) {
+          const secCfg = JSON.parse(secRow.configJson);
+          if (secCfg.logChannelId && guild.channels.cache.has(secCfg.logChannelId)) return secCfg.logChannelId;
+          if (secCfg.securityLogChannelId && guild.channels.cache.has(secCfg.securityLogChannelId)) return secCfg.securityLogChannelId;
+        }
+      }
+    } catch (e) {}
+
+    // 3. Fallbacks
+    return providedChannelId || guild.systemChannelId || guild.publicUpdatesChannelId || null;
   }
 
   private static async applyQuarantine(guild: Guild, member: GuildMember): Promise<void> {

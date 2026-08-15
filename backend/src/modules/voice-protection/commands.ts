@@ -3,7 +3,7 @@ import { updateVoiceChannelConnection } from './detector.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
 import { joinVoiceChannel, getVoiceConnection } from '@discordjs/voice';
 import { stopMonitoringAllInGuild, startMonitoringUser } from './analyzer.js';
-import { Embeds, Colors, buildRichCard, buildStatusCard, buildSuccessCard, buildErrorCard, buildPermCard, buildWarnCard } from '../../core/UIFactory.js';
+import { Embeds, Colors, buildRichCard, buildStatusCard, buildSuccessCard, buildErrorCard, buildPermCard, buildWarnCard, buildLimeOverviewCard, buildMinimalAction, createLimeEmbed, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, CONFIG_ICON, TIMER_ICON, GAVEL_ICON } from '../../core/UIFactory.js';
 
 export const VoiceProtectionCommands = [
   {
@@ -257,24 +257,28 @@ export async function handleVoiceProtectionSlashCommand(
 
   // 3. STATUS
   if (sub === 'status') {
-    const { embeds, components, flags } = buildRichCard({
-      emoji: '<:shield:1532403012751065179>',
-      title: 'Voice Protection — Operational Registry',
-      description: 'Live auditory screening engine parameters and shielding matrix status.',
-      accentColor: config.enabled ? Colors.SUCCESS : Colors.MUTED,
-      fields: [
-        { label: '<:shield:1532403012751065179> System Status',        value: config.enabled ? '<a:approved:1532390590707142956> **SHIELD ACTIVE**' : '<:wrong:1532390628330307634> **SHIELD OFFLINE**' },
-        { label: '<:voicechannelgreen:1532425750278438962> Loudness Ceiling',     value: `\`${config.threshold ?? 85}%\` RMS` },
-        { label: '<:timer:1532620491662037123> Audit Duration',       value: `\`${config.duration ?? 3}s\`` },
-        { label: '<:gavel:1532621057318584380> Enforcement Action',   value: `\`${(config.punishment ?? 'servermute').toUpperCase()}\`` },
-        { label: '<:config:1532425712844144701> Mute Duration',        value: `\`${config.muteDuration ?? 30}s\`` },
-        { label: '<:config:1532425712844144701> Penalty Cooldown',     value: `\`${config.cooldown ?? 60}s\`` },
-        { label: '<:config:1532425712844144701> Audit Log Channel',    value: config.logChannel ? `<#${config.logChannel}>` : '`Not Configured`' },
+    const overviewCard = buildLimeOverviewCard({
+      title: 'VOICE PROTECTION — OPERATIONAL REGISTRY',
+      subtitle: 'LIVE AUDITORY SCREENING ENGINE & SHIELDING MATRIX',
+      color: config.enabled ? Colors.BRAND : Colors.MUTED,
+      sections: [
+        {
+          title: `${SHIELD_ICON} OPERATIONAL PARAMETERS`,
+          items: [
+            `${config.enabled ? VERIFIED_ICON + ' **System Status**: **SHIELD ACTIVE**' : WRONG_ICON + ' **System Status**: **SHIELD OFFLINE**'}`,
+            `• **Loudness Ceiling**: \`${config.threshold ?? 85}%\` RMS`,
+            `• **Audit Duration**: \`${config.duration ?? 3}s\``,
+            `• **Enforcement Action**: \`${(config.punishment ?? 'servermute').toUpperCase()}\``,
+            `• **Mute Duration**: \`${config.muteDuration ?? 30}s\``,
+            `• **Penalty Cooldown**: \`${config.cooldown ?? 60}s\``,
+            `• **Audit Log Channel**: ${config.logChannel ? `<#${config.logChannel}>` : '`Not Configured`'}`
+          ]
+        }
       ],
-      footerNote: 'Rage Optimiser • Unbypassable Security',
+      footerText: 'Rage Optimiser Enterprise • Voice Protection'
     });
 
-    return interaction.reply({ embeds, components, flags });
+    return interaction.reply({ embeds: [overviewCard] });
   }
 
   // 4. CONFIG
@@ -300,19 +304,15 @@ export async function handleVoiceProtectionSlashCommand(
 
     await context.updateModuleConfig('voice-protection', updates);
 
-    const embed = new EmbedBuilder()
-      .setTitle('<:config:1532425712844144701> Configuration Synced')
-      .setDescription('Successfully updated Voice Protection settings parameters:')
-      .setColor(0x99CC00)
-      .addFields(
-        Object.keys(updates).map(k => ({ 
-          name: k.replace(/([A-Z])/g, ' $1').toUpperCase(), 
-          value: `\`${updates[k]}\``, 
-          inline: true 
-        }))
-      )
-      .setTimestamp()
-      .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
+    const embed = createLimeEmbed({
+      title: 'Configuration Synced',
+      description: `${CONFIG_ICON} Successfully updated Voice Protection parameters:`,
+      fields: Object.keys(updates).map(k => ({ 
+        name: k.replace(/([A-Z])/g, ' $1').toUpperCase(), 
+        value: `\`${updates[k]}\``, 
+        inline: true 
+      }))
+    });
 
     return interaction.reply({ embeds: [embed], flags: 64 });
   }
@@ -329,12 +329,10 @@ export async function handleVoiceProtectionSlashCommand(
         ? (config.ignoredChannels || []).map((id: string) => `<#${id}>`).join('\n') || '*No channels currently ignored.*'
         : (config.ignoredRoles || []).map((id: string) => `<@&${id}>`).join('\n') || '*No roles currently ignored.*';
 
-      const embed = new EmbedBuilder()
-        .setTitle(`<:voicechannelgreen:1532425750278438962> Ignored ${type === 'channel' ? 'Channels' : 'Roles'} Registry`)
-        .setColor(0x99CC00)
-        .setDescription(list)
-        .setTimestamp()
-        .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
+      const embed = createLimeEmbed({
+        title: `Ignored ${type === 'channel' ? 'Channels' : 'Roles'} Registry`,
+        description: list
+      });
 
       return interaction.reply({ embeds: [embed], flags: 64 });
     }
@@ -363,12 +361,11 @@ export async function handleVoiceProtectionSlashCommand(
       await context.updateModuleConfig('voice-protection', { ignoredRoles: roles });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle('<:config:1532425712844144701> Exemption List Updated')
-      .setDescription(`Successfully **${action === 'add' ? 'added' : 'removed'}** the target ${type} from the ignore list.`)
-      .setColor(0x99CC00)
-      .setTimestamp()
-      .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
+    const embed = buildMinimalAction({
+      user: interaction.user,
+      action: `${action === 'add' ? 'added' : 'removed'} ${type} ignore exemption`,
+      target: type === 'channel' ? targetChannel : targetRole
+    });
 
     return interaction.reply({ embeds: [embed], flags: 64 });
   }
@@ -385,12 +382,10 @@ export async function handleVoiceProtectionSlashCommand(
         ? (config.whitelistedUsers || []).map((id: string) => `<@${id}>`).join('\n') || '*No users currently whitelisted.*'
         : (config.whitelistedRoles || []).map((id: string) => `<@&${id}>`).join('\n') || '*No roles currently whitelisted.*';
 
-      const embed = new EmbedBuilder()
-        .setTitle(`<:shield:1532403012751065179> Whitelisted Immune ${type === 'user' ? 'Users' : 'Roles'} Registry`)
-        .setColor(0x99CC00)
-        .setDescription(list)
-        .setTimestamp()
-        .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
+      const embed = createLimeEmbed({
+        title: `Whitelisted Immune ${type === 'user' ? 'Users' : 'Roles'} Registry`,
+        description: list
+      });
 
       return interaction.reply({ embeds: [embed], flags: 64 });
     }
@@ -419,12 +414,11 @@ export async function handleVoiceProtectionSlashCommand(
       await context.updateModuleConfig('voice-protection', { whitelistedRoles: roles });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle('<:shield:1532403012751065179> Immunity List Updated')
-      .setDescription(`Successfully **${action === 'add' ? 'added' : 'removed'}** the target ${type} from the whitelist immunity registry.`)
-      .setColor(0x99CC00)
-      .setTimestamp()
-      .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
+    const embed = buildMinimalAction({
+      user: interaction.user,
+      action: `${action === 'add' ? 'added' : 'removed'} ${type} whitelist immunity`,
+      target: type === 'user' ? targetUser : targetRole
+    });
 
     return interaction.reply({ embeds: [embed], flags: 64 });
   }
@@ -612,18 +606,16 @@ export async function handleVoiceProtectionMoveCommand(client: any, interaction:
     await context.updateModuleConfig('voice-protection', updatedConfig);
 
     // Step 8: Success Embed
-    const embed = new EmbedBuilder()
-      .setTitle('<:shield:1532403012751065179> Voice Protection Moved')
-      .setColor(0x99CC00)
-      .addFields(
+    const embed = createLimeEmbed({
+      title: 'Voice Protection Moved',
+      fields: [
         { name: 'Previous Channel', value: previousChannel ? `<:voicechannelgreen:1532425750278438962> ${previousChannel.name}` : '<:voicechannelgreen:1532425750278438962> None', inline: true },
         { name: 'Current Channel', value: `<:voicechannelgreen:1532425750278438962> ${channel.name}`, inline: true },
-        { name: 'Status', value: '<a:approved:1532390590707142956> Monitoring', inline: true },
+        { name: 'Status', value: `${VERIFIED_ICON} Monitoring`, inline: true },
         { name: 'Changed By', value: `<@${interaction.user.id}>`, inline: true },
         { name: 'Time', value: `<t:${Math.floor(now / 1000)}:F>`, inline: true }
-      )
-      .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
-      .setTimestamp();
+      ]
+    });
 
     await interaction.editReply({ embeds: [embed] });
 

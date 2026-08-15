@@ -1,6 +1,6 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { Embeds, Colors, buildStatusCard, createLimeEmbed } from '../../core/UIFactory.js';
+import { Embeds, Colors, buildStatusCard, createLimeEmbed, buildLimeOverviewCard, buildMinimalAction, buildLimeWarnCard, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, GAVEL_ICON, LINK_ICON, INFO_ICON, CONFIG_ICON, VIP_ICON, BOT_ICON } from '../../core/UIFactory.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
 import { isUrlCommandBypass } from '../../utils/antiLinkBypass.js';
 
@@ -558,24 +558,46 @@ export const AutomodManifest: ModuleManifest = {
         const ignoredChannelsList = (config.ignoredChannels || []).map((id: string) => `<#${id}>`).join(', ') || '*None*';
         const ignoredRolesList = (config.ignoredRoles || []).map((id: string) => `<@&${id}>`).join(', ') || '*None*';
 
-        const statusEmbed = Embeds.info(
-          '<:gavel:1532621057318584380> AutoMod & AntiLink Protection Center',
-          '*Automated chat filtering, anti-link rules, anti-everyone tags, ignored channels, and role bypasses.*',
-          {
-            module: 'automod',
-            fields: [
-              { name: '<:bot:1532621107746570391> AutoMod Status',          value: `\`${amMod?.status || 'enabled'}\``,                     inline: true },
-              { name: '<:link:1532620952087826602> AntiLink Filter',         value: config.blockLinks !== false ? '<a:approved:1532390590707142956> **Enabled**' : '<:wrong:1532390628330307634> **Disabled**', inline: true },
-              { name: '<:shield:1532403012751065179> Anti-Everyone Tag',     value: isEveryoneEnabled ? '<a:approved:1532390590707142956> **Enabled**' : '<:wrong:1532390628330307634> **Disabled**', inline: true },
-              { name: '<:shield:1532403012751065179> Punishment Mode',         value: `\`${config.punishment || 'warn'}\``,                  inline: true },
-              { name: '<:information:1532621274092929124> Ignored Channels',        value: ignoredChannelsList,                                    inline: false },
-              { name: '<:vip:1532620837117759508> Ignored Roles',           value: ignoredRolesList,                                       inline: false },
-              { name: '<:config:1532425712844144701> Configure Commands',      value: '• `r!automod antieveryone <on|off>` — Enable/disable @everyone & @here tag filter\n• `r!automod antilink <enable|disable>` — Enable/disable link filter\n• `r!automod ignore-channel <add|remove|list> #channel`\n• `r!automod ignore-role <add|remove|list> @role`', inline: false },
-            ],
-          }
-        );
+        const isBlockLinks = config.blockLinks !== false;
+        const statusIcon = (amMod?.status || 'enabled') === 'enabled' ? VERIFIED_ICON : WRONG_ICON;
+        const antilinkIcon = isBlockLinks ? VERIFIED_ICON : WRONG_ICON;
+        const everyoneIcon = isEveryoneEnabled ? VERIFIED_ICON : WRONG_ICON;
 
-        return interaction.reply({ embeds: [statusEmbed] });
+        const overviewCard = buildLimeOverviewCard({
+          title: 'AUTOMOD & ANTILINK PROTECTION CENTER',
+          subtitle: 'AUTOMATED CHAT FILTERING, ANTI-LINK & TAG RULES MATRIX',
+          color: Colors.BRAND,
+          sections: [
+            {
+              title: `${GAVEL_ICON} PROTECTION STATUS MATRIX`,
+              items: [
+                `${statusIcon} **AutoMod Status**: \`${amMod?.status || 'enabled'}\``,
+                `${antilinkIcon} **AntiLink Filter**: ${isBlockLinks ? '**Enabled**' : '**Disabled**'}`,
+                `${everyoneIcon} **Anti-Everyone Tag Filter**: ${isEveryoneEnabled ? '**Enabled**' : '**Disabled**'}`,
+                `${SHIELD_ICON} **Punishment Mode**: \`${config.punishment || 'warn'}\``
+              ]
+            },
+            {
+              title: `${INFO_ICON} BYPASS RESTRICTIONS`,
+              items: [
+                `Ignored Channels: ${ignoredChannelsList}`,
+                `Ignored Roles: ${ignoredRolesList}`
+              ]
+            },
+            {
+              title: `${CONFIG_ICON} CONFIGURE COMMANDS`,
+              items: [
+                `• \`r!automod antieveryone <on|off>\` — Enable/disable @everyone & @here tag filter`,
+                `• \`r!automod antilink <enable|disable>\` — Enable/disable link filter`,
+                `• \`r!automod ignore-channel <add|remove|list> #channel\` — Manage ignored channels`,
+                `• \`r!automod ignore-role <add|remove|list> @role\` — Manage ignored roles`
+              ]
+            }
+          ],
+          footerText: 'Rage Optimiser Enterprise • AutoMod Protection'
+        });
+
+        return interaction.reply({ embeds: [overviewCard] });
       }
     },
     {
@@ -703,19 +725,27 @@ export const AutomodManifest: ModuleManifest = {
 
             if (reason === 'Posting unauthorized links') {
               (message as any)._antiLinkHandled = true;
-              const dmEmbed = Embeds.warn(
-                `<:link:1532620952087826602> Anti-Link Enforcement — ${message.guild.name}`,
-                `Your message in **#${message.channel.name || 'channel'}** was removed because it contained an unauthorized link.\n\n**Server**: ${message.guild.name}\n**Action**: Message removed & link blocked.`,
-                { module: 'automod', footer: `${message.guild.name}  •  Anti-Link Protection` }
-              );
-              await message.member?.send({ embeds: [dmEmbed] }).catch(() => {});
+              const warnCard = buildLimeWarnCard({
+                category: 'Unauthorized Link',
+                user: message.author,
+                reason: 'Posting unauthorized links',
+                currentLimit: 1,
+                maxLimit: 5,
+                thumbnailUrl: message.author.displayAvatarURL?.()
+              });
+              await message.channel.send({ embeds: [warnCard] })
+                .then((m: any) => setTimeout(() => m.delete().catch(() => {}), 6000));
             } else {
-              const warningEmbed = Embeds.warn(
-                '<:shield:1532403012751065179> AutoMod Enforcement',
-                `**User**: ${message.author} (\`${message.author.id}\`)\n**Reason**: ${reason}\n**Action**: Message removed.`,
-                { module: 'automod' }
-              );
-              await message.channel.send({ embeds: [warningEmbed] })
+              const categoryName = reason.includes('words') ? 'Swear Words' : (reason.includes('caps') ? 'Caps' : 'Spam');
+              const warnCard = buildLimeWarnCard({
+                category: categoryName,
+                user: message.author,
+                reason: reason,
+                currentLimit: 1,
+                maxLimit: 5,
+                thumbnailUrl: message.author.displayAvatarURL?.()
+              });
+              await message.channel.send({ embeds: [warnCard] })
                 .then((m: any) => setTimeout(() => m.delete().catch(() => {}), 6000));
             }
             

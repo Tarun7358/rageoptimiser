@@ -5,7 +5,7 @@ import { isUrlCommandBypass } from '../../utils/antiLinkBypass.js';
 import { Database } from '../../core/Database.js';
 import { getPrebotEntry, PREBOT_PERMISSIONS } from '../prebot_whitelist/manifest.js';
 import { checkRoleAssignment } from '../join-role-guard/manifest.js';
-import { Embeds, Colors, createLimeEmbed, buildLimeOverviewCard, VERIFIED_ICON, WRONG_ICON, MEMBER_ICON, VIP_ICON, INFO_ICON, TIMER_ICON, SHIELD_ICON } from '../../core/UIFactory.js';
+import { Embeds, Colors, createLimeEmbed, buildLimeOverviewCard, buildMinimalAction, buildLimeWarnCard, VERIFIED_ICON, WRONG_ICON, MEMBER_ICON, VIP_ICON, INFO_ICON, TIMER_ICON, SHIELD_ICON } from '../../core/UIFactory.js';
 import { normalizeRuleName, DEFAULT_SECURITY_RULES, getEffectiveRule } from '../config/manifest.js';
 import { TwoFactorManager } from '../../core/security/TwoFactorManager.js';
 
@@ -1337,7 +1337,7 @@ export const SecurityManifest: ModuleManifest = {
             {
               module: 'security',
               fields: skippedRoles.map(s => ({
-                name: `${VIP_ICON} ${s.role.name}`,
+                name: '✨ . Audit',
                 value: s.reason,
                 inline: false
               }))
@@ -1411,7 +1411,7 @@ export const SecurityManifest: ModuleManifest = {
 
         if (successfullyAdded.length === 0) {
           const errEmbed = createLimeEmbed({
-            author: 'Rage Optimiser • Security & Role Engine',
+            author: 'Rage Optimiser Enterprise - Core Security Engine',
             title: 'Role Assignment Failed',
             description: `${WRONG_ICON} Could not assign role(s) to ${targetMember}.`,
             color: 0xEF4444,
@@ -1420,20 +1420,17 @@ export const SecurityManifest: ModuleManifest = {
           return interaction.reply({ embeds: [errEmbed], flags: 64 });
         }
 
-        const embedColor = 0x99CC00;
         const roleSummaryStr = successfullyAdded.length === 1 ? `${successfullyAdded[0]}` : successfullyAdded.map(r => `${r}`).join(', ');
 
-        let descText = `> ${VERIFIED_ICON} ${interaction.user} **Has Given** ${roleSummaryStr} **to** ${targetMember}`;
-        if (durationStr && durationMs) {
-          descText += ` *(Expires <t:${expiresTimestamp}:R>)*`;
-        }
-        if (reason) {
-          descText += `\n> ${INFO_ICON} **Reason:** \`${reason}\``;
-        }
-
-        const embed = new EmbedBuilder()
-          .setColor(embedColor)
-          .setDescription(descText);
+        const embed = buildMinimalAction({
+          user: interaction.user,
+          action: 'Has Given',
+          target: roleSummaryStr,
+          toOrFrom: 'to',
+          extra: targetMember,
+          reason: reason || undefined,
+          duration: durationStr && durationMs ? `<t:${expiresTimestamp}:R>` : undefined
+        });
 
         return interaction.reply({ embeds: [embed] });
       }
@@ -1496,14 +1493,14 @@ export const SecurityManifest: ModuleManifest = {
           await targetMember.roles.remove(role.id, `Role removed by ${interaction.user.tag}: ${logReason}`);
           context.logSyncEvent(`Role Manager: Removed role "${role.name}" (${role.id}) from "${targetMember.user.tag}" by "${interaction.user.tag}". Reason: ${logReason}`, 'success');
 
-          let descText = `> ${WRONG_ICON} ${interaction.user} **Has Removed** ${role} **from** ${targetMember}`;
-          if (reason) {
-            descText += `\n> ${INFO_ICON} **Reason:** \`${reason}\``;
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor(0x99CC00)
-            .setDescription(descText);
+          const embed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Removed',
+            target: role,
+            toOrFrom: 'from',
+            extra: targetMember,
+            reason: reason || undefined
+          });
 
           return interaction.reply({ embeds: [embed] });
         } catch (err: any) {

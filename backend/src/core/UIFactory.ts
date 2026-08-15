@@ -38,6 +38,7 @@ export const ARROW_ICON = '<:lightpurplearrow:1532621364115013693>';
 export const CONFIG_ICON = '<:config:1532425712844144701>';
 export const TICKET_ICON = '<:ticket:1532620631466836021>';
 export const TIMER_ICON = '<:timer:1532620491662037123>';
+export const DEFAULT_BRAND_IMAGE_URL = 'https://cdn.discordapp.com/attachments/1499055667238146289/1538212292980773004/ChatGPT_Image_Aug_15_2026_09_14_48_PM.png?ex=6a81db55&is=6a8089d5&hm=4e8308bbc0423a9b1fa28776ba323ebc65e14534cf9fa9487546a50d6e172d3b';
 export const VIP_ICON = '<:vip:1532620837117759508>';
 export const LINK_ICON = '<:link:1532620952087826602>';
 export const VOICE_ICON = '<:voicechannelgreen:1532425750278438962>';
@@ -78,11 +79,11 @@ export function createLimeEmbed(options: {
     : (options.color || 0x99CC00);
 
   const embed = new EmbedBuilder()
-    .setAuthor({ name: options.author || 'Rage Optimiser' })
+    .setAuthor({ name: options.author || 'Rage Optimiser Enterprise - Core Security Engine' })
     .setTitle(options.title)
     .setColor(colorVal as any)
     .setFooter({
-      text: options.footerText || `Rage Optimiser • Unbypassable Security`,
+      text: options.footerText || `Rage Optimiser • Rage Optimiser • Unbypassable Security • ${SHIELD_ICON}`,
       iconURL: options.client?.user?.displayAvatarURL?.()
     })
     .setTimestamp();
@@ -134,12 +135,12 @@ export type ModuleKey = keyof typeof ModuleMeta;
 // ─────────────────────────────────────────────
 // FOOTER & AUTHOR HELPERS
 // ─────────────────────────────────────────────
-const BRAND_FOOTER = 'Rage Optimiser • Unbypassable Security';
+const BRAND_FOOTER = `Rage Optimiser • Rage Optimiser • Unbypassable Security • ${SHIELD_ICON}`;
 
 function moduleFooterText(module?: ModuleKey | string): string {
   if (!module) return BRAND_FOOTER;
   const meta = ModuleMeta[module as ModuleKey];
-  return `${BRAND_FOOTER}  •  ${meta ? meta.icon + ' ' + meta.name : module}`;
+  return `${BRAND_FOOTER}\n${meta ? meta.name : module}`;
 }
 
 // ─────────────────────────────────────────────
@@ -222,7 +223,7 @@ function buildBaseEmbed(
     embed.setAuthor({ name: title, iconURL: opts.authorIcon });
     embed.setTitle(''); // avoid duplicating title in author
   } else {
-    embed.setAuthor({ name: 'Rage Optimiser Enterprise • Core Security Engine' });
+    embed.setAuthor({ name: 'Rage Optimiser Enterprise - Core Security Engine' });
   }
 
   return embed;
@@ -232,18 +233,62 @@ export function buildMinimalAction(opts: {
   user: any;
   action: string;
   target?: string | any;
-  toOrFrom?: 'to' | 'from' | '|' | '';
-  extra?: string;
+  toOrFrom?: string;
+  extra?: string | any;
+  reason?: string;
+  duration?: string;
   color?: number;
 }): EmbedBuilder {
   const color = opts.color ?? Colors.LIME;
-  const linkWord = opts.toOrFrom ? ` **${opts.toOrFrom}** ` : (opts.target ? ' ' : '');
-  const targetStr = opts.target ? `${linkWord}${opts.target}` : '';
-  const extraStr = opts.extra ? ` ${opts.extra}` : '';
-
+  let text = `> ${VERIFIED_ICON} ${opts.user} **${opts.action}**`;
+  if (opts.target) {
+    text += ` ${opts.target}`;
+  }
+  if (opts.toOrFrom && opts.extra) {
+    text += ` **${opts.toOrFrom}** ${opts.extra}`;
+  } else if (opts.extra) {
+    text += ` ${opts.extra}`;
+  }
+  if (opts.duration) {
+    text += ` *(Expires ${opts.duration})*`;
+  }
+  if (opts.reason) {
+    text += `\n> ${INFO_ICON} **Reason:** \`${opts.reason}\``;
+  }
   return new EmbedBuilder()
     .setColor(color)
-    .setDescription(`${VERIFIED_ICON} ${opts.user} **${opts.action}**${targetStr}${extraStr}`);
+    .setDescription(text);
+}
+
+export function buildLimeWarnCard(opts: {
+  category: string;
+  user: any;
+  reason: string;
+  currentLimit?: number;
+  maxLimit?: number;
+  thumbnailUrl?: string;
+  color?: number;
+}): EmbedBuilder {
+  const current = opts.currentLimit ?? 1;
+  const max = opts.maxLimit ?? 5;
+  const color = opts.color ?? Colors.LIME;
+
+  const desc = [
+    `Reason: . ${opts.user} , **${opts.reason}**`,
+    ` ,`,
+    ` has been warned " Your Limit is ${current}/${max} " Exceeding the limts will leads to punishments ,`
+  ].join('\n');
+
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setTitle(`Warned ${opts.category} | ${VERIFIED_ICON}`)
+    .setDescription(desc);
+
+  if (opts.thumbnailUrl) {
+    embed.setThumbnail(opts.thumbnailUrl);
+  }
+
+  return embed;
 }
 
 export function buildLimeOverviewCard(opts: {

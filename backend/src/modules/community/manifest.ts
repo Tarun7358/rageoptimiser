@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { Database } from '../../core/Database.js';
-import { buildLimeOverviewCard, VERIFIED_ICON, WRONG_ICON, TIMER_ICON, SHIELD_ICON, CONFIG_ICON, Colors } from '../../core/UIFactory.js';
+import { buildLimeOverviewCard, buildMinimalAction, createLimeEmbed, VERIFIED_ICON, WRONG_ICON, TIMER_ICON, SHIELD_ICON, CONFIG_ICON, Colors } from '../../core/UIFactory.js';
 
 // Safe display name helper
 function userTag(user: any): string {
@@ -20,7 +20,7 @@ export const DEFAULT_LIME_DESCRIPTION = [
 ].join('\n');
 export const DEFAULT_LIME_COLOR = '#CBF528';
 export const DEFAULT_LIME_FOOTER = '{server} • Member #{memberCount}';
-export const DEFAULT_WELCOME_IMAGE_URL = 'https://cdn.discordapp.com/attachments/1318247749904367699/1534546572698976418/ChatGPT_Image_Aug_5_2026_06_00_23_PM.png?ex=6a74855d&is=6a7333dd&hm=cc81e1454fadaba8c9db182ebbb5b87fc6c7274da67ddd393f4f242587a4f6aa';
+export const DEFAULT_WELCOME_IMAGE_URL = 'https://cdn.discordapp.com/attachments/1499055667238146289/1538212292980773004/ChatGPT_Image_Aug_15_2026_09_14_48_PM.png?ex=6a81db55&is=6a8089d5&hm=4e8308bbc0423a9b1fa28776ba323ebc65e14534cf9fa9487546a50d6e172d3b';
 
 export function parseWelcomeVariables(str: string, member: any, countOverride?: number, config?: any): string {
   if (!str) return '';
@@ -691,24 +691,20 @@ export const CommunityManifest: ModuleManifest = {
     {
       name: 'command_afk',
       handler: async (client: any, interaction: any, context: any) => {
-        const reason = interaction.options.getString('reason') || 'AFK';
+        const reason = (typeof interaction.options?.getString === 'function' ? interaction.options.getString('reason') : null) || interaction.parsed?.args?.join(' ') || 'AFK';
         const guildId = interaction.guildId;
         if (!guildId) return;
 
         await setUserAFK(guildId, interaction.user.id, reason);
+        if (context?.logSyncEvent) {
+          context.logSyncEvent(`[AFK System] ${interaction.user?.tag || interaction.user?.username || interaction.user?.id} activated AFK status (Reason: "${reason}").`, 'info');
+        }
 
-        const embed = new EmbedBuilder()
-          .setColor(0x84cc16)
-          .setTitle('AFK Status Activated')
-          .setDescription(
-            `<a:approved:1532390590707142956> **Status Activated**\n` +
-            `**User**: ${interaction.user}\n` +
-            `**Reason**: \`${reason}\`\n\n` +
-            `*your afk status will be removed upon next message*`
-          )
-          .setThumbnail(interaction.user.displayAvatarURL({ forceStatic: false }))
-          .setFooter({ text: 'Rage Optimiser • AFK System' })
-          .setTimestamp();
+        const embed = buildMinimalAction({
+          user: interaction.user,
+          action: 'is now AFK',
+          reason: reason
+        });
 
         await interaction.reply({ embeds: [embed] });
       }
@@ -999,29 +995,38 @@ export const CommunityManifest: ModuleManifest = {
         if (message.author.bot) return;
         const guildId = message.guildId;
         if (!guildId) return;
-        
-        console.log(`[Community messageCreate] Processing message from ${message.author.username} in guild ${guildId}`);
 
         try {
-          // Remove AFK if the user speaks
+          const content = (message.content || '').trim().toLowerCase();
+          const isAfkCommand = /^[!r\.\/+]?\s*afk\b/i.test(content) || content.includes('afk');
+
+          // Remove AFK if the user speaks (and it's NOT the AFK setting command itself)
           const status = await getUserAFK(guildId, message.author.id);
-          if (status) {
-            console.log(`[Community messageCreate] User ${message.author.username} was AFK (${status.reason}). Clearing AFK status.`);
-            await clearUserAFK(guildId, message.author.id);
-            await message.reply(`Welcome back! I've removed your AFK status.`).then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
+          if (status && !isAfkCommand) {
+            const timeSinceSet = Date.now() - status.timestamp;
+            if (timeSinceSet > 3000) {
+              console.log(`[Community messageCreate] User ${message.author.username} was AFK (${status.reason}). Clearing AFK status.`);
+              await clearUserAFK(guildId, message.author.id);
+              if (context?.logSyncEvent) {
+                context.logSyncEvent(`[AFK System] ${message.author?.tag || message.author?.username} returned from AFK (Reason was: "${status.reason}").`, 'info');
+              }
+              await message.reply(`Welcome back! I've removed your AFK status.`).then((m: any) => setTimeout(() => m.delete().catch(() => {}), 5000));
+            }
           }
 
           // Check if mentioned users are AFK
           if (message.mentions.users.size > 0) {
-            console.log(`[Community messageCreate] Mentions count: ${message.mentions.users.size}`);
             const mentionChecks = message.mentions.users.map(async (user: any) => {
-              console.log(`[Community messageCreate] Checking AFK for mentioned user: ${user.username} (${user.id})`);
+              if (user.id === message.author.id) return;
               const afkStatus = await getUserAFK(guildId, user.id);
               if (afkStatus) {
-                console.log(`[Community messageCreate] Mentioned user ${user.username} is AFK: ${afkStatus.reason}`);
-                await message.reply(`💤 **${user.username}** is currently AFK: ${afkStatus.reason} (Since <t:${Math.floor(afkStatus.timestamp / 1000)}:R>)`);
-              } else {
-                console.log(`[Community messageCreate] Mentioned user ${user.username} is NOT AFK.`);
+                const embed = buildMinimalAction({
+                  user: user,
+                  action: 'is currently AFK',
+                  reason: afkStatus.reason,
+                  extra: `*(Since <t:${Math.floor(afkStatus.timestamp / 1000)}:R>)*`
+                });
+                await message.reply({ embeds: [embed] });
               }
             });
             await Promise.all(mentionChecks);
