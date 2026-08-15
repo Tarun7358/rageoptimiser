@@ -219,11 +219,20 @@ export class PayloadFormatter {
   public static normalizeFooter(footerText: string | undefined): string {
     if (!footerText) return BRAND_FOOTER;
 
-    return footerText
+    let cleaned = footerText
+      .replace(/(?:Rage Optimiser\s*•\s*)+/gi, 'Rage Optimiser • ')
       .replace(/Unbypassable Security \| Menu Expired Rescue it/gi, BRAND_FOOTER)
       .replace(/Rage Optimiser • Security Engine/gi, BRAND_FOOTER)
-      .replace(/Rage Optimiser • IS GLOBAL/gi, BRAND_FOOTER)
-      .replace(/(?:Secure\s+)?Unbypassable\s+Security(?:\s*\|\s*Menu\s+Expired\s+Rescue\s+it)?/gi, BRAND_FOOTER);
+      .replace(/Rage Optimiser • IS GLOBAL/gi, BRAND_FOOTER);
+
+    if (cleaned.includes('Unbypassable Security')) {
+      if (!cleaned.startsWith('Rage Optimiser')) {
+        cleaned = `Rage Optimiser • ${cleaned}`;
+      }
+      cleaned = cleaned.replace(/(?:Rage Optimiser\s*•\s*)+/gi, 'Rage Optimiser • ').trim();
+    }
+
+    return cleaned;
   }
 
   /**

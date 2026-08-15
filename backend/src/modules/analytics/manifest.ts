@@ -108,7 +108,7 @@ export const AnalyticsManifest: any = {
               '🥉 `r!logs` — **12 executions**',
               '**4.** `r!backup` — **8 executions**',
             ],
-            accentColor: Colors.MUSIC,
+            accentColor: Colors.BRAND,
           });
           return interaction.reply({ embeds, components });
         }
