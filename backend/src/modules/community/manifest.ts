@@ -126,6 +126,10 @@ export function registerWelcomeCommands(): void {
           return message.reply({ content: `${WRONG_ICON} **Access Denied**: Welcome configuration requires Administrator permissions.` });
         }
 
+        if (args[0]?.toLowerCase() === 'set' || args[0]?.toLowerCase() === 'config' || args[0]?.toLowerCase() === 'configure') {
+          args.shift();
+        }
+
         const action = args[0]?.toLowerCase() || 'status';
         const modules = extra?.getModulesState ? extra.getModulesState() : [];
         const commModule = modules.find((m: any) => m.id === 'community');
@@ -294,7 +298,7 @@ export function registerWelcomeCommands(): void {
             `• \`r!welcome image <URL | reset>\` — Set greeting card banner image`,
             `• \`r!welcome autorole <@role | ID | name>\` — Set auto-assigned join role`,
             `• \`r!welcome status\` — View active welcome matrix parameters`,
-            `• \`r!welcome test\` — Dispatch live greeting preview card`
+            `• \`r!welcome test\` — Dispatch live greeting preview card\` (or \`r!welcome set channel <ID>\`)`
           ].join('\n')
         });
       }
