@@ -69,6 +69,17 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
   }
 }
 
+export function resolveTargetChannel(guild: Guild, input?: string) {
+  if (!input) return null;
+  const cleanInput = input.trim();
+  const idMatch = cleanInput.match(/^<#(\d+)>$/) || cleanInput.match(/^(\d{17,20})$/);
+  if (idMatch) {
+    return guild.channels.cache.get(idMatch[1]) || null;
+  }
+  const lower = cleanInput.toLowerCase().replace(/^#/, '');
+  return guild.channels.cache.find(c => c.name.toLowerCase() === lower || c.name.toLowerCase().includes(lower)) || null;
+}
+
 export async function syncGuildStatCounters(guild: Guild, config: any, context?: any) {
   if (!config || !config.enabled) return;
 
@@ -225,18 +236,10 @@ export const StatsCounterManifest: ModuleManifest = {
           return interaction.reply({ embeds: [overviewCard], flags: 64 });
         }
 
-        // 2. SETUP MEMBERS
-        if (rawSub === 'setup' && (mode === 'members' || mode === 'server')) {
+        // 2. SETUP / SETCHANNEL MEMBERS
+        if ((rawSub === 'setup' || rawSub === 'setchannel' || rawSub === 'set') && (mode === 'members' || mode === 'server')) {
+          const targetInput = args[2] || (rawSub === 'set' && args[1] === 'channel' ? args[3] : undefined) || interaction.options?.getChannel?.('channel')?.id || interaction.options?.getString?.('channel');
           await interaction.deferReply({ flags: 64 });
-
-          // Create Category if needed
-          let category = config.memberCategoryId ? guild.channels.cache.get(config.memberCategoryId) : null;
-          if (!category) {
-            category = await guild.channels.create({
-              name: '.  Secure . GG',
-              type: ChannelType.GuildCategory
-            }).catch(() => null);
-          }
 
           const totalMembers = guild.memberCount || guild.members.cache.size;
           let activeVoice = 0;
@@ -246,86 +249,118 @@ export const StatsCounterManifest: ModuleManifest = {
 
           const channelName = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoice}`.slice(0, 95);
 
-          // Create locked Voice Channel (Connect: false creates padlock icon 🔒)
-          const voiceChannel = await guild.channels.create({
-            name: channelName,
-            type: ChannelType.GuildVoice,
-            parent: category ? category.id : undefined,
-            permissionOverwrites: [
-              {
-                id: guild.roles.everyone.id,
-                allow: [PermissionFlagsBits.ViewChannel],
-                deny: [PermissionFlagsBits.Connect]
-              }
-            ]
-          });
+          let targetChannel: any = resolveTargetChannel(guild, targetInput);
+
+          if (targetChannel) {
+            await targetChannel.setName(channelName).catch(() => {});
+            if (targetChannel.isVoiceBased?.()) {
+              await targetChannel.permissionOverwrites?.edit?.(guild.roles.everyone.id, {
+                ViewChannel: true,
+                Connect: false
+              }).catch(() => {});
+            }
+          } else {
+            // Create Category if needed
+            let category = config.memberCategoryId ? guild.channels.cache.get(config.memberCategoryId) : null;
+            if (!category) {
+              category = await guild.channels.create({
+                name: '.  Secure . GG',
+                type: ChannelType.GuildCategory
+              }).catch(() => null);
+            }
+
+            targetChannel = await guild.channels.create({
+              name: channelName,
+              type: ChannelType.GuildVoice,
+              parent: category ? category.id : undefined,
+              permissionOverwrites: [
+                {
+                  id: guild.roles.everyone.id,
+                  allow: [PermissionFlagsBits.ViewChannel],
+                  deny: [PermissionFlagsBits.Connect]
+                }
+              ]
+            });
+          }
 
           const updatedConfig = {
             ...config,
             enabled: true,
-            memberChannelId: voiceChannel.id,
-            memberCategoryId: category ? category.id : null
+            memberChannelId: targetChannel.id,
+            memberCategoryId: targetChannel.parentId || config.memberCategoryId || null
           };
 
           await context.updateModuleConfig('stats-counter', updatedConfig);
 
           const embed = buildMinimalAction({
             user: interaction.user,
-            action: 'created display-only locked Member Stats channel',
-            target: voiceChannel
+            action: `configured display-only Member Stats channel (${targetChannel.name})`,
+            target: targetChannel
           });
 
           return interaction.editReply({ embeds: [embed] });
         }
 
-        // 3. SETUP YOUTUBE
-        if (rawSub === 'setup' && (mode === 'youtube' || mode === 'yt')) {
+        // 3. SETUP / SETCHANNEL YOUTUBE
+        if ((rawSub === 'setup' || rawSub === 'setchannel' || rawSub === 'set') && (mode === 'youtube' || mode === 'yt')) {
           const handle = args[2] || interaction.options?.getString?.('handle');
           if (!handle) {
             return interaction.reply({
               embeds: [
                 createLimeEmbed({
                   title: 'Syntax Error',
-                  description: `${WRONG_ICON} Please specify a valid YouTube handle or URL.\n\n**Example**: \`r!counter setup youtube @MrBeast\``
+                  description: `${WRONG_ICON} Please specify a valid YouTube handle or URL.\n\n**Example**: \`r!counter setup youtube @MrBeast [#channel]\``
                 })
               ],
               flags: 64
             });
           }
 
+          const targetInput = args[3] || (rawSub === 'set' && args[1] === 'channel' ? args[4] : undefined) || interaction.options?.getChannel?.('channel')?.id || interaction.options?.getString?.('channel');
           await interaction.deferReply({ flags: 64 });
-
-          // Create Category if needed
-          let category = config.ytCategoryId ? guild.channels.cache.get(config.ytCategoryId) : null;
-          if (!category) {
-            category = await guild.channels.create({
-              name: '.  Secure . YT',
-              type: ChannelType.GuildCategory
-            }).catch(() => null);
-          }
 
           const ytData = await fetchYouTubeSubscribers(handle);
           const channelName = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`.slice(0, 95);
 
-          // Create locked Voice Channel
-          const voiceChannel = await guild.channels.create({
-            name: channelName,
-            type: ChannelType.GuildVoice,
-            parent: category ? category.id : undefined,
-            permissionOverwrites: [
-              {
-                id: guild.roles.everyone.id,
-                allow: [PermissionFlagsBits.ViewChannel],
-                deny: [PermissionFlagsBits.Connect]
-              }
-            ]
-          });
+          let targetChannel: any = resolveTargetChannel(guild, targetInput);
+
+          if (targetChannel) {
+            await targetChannel.setName(channelName).catch(() => {});
+            if (targetChannel.isVoiceBased?.()) {
+              await targetChannel.permissionOverwrites?.edit?.(guild.roles.everyone.id, {
+                ViewChannel: true,
+                Connect: false
+              }).catch(() => {});
+            }
+          } else {
+            // Create Category if needed
+            let category = config.ytCategoryId ? guild.channels.cache.get(config.ytCategoryId) : null;
+            if (!category) {
+              category = await guild.channels.create({
+                name: '.  Secure . YT',
+                type: ChannelType.GuildCategory
+              }).catch(() => null);
+            }
+
+            targetChannel = await guild.channels.create({
+              name: channelName,
+              type: ChannelType.GuildVoice,
+              parent: category ? category.id : undefined,
+              permissionOverwrites: [
+                {
+                  id: guild.roles.everyone.id,
+                  allow: [PermissionFlagsBits.ViewChannel],
+                  deny: [PermissionFlagsBits.Connect]
+                }
+              ]
+            });
+          }
 
           const updatedConfig = {
             ...config,
             enabled: true,
-            ytChannelId: voiceChannel.id,
-            ytCategoryId: category ? category.id : null,
+            ytChannelId: targetChannel.id,
+            ytCategoryId: targetChannel.parentId || config.ytCategoryId || null,
             ytHandle: handle
           };
 
@@ -333,8 +368,8 @@ export const StatsCounterManifest: ModuleManifest = {
 
           const embed = buildMinimalAction({
             user: interaction.user,
-            action: `created display-only YouTube counter channel for **${handle}**`,
-            target: voiceChannel
+            action: `configured display-only YouTube counter for **${handle}** (${targetChannel.name})`,
+            target: targetChannel
           });
 
           return interaction.editReply({ embeds: [embed] });
@@ -392,12 +427,16 @@ export function registerStatsCounterCommands(): void {
     name: 'counter',
     category: 'Community',
     description: '📊 Manage display-only Server & YouTube live statistics channels.',
-    usage: 'r!counter <setup | status | update | reset> [members | youtube <handle>]',
+    usage: 'r!counter <setup | status | update | reset> [members | youtube <handle>] [#channel|channelId|channelName]',
     aliases: ['statscounter', 'serverstats', 'ytcounter'],
     cooldownSeconds: 3,
     examples: [
       'r!counter setup members',
+      'r!counter setup members #stats-channel',
+      'r!counter setup members 123456789012345678',
       'r!counter setup youtube @MrBeast',
+      'r!counter setup youtube @MrBeast #yt-stats',
+      'r!counter setup youtube clasherliveop 123456789012345678',
       'r!counter status',
       'r!counter update',
       'r!counter reset'
@@ -407,16 +446,24 @@ export function registerStatsCounterCommands(): void {
     subcommands: [
       {
         name: 'setup members',
-        description: 'Create locked voice channel displaying live Member Count & Active VC Chat.',
-        usage: 'r!counter setup members',
-        examples: ['r!counter setup members'],
+        description: 'Set or create locked Voice Channel displaying live Member Count & Active VC Chat.',
+        usage: 'r!counter setup members [#channel|channelId|channelName]',
+        examples: [
+          'r!counter setup members',
+          'r!counter setup members #server-stats',
+          'r!counter setup members 123456789012345678'
+        ],
         userPermissions: ['ManageGuild']
       },
       {
         name: 'setup youtube',
-        description: 'Create locked voice channel displaying live YouTube Subscribers & Videos.',
-        usage: 'r!counter setup youtube <handle>',
-        examples: ['r!counter setup youtube @MrBeast'],
+        description: 'Set or create locked Voice Channel displaying live YouTube Subscribers & Views.',
+        usage: 'r!counter setup youtube <handle> [#channel|channelId|channelName]',
+        examples: [
+          'r!counter setup youtube @MrBeast',
+          'r!counter setup youtube clasherliveop #yt-counter',
+          'r!counter setup youtube @MrBeast 123456789012345678'
+        ],
         userPermissions: ['ManageGuild']
       },
       {
