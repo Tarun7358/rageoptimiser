@@ -138,17 +138,15 @@ export function registerTempRoleCommands(): void {
           );
 
           const humanDuration = formatMsToHuman(durationMs);
-          const caseId = Math.floor(10 + Math.random() * 90);
-          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
-          const embed = buildLimeActionCard({
-            title: `${TIMER_EMOJI} Temporary Role Assigned`,
-            description: `Granted **${role.name}** to **${targetMember.user.tag}**.`,
-            fields: [
-              { name: 'Case ID', value: `#${caseId}`, inline: true },
-              { name: 'Role', value: `<@&${role.id}>`, inline: true },
-              { name: 'Duration', value: `${humanDuration}`, inline: true },
-              { name: `<:information:1532621274092929124> Reason`, value: reason, inline: false }
-            ]
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: message.author,
+            action: 'Has Given',
+            target: role,
+            toOrFrom: 'to',
+            extra: targetMember,
+            duration: humanDuration,
+            reason: reason !== 'No reason provided' ? reason : undefined
           });
           return message.reply({ embeds: [embed] });
         } catch (err: any) {
@@ -181,15 +179,13 @@ export function registerTempRoleCommands(): void {
             [message.guild!.id, targetMember.id, role.id]
           );
 
-          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
-          const embed = buildLimeActionCard({
-            title: `${TIMER_EMOJI} Temporary Role Revoked`,
-            description: `Revoked **${role.name}** from **${targetMember.user.tag}**.`,
-            fields: [
-              { name: 'Role', value: `<@&${role.id}>`, inline: true },
-              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
-              { name: `<:information:1532621274092929124> Details`, value: `Temporary role duration revoked immediately.`, inline: false }
-            ]
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: message.author,
+            action: 'Has Revoked',
+            target: role,
+            toOrFrom: 'from',
+            extra: targetMember
           });
           return message.reply({ embeds: [embed] });
         } catch (err: any) {

@@ -153,15 +153,11 @@ export function registerExtraOwnerCommands(): void {
 
           updateExtraOwnerInCache(message.guild!.id, targetMember.id, defaultPerms);
 
-          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
-          const embed = buildLimeActionCard({
-            title: `${VIP_EMOJI} Extra Owner Granted`,
-            description: `Granted delegated **Extra Owner** authority to **${targetMember.user.tag}**.`,
-            fields: [
-              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
-              { name: 'Granted By', value: `<@${message.author.id}>`, inline: true },
-              { name: `<:information:1532621274092929124> Delegated Privileges`, value: '`Anti-Nuke Immunity`, `Whitelist Admin`, `Lockdowns`, `Quarantine`', inline: false }
-            ]
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: message.author,
+            action: 'Has Granted Extra Owner to',
+            target: targetMember
           });
           return message.reply({ embeds: [embed] });
         } catch (err: any) {
@@ -193,15 +189,11 @@ export function registerExtraOwnerCommands(): void {
 
           removeExtraOwnerFromCache(message.guild!.id, targetMember.id);
 
-          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
-          const embed = buildLimeActionCard({
-            title: `${VIP_EMOJI} Extra Owner Revoked`,
-            description: `Revoked **Extra Owner** authority from **${targetMember.user.tag}**.`,
-            fields: [
-              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
-              { name: 'Revoked By', value: `<@${message.author.id}>`, inline: true },
-              { name: `<:information:1532621274092929124> Status`, value: 'Delegated Owner privileges removed immediately.', inline: false }
-            ]
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: message.author,
+            action: 'Has Revoked Extra Owner from',
+            target: targetMember
           });
           return message.reply({ embeds: [embed] });
         } catch (err: any) {
