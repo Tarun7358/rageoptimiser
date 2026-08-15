@@ -202,17 +202,13 @@ export const ModerationManifest: ModuleManifest = {
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
           await interaction.guild.members.ban(user, { reason });
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:shield:1532403012751065179> Security Action: Member Permanent Banishment')
-            .setDescription(`The selected member has been permanently removed from the server.\nAll moderation actions have been securely recorded in the audit log.`)
-            .addFields(
-              { name: 'Target Account', value: `${user} (${user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Incident Reason', value: reason }
-            )
-            .setColor('#f43f5e')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Banned',
+            target: user,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, user, interaction.user, 'Ban', reason, context);
         } catch (e) {
@@ -248,17 +244,13 @@ export const ModerationManifest: ModuleManifest = {
         }
         try {
           await member.kick(reason);
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:gavel:1532621057318584380> Security Action: Member Successfully Removed')
-            .setDescription(`The selected member has been successfully kicked from the server.\nAll moderation actions have been securely recorded in the audit log.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Incident Reason', value: reason }
-            )
-            .setColor('#eab308')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Kicked',
+            target: member.user,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Kick', reason, context);
         } catch (e) {
@@ -301,17 +293,13 @@ export const ModerationManifest: ModuleManifest = {
 
         try {
           await member.timeout(ms, 'Moderator Timeout');
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:timer:1532620491662037123> Security Action: Temporary Session Suspension')
-            .setDescription(`The selected member's messaging privileges have been temporarily suspended.\nAll moderation actions have been securely recorded in the audit log.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Suspension Duration', value: durationStr, inline: true }
-            )
-            .setColor('#eab308')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Timed Out',
+            target: member.user,
+            duration: durationStr
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Timeout', durationStr, context);
         } catch (e) {
@@ -346,16 +334,12 @@ export const ModerationManifest: ModuleManifest = {
         }
         try {
           await member.timeout(null, 'Timeout removed by Moderator');
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<a:approved:1532390590707142956> Security Action: Session Restoration Protocol')
-            .setDescription(`The temporary session suspension has been revoked. Privileges are fully restored.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true }
-            )
-            .setColor('#10b981')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Removed Timeout From',
+            target: member.user
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Untimeout', 'N/A', context);
         } catch (e) {
@@ -390,16 +374,13 @@ export const ModerationManifest: ModuleManifest = {
         }
         try {
           await member.timeout(60 * 60 * 1000, 'Moderator Mute');
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:timer:1532620491662037123> Security Action: Temporary Voice & Text Mute')
-            .setDescription(`The member has been placed under temporary silence restrictions for 1 hour.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true }
-            )
-            .setColor('#eab308')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Muted',
+            target: member.user,
+            duration: '1h'
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Mute', '1h', context);
         } catch (e) {
@@ -434,16 +415,12 @@ export const ModerationManifest: ModuleManifest = {
         }
         try {
           await member.timeout(null, 'Unmuted by Moderator');
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<a:approved:1532390590707142956> Security Action: Silence Restrictions Revoked')
-            .setDescription(`The silence restrictions have been successfully revoked. Voice and text privileges are active.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true }
-            )
-            .setColor('#10b981')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Unmuted',
+            target: member.user
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Unmute', 'N/A', context);
         } catch (e) {
@@ -475,18 +452,14 @@ export const ModerationManifest: ModuleManifest = {
         warnings.push({ reason, date: new Date().toISOString(), by: interaction.user.id, byTag: userTag(interaction.user) });
         await saveUserWarnings(guildId, user.id, warnings);
 
-        const successEmbed = new EmbedBuilder()
-          .setTitle('<:shield:1532403012751065179> Security Action: Formal Notification Issued')
-          .setDescription(`A formal warning has been issued to the selected member.\nThe infraction has been securely saved to the warnings log registry.`)
-          .addFields(
-            { name: 'Target Account', value: `${user} (${user.id})`, inline: true },
-            { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-            { name: 'Warning Reason', value: reason },
-            { name: 'Total Warnings', value: `\`${warnings.length}\``, inline: true }
-          )
-          .setColor('#eab308')
-          .setTimestamp()
-          .setFooter({ text: 'Rage Optimiser • Security System' });
+        const { buildMinimalAction } = await import('../../core/UIFactory.js');
+        const successEmbed = buildMinimalAction({
+          user: interaction.user,
+          action: 'Has Warned',
+          target: user,
+          reason: reason !== 'No reason provided' ? reason : undefined,
+          extra: `*(Total Warnings: ${warnings.length})*`
+        });
         await interaction.reply({ embeds: [successEmbed] });
         logModAction(interaction.guild, user, interaction.user, 'Warn', reason, context);
       }
@@ -500,9 +473,9 @@ export const ModerationManifest: ModuleManifest = {
         
         const embed = new EmbedBuilder()
           .setTitle(`<:information:1532621274092929124> Infraction Warning Log: ${userTag(user)}`)
-          .setColor('#4f8cff')
+          .setColor('#99CC00')
           .setTimestamp()
-          .setFooter({ text: 'Rage Optimiser • Infraction Logs' });
+          .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
 
         if (userWarns.length === 0) {
           embed.setDescription('This member currently has zero active warning logs.');
@@ -529,16 +502,12 @@ export const ModerationManifest: ModuleManifest = {
         const guildId = interaction.guildId;
         await clearUserWarnings(guildId, user.id);
 
-        const successEmbed = new EmbedBuilder()
-          .setTitle('<a:approved:1532390590707142956> Warning Logs Revoked')
-          .setDescription(`All warning logs have been successfully cleared for the specified member.`)
-          .addFields(
-            { name: 'Target Account', value: `${user} (${user.id})`, inline: true },
-            { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true }
-          )
-          .setColor('#10b981')
-          .setTimestamp()
-          .setFooter({ text: 'Rage Optimiser • Security System' });
+        const { buildMinimalAction } = await import('../../core/UIFactory.js');
+        const successEmbed = buildMinimalAction({
+          user: interaction.user,
+          action: 'Has Cleared Warnings For',
+          target: user
+        });
         await interaction.reply({ embeds: [successEmbed] });
         logModAction(interaction.guild, user, interaction.user, 'Clear Warnings', 'N/A', context);
       }
@@ -729,16 +698,13 @@ export const ModerationManifest: ModuleManifest = {
         const seconds = interaction.options.getInteger('seconds');
         try {
           await interaction.channel.setRateLimitPerUser(seconds);
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:timer:1532620491662037123> Slowmode Status: Updated')
-            .setDescription(`The message rate limit per user has been configured.`)
-            .addFields(
-              { name: 'Message Interval Delay', value: seconds === 0 ? 'Disabled' : `\`${seconds} seconds\``, inline: true },
-              { name: 'Target Channel', value: `${interaction.channel}`, inline: true }
-            )
-            .setColor('#10b981')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Updated Slowmode',
+            target: interaction.channel,
+            extra: seconds === 0 ? 'Disabled' : `*(Delay: ${seconds}s)*`
+          });
           await interaction.reply({ embeds: [successEmbed] });
         } catch (e) {
           const errEmbed = new EmbedBuilder()
@@ -765,17 +731,13 @@ export const ModerationManifest: ModuleManifest = {
         const reason = interaction.options.getString('reason') || 'No reason provided';
         try {
           await interaction.guild.members.unban(userId, reason);
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<a:approved:1532390590707142956> Security Action: Member Re-authorized')
-            .setDescription(`The banishment registry has been updated to re-authorize the specified user ID.`)
-            .addFields(
-              { name: 'Re-authorized ID', value: `\`${userId}\``, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Revocation Reason', value: reason }
-            )
-            .setColor('#10b981')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Unbanned User ID',
+            target: `\`${userId}\``,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, { id: userId, tag: userId }, interaction.user, 'Unban', reason, context);
         } catch (e) {
@@ -812,17 +774,13 @@ export const ModerationManifest: ModuleManifest = {
         try {
           await interaction.guild.members.ban(member.user.id, { deleteMessageSeconds: 7 * 24 * 60 * 60, reason });
           await interaction.guild.members.unban(member.user.id, 'Softban automatic unban');
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:gavel:1532621057318584380> Security Action: Softban Protocol Executed')
-            .setDescription(`The selected member has been softbanned (removed, and message history cleared).`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Incident Reason', value: reason }
-            )
-            .setColor('#f43f5e')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Softbanned',
+            target: member.user,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, 'Softban', reason, context);
         } catch (e) {
@@ -865,17 +823,14 @@ export const ModerationManifest: ModuleManifest = {
 
         try {
           await interaction.guild.members.ban(member.user.id, { reason });
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:timer:1532620491662037123> Security Action: Temporary Guild Suspension')
-            .setDescription(`The selected member has been temporarily suspended from the server.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user} (${member.user.id})`, inline: true },
-              { name: 'Authorized Moderator', value: `${interaction.user}`, inline: true },
-              { name: 'Suspension Duration', value: durationStr, inline: true }
-            )
-            .setColor('#f43f5e')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Security System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Tempbanned',
+            target: member.user,
+            duration: durationStr,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           await interaction.reply({ embeds: [successEmbed] });
           logModAction(interaction.guild, member.user, interaction.user, `Tempban (${durationStr})`, reason, context);
 
@@ -916,16 +871,13 @@ export const ModerationManifest: ModuleManifest = {
         }
         try {
           await member.setNickname(nickname);
-          const successEmbed = new EmbedBuilder()
-            .setTitle('<:config:1532425712844144701> Nickname Status: Updated')
-            .setDescription(`The user's display nickname has been successfully modified.`)
-            .addFields(
-              { name: 'Target Account', value: `${member.user}`, inline: true },
-              { name: 'New Nickname', value: `\`${nickname}\``, inline: true }
-            )
-            .setColor('#10b981')
-            .setTimestamp()
-            .setFooter({ text: 'Rage Optimiser • Configuration System' });
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const successEmbed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Changed Nickname Of',
+            target: member.user,
+            extra: `to \`${nickname}\``
+          });
           await interaction.reply({ embeds: [successEmbed] });
         } catch (e) {
           const errEmbed = new EmbedBuilder()
