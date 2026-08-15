@@ -153,13 +153,14 @@ export function registerExtraOwnerCommands(): void {
 
           updateExtraOwnerInCache(message.guild!.id, targetMember.id, defaultPerms);
 
-          const embed = createLimeEmbed({
-            title: 'Extra Owner Granted Successfully',
-            description: `${APPROVED_ICON} Granted delegated Extra Owner authority to ${targetMember.user.tag}.`,
+          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
+          const embed = buildLimeActionCard({
+            title: `${VIP_EMOJI} Extra Owner Granted`,
+            description: `Granted delegated **Extra Owner** authority to **${targetMember.user.tag}**.`,
             fields: [
-              { name: 'Extra Owner Target', value: `${targetMember.user.tag} (\`${targetMember.id}\`)`, inline: true },
+              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
               { name: 'Granted By', value: `<@${message.author.id}>`, inline: true },
-              { name: 'Delegated Permissions', value: '`Anti-Nuke Immunity`, `Whitelist Admin`, `Lockdowns`, `Quarantine`', inline: false }
+              { name: `<:information:1532621274092929124> Delegated Privileges`, value: '`Anti-Nuke Immunity`, `Whitelist Admin`, `Lockdowns`, `Quarantine`', inline: false }
             ]
           });
           return message.reply({ embeds: [embed] });
@@ -192,12 +193,17 @@ export function registerExtraOwnerCommands(): void {
 
           removeExtraOwnerFromCache(message.guild!.id, targetMember.id);
 
-          return message.reply({
-            embeds: [createLimeEmbed({
-              title: 'Extra Owner Revoked',
-              description: `${APPROVED_ICON} Revoked Extra Owner status from ${targetMember.user.tag}.`
-            })]
+          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
+          const embed = buildLimeActionCard({
+            title: `${VIP_EMOJI} Extra Owner Revoked`,
+            description: `Revoked **Extra Owner** authority from **${targetMember.user.tag}**.`,
+            fields: [
+              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
+              { name: 'Revoked By', value: `<@${message.author.id}>`, inline: true },
+              { name: `<:information:1532621274092929124> Status`, value: 'Delegated Owner privileges removed immediately.', inline: false }
+            ]
           });
+          return message.reply({ embeds: [embed] });
         } catch (err: any) {
           return message.reply({
             embeds: [createLimeEmbed({

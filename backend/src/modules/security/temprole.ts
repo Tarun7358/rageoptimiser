@@ -181,12 +181,17 @@ export function registerTempRoleCommands(): void {
             [message.guild!.id, targetMember.id, role.id]
           );
 
-          return message.reply({
-            embeds: [createLimeEmbed({
-              title: 'Temporary Role Revoked',
-              description: `${APPROVED_ICON} Revoked temporary role ${role} from ${targetMember.user.tag}.`
-            })]
+          const { buildLimeActionCard } = await import('../../core/UIFactory.js');
+          const embed = buildLimeActionCard({
+            title: `${TIMER_EMOJI} Temporary Role Revoked`,
+            description: `Revoked **${role.name}** from **${targetMember.user.tag}**.`,
+            fields: [
+              { name: 'Role', value: `<@&${role.id}>`, inline: true },
+              { name: 'Target User', value: `<@${targetMember.id}>`, inline: true },
+              { name: `<:information:1532621274092929124> Details`, value: `Temporary role duration revoked immediately.`, inline: false }
+            ]
           });
+          return message.reply({ embeds: [embed] });
         } catch (err: any) {
           return message.reply({
             embeds: [createLimeEmbed({
