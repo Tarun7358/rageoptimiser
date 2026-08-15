@@ -1639,18 +1639,13 @@ export const SecurityManifest: ModuleManifest = {
               [guild.id, caseId, target.id, target.user.tag, interaction.user.id, interaction.user.tag, 'SOFTBAN', reason, Date.now()]
             );
           }
-          const embed = new EmbedBuilder()
-            .setTitle('<:gavel:1532621057318584380> Member Softbanned')
-            .setColor(0x99CC00)
-            .setDescription(`**${target.user.tag}** was softbanned (messages purged and unbanned).`)
-            .addFields(
-              { name: '<:ticket:1532620631466836021> Case ID', value: `#${caseId}`, inline: true },
-              { name: '<:member:1532621317487071426> Offender', value: `${target} (\`${target.id}\`)`, inline: true },
-              { name: '<:shield:1532403012751065179> Moderator', value: `${interaction.user}`, inline: true },
-              { name: '<:information:1532621274092929124> Reason', value: reason, inline: false }
-            )
-            .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
-            .setTimestamp();
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Softbanned',
+            target: target,
+            reason: reason !== 'No reason provided' ? reason : undefined
+          });
           return interaction.reply({ embeds: [embed] });
         } catch (err: any) {
           return interaction.reply({ content: `<:wrong:1532390628330307634> Softban failed: ${err.message}`, flags: 64 });
@@ -1696,18 +1691,16 @@ export const SecurityManifest: ModuleManifest = {
             await target.roles.remove(role.id, 'Temporary role expired').catch(() => { });
           }, durationMs);
 
-          const embed = new EmbedBuilder()
-            .setTitle('<:timer:1532620491662037123> Temporary Role Assigned')
-            .setColor(0x99CC00)
-            .setDescription(`Granted **${role.name}** to **${target.user.tag}**.`)
-            .addFields(
-              { name: '<:ticket:1532620631466836021> Case ID', value: `#${caseId}`, inline: true },
-              { name: '<:vip:1532620837117759508> Role', value: `${role}`, inline: true },
-              { name: '<:timer:1532620491662037123> Duration', value: durationStr, inline: true },
-              { name: '<:information:1532621274092929124> Reason', value: reason, inline: false }
-            )
-            .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
-            .setTimestamp();
+          const { buildMinimalAction } = await import('../../core/UIFactory.js');
+          const embed = buildMinimalAction({
+            user: interaction.user,
+            action: 'Has Given',
+            target: role,
+            toOrFrom: 'to',
+            extra: target,
+            duration: durationStr,
+            reason: reason !== 'Temporary role assignment' ? reason : undefined
+          });
           return interaction.reply({ embeds: [embed] });
         } catch (err: any) {
           return interaction.reply({ content: `<:wrong:1532390628330307634> Failed to assign temp role: ${err.message}`, flags: 64 });
