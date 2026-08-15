@@ -117,28 +117,20 @@ export async function syncGuildStatCounters(guild: Guild, config: any, context?:
       }
     });
 
-    // 2. Update Member Stats Voice Channel & Status
+    // 2. Update Member Stats Voice Channel Status
     if (config.memberChannelId) {
       const channel = guild.channels.cache.get(config.memberChannelId);
       if (channel) {
-        const newName = `${CHANNEL_EMOJIS.MEMBERS} Members: ${totalMembers} ・ ${CHANNEL_EMOJIS.VOICE} VC: ${activeVoiceCount}`.slice(0, 95);
-        if (channel.name !== newName) {
-          await channel.setName(newName).catch(() => {});
-        }
         const statusText = `${STAT_EMOJIS.CANDY} . Members : ${totalMembers} . ${STAT_EMOJIS.FOXY} Voice Chat : ${activeVoiceCount}`;
         await setVoiceChannelStatusHelper(channel, statusText);
       }
     }
 
-    // 3. Update YouTube Stats Voice Channel & Status
+    // 3. Update YouTube Stats Voice Channel Status
     if (config.ytChannelId && config.ytHandle) {
       const channel = guild.channels.cache.get(config.ytChannelId);
       if (channel) {
         const ytData = await fetchYouTubeSubscribers(config.ytHandle);
-        const newName = `${CHANNEL_EMOJIS.YOUTUBE} Subs: ${ytData.subs} ・ ${CHANNEL_EMOJIS.VIEWS} Views: ${ytData.views}`.slice(0, 95);
-        if (channel.name !== newName) {
-          await channel.setName(newName).catch(() => {});
-        }
         const statusText = `${STAT_EMOJIS.YOUTUBE} Subs : ${ytData.subs} . ${STAT_EMOJIS.ARROW} ${ytData.views} Views`;
         await setVoiceChannelStatusHelper(channel, statusText);
       }
@@ -274,12 +266,9 @@ export const StatsCounterManifest: ModuleManifest = {
             if (ch.isVoiceBased?.()) activeVoice += ch.members.size;
           });
 
-          const channelName = `${CHANNEL_EMOJIS.MEMBERS} Members: ${totalMembers} ・ ${CHANNEL_EMOJIS.VOICE} VC: ${activeVoice}`.slice(0, 95);
-
           let targetChannel: any = resolveTargetChannel(guild, targetInput);
 
           if (targetChannel) {
-            await targetChannel.setName(channelName).catch(() => {});
             if (targetChannel.isVoiceBased?.()) {
               await targetChannel.permissionOverwrites?.edit?.(guild.roles.everyone.id, {
                 ViewChannel: true,
@@ -297,7 +286,7 @@ export const StatsCounterManifest: ModuleManifest = {
             }
 
             targetChannel = await guild.channels.create({
-              name: channelName,
+              name: '🔒 Server Stats',
               type: ChannelType.GuildVoice,
               parent: category ? category.id : undefined,
               permissionOverwrites: [
@@ -323,7 +312,7 @@ export const StatsCounterManifest: ModuleManifest = {
 
           const embed = buildMinimalAction({
             user: interaction.user,
-            action: `configured display-only Member Stats channel (${targetChannel.name})`,
+            action: `configured Voice Channel Status for **${targetChannel.name}**`,
             target: targetChannel
           });
 
@@ -349,12 +338,10 @@ export const StatsCounterManifest: ModuleManifest = {
           await interaction.deferReply({ flags: 64 });
 
           const ytData = await fetchYouTubeSubscribers(handle);
-          const channelName = `${CHANNEL_EMOJIS.YOUTUBE} Subs: ${ytData.subs} ・ ${CHANNEL_EMOJIS.VIEWS} Views: ${ytData.views}`.slice(0, 95);
 
           let targetChannel: any = resolveTargetChannel(guild, targetInput);
 
           if (targetChannel) {
-            await targetChannel.setName(channelName).catch(() => {});
             if (targetChannel.isVoiceBased?.()) {
               await targetChannel.permissionOverwrites?.edit?.(guild.roles.everyone.id, {
                 ViewChannel: true,
@@ -372,7 +359,7 @@ export const StatsCounterManifest: ModuleManifest = {
             }
 
             targetChannel = await guild.channels.create({
-              name: channelName,
+              name: '🔒 YouTube Stats',
               type: ChannelType.GuildVoice,
               parent: category ? category.id : undefined,
               permissionOverwrites: [
