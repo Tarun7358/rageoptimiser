@@ -304,7 +304,7 @@ export const StatsCounterManifest: ModuleManifest = {
             }
 
             targetChannel = await guild.channels.create({
-              name: '🔒 Server Stats',
+              name: '🔒 . Rage . Server',
               type: ChannelType.GuildVoice,
               parent: category ? category.id : undefined,
               permissionOverwrites: [
@@ -377,7 +377,7 @@ export const StatsCounterManifest: ModuleManifest = {
             }
 
             targetChannel = await guild.channels.create({
-              name: '🔒 YouTube Stats',
+              name: '🔒 . Rage . YouTube',
               type: ChannelType.GuildVoice,
               parent: category ? category.id : undefined,
               permissionOverwrites: [
