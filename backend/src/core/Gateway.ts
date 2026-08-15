@@ -978,7 +978,7 @@ export class Gateway {
         const suggested = FuzzySuggestions.suggest(parsed.commandName, allCmds);
         const curPfx = PrefixResolver.getPrefix(message.guildId || undefined);
         const unknownDesc = suggested
-          ? `Command \`${parsed.commandName}\` was not found.\n\n> <:information:1532621274092929124> Did you mean **\`${curPfx}${suggested}\`**?`
+          ? `Command \`${parsed.commandName}\` was not found.\n\n> <a:lovemail:1527647157371535420> Did you mean **\`${curPfx}${suggested}\`**?`
           : `Unknown command \`${curPfx}${parsed.commandName}\`.\n\nType **\`${curPfx}help\`** or **\`/help\`** to view all commands.`;
         const unknownEmbed = Embeds.error('Command Not Found', unknownDesc, { module: 'system' });
         await message.reply({ embeds: [unknownEmbed] }).catch(() => { });

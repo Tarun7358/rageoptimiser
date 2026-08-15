@@ -35,8 +35,8 @@ export async function sendVoiceProtectionLog(
           { name: '<:member:1532621317487071426> User', value: `${user} (${user.username})`, inline: true },
           { name: '<:voicechannelgreen:1532425750278438962> Channel', value: `${channel.name} (<#${channel.id}>)`, inline: true },
           { name: '<:shield:1532403012751065179> Action Taken', value: `**${action.toUpperCase()}**`, inline: true },
-          { name: '<:information:1532621274092929124> Avg Loudness', value: `\`${avgLoudness}%\``, inline: true },
-          { name: '<:information:1532621274092929124> Peak Loudness', value: `\`${peakLoudness}%\``, inline: true }
+          { name: '<a:lovemail:1527647157371535420> Avg Loudness', value: `\`${avgLoudness}%\``, inline: true },
+          { name: '<a:lovemail:1527647157371535420> Peak Loudness', value: `\`${peakLoudness}%\``, inline: true }
         )
         .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
         .setTimestamp();

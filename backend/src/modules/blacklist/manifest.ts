@@ -263,7 +263,7 @@ export const BlacklistManifest: ModuleManifest = {
         // --- LIST ---
         if (sub === 'list') {
           const filtered = entries.filter(e => e.type === (subGroup as BlacklistType));
-          if (filtered.length === 0) return interaction.reply({ content: `<:information:1532621274092929124> No ${subGroup} entries in the blacklist.`, flags: 64 });
+          if (filtered.length === 0) return interaction.reply({ content: `<a:lovemail:1527647157371535420> No ${subGroup} entries in the blacklist.`, flags: 64 });
           const lines = filtered.slice(0, 20).map((e, i) => `**${i + 1}.** \`${e.label || e.value}\` — ${e.reason || 'No reason'}`);
           return interaction.reply({ content: `<:shield:1532403012751065179> **${subGroup?.toUpperCase()} Blacklist** (${filtered.length} entries):\n${lines.join('\n')}`, flags: 64 });
         }

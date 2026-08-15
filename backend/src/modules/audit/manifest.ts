@@ -53,7 +53,7 @@ export const AuditManifest: any = {
 
         if (sub === 'timeline') {
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Unified Audit Timeline Logs')
+            .setTitle('<a:lovemail:1527647157371535420> Unified Audit Timeline Logs')
             .setColor('#7C5CFC')
             .setDescription('• **[10 mins ago]**: Whitelist change: added tarun7358 to bypass list.\n• **[12 mins ago]**: Voice effect sent: soundboard "applause" in Voice #1.\n• **[15 mins ago]**: Config update: welcome channel set to #general.\n• **[20 mins ago]**: Backup created snapshot BP-142.')
             .setTimestamp();
@@ -71,7 +71,7 @@ export const AuditManifest: any = {
 
         if (sub === 'filter') {
           const type = interaction.options.getString('type');
-          return interaction.reply({ content: `<:information:1532621274092929124> **Filtered Timeline** (Filter: \`${type}\`):\nNo matching events found.`, flags: 64 });
+          return interaction.reply({ content: `<a:lovemail:1527647157371535420> **Filtered Timeline** (Filter: \`${type}\`):\nNo matching events found.`, flags: 64 });
         }
 
         if (sub === 'stats') {

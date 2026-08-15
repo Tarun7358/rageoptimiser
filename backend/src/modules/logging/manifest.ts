@@ -181,7 +181,7 @@ export const LoggingManifest: ModuleManifest = {
           const query = interaction.options.getString('query');
           const embed = new EmbedBuilder()
             .setColor(0x84cc16)
-            .setTitle('<:information:1532621274092929124> Logging Center — Audit Search Results')
+            .setTitle('<a:lovemail:1527647157371535420> Logging Center — Audit Search Results')
             .setDescription(`> ### Telemetry Search: \`${query}\`\n\n*No matching telemetry entries found in the active log cache.*`)
             .setFooter({ text: 'Rage Optimiser • Audit Telemetry', iconURL: client.user?.displayAvatarURL() })
             .setTimestamp();
@@ -366,7 +366,7 @@ export const LoggingManifest: ModuleManifest = {
               if (channel && channel.isTextBased()) {
                 const embed = new EmbedBuilder()
                   .setColor(0x84cc16)
-                  .setTitle(`<:information:1532621274092929124> Audit Verification — ${actualCategory.toUpperCase()}`)
+                  .setTitle(`<a:lovemail:1527647157371535420> Audit Verification — ${actualCategory.toUpperCase()}`)
                   .setDescription(
                     `> ### Test Log Telemetry Event\n` +
                     `> Triggered by ${interaction.user} (\`${interaction.user.id}\`)\n\n` +

@@ -439,7 +439,7 @@ export async function handleVoiceProtectionSlashCommand(
       await context.updateModuleConfig('voice-protection', { stats: emptyStats });
       
       const embed = new EmbedBuilder()
-        .setTitle('<:information:1532621274092929124> Metrics Registry Purged')
+        .setTitle('<a:lovemail:1527647157371535420> Metrics Registry Purged')
         .setDescription('Voice Protection telemetry and detection frequency statistics have been reset to zero.')
         .setColor(0x99CC00)
         .setTimestamp()
@@ -450,14 +450,14 @@ export async function handleVoiceProtectionSlashCommand(
 
     const stats = config.stats || {};
     const embed = new EmbedBuilder()
-      .setTitle('<:information:1532621274092929124> Voice Protection — Auditing Telemetry')
+      .setTitle('<a:lovemail:1527647157371535420> Voice Protection — Auditing Telemetry')
       .setDescription('Telemetry data and loudness spikes logged by the active audio analysis engine.')
       .setColor(0x99CC00)
       .addFields(
         { name: '<:wrong:1532390628330307634> Total Violations', value: `\`${stats.totalDetections || 0}\` times`, inline: true },
         { name: '<:shield:1532403012751065179> Enforced Penalties', value: `\`${stats.totalMutes || 0}\` mutes`, inline: true },
         { name: '<:voicechannelgreen:1532425750278438962> Mean Level (RMS)', value: `\`${stats.avgLoudness || 0}%\``, inline: true },
-        { name: '<:information:1532621274092929124> Peak Audio Surge', value: `\`${stats.peakLoudness || 0}%\``, inline: true }
+        { name: '<a:lovemail:1527647157371535420> Peak Audio Surge', value: `\`${stats.peakLoudness || 0}%\``, inline: true }
       )
       .setTimestamp()
       .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });

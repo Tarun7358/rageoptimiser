@@ -213,7 +213,7 @@ export const VoiceManifest: ModuleManifest = {
 
           if (!existingConnection && !prevChannelId) {
             const embed = new EmbedBuilder()
-              .setTitle('<:information:1532621274092929124> Not Connected')
+              .setTitle('<a:lovemail:1527647157371535420> Not Connected')
               .setDescription('The bot is not currently in any voice channel and 24/7 mode is not active.')
               .setColor(0x99CC00)
               .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
@@ -272,7 +272,7 @@ export const VoiceManifest: ModuleManifest = {
               { name: '<:link:1532620952087826602> Gateway State', value: `\`${connState}\``, inline: true },
               { name: '<:timer:1532620491662037123> Connection Duration', value: `\`${duration}\``, inline: true },
               { name: '<:config:1532425712844144701> Reconnect Attempts', value: `\`${reconnectAttempts}\``, inline: true },
-              { name: '<:information:1532621274092929124> Module Status', value: `\`${voiceMod?.status || 'unknown'}\``, inline: true }
+              { name: '<a:lovemail:1527647157371535420> Module Status', value: `\`${voiceMod?.status || 'unknown'}\``, inline: true }
             )
             .setColor(0x99CC00)
             .setTimestamp()

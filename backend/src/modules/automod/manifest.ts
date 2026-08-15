@@ -361,7 +361,7 @@ export const AutomodManifest: ModuleManifest = {
           // list
           const channelMentions = ignoredChannels.map((id: string) => `<#${id}>`).join(', ');
           return interaction.reply({
-            content: `<:information:1532621274092929124> **AntiLink Ignored Channels**:\n${channelMentions || '*No ignored channels configured.*'}`,
+            content: `<a:lovemail:1527647157371535420> **AntiLink Ignored Channels**:\n${channelMentions || '*No ignored channels configured.*'}`,
             flags: 64
           });
         }

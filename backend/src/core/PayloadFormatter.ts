@@ -29,7 +29,7 @@ export const FMT_ICONS = {
   config:     '<:config:1532425712844144701>',
   member:     '<:member:1532621317487071426>',
   bot:        '<:bot:1532621107746570391>',
-  info:       '<:information:1532621274092929124>',
+  info:       '<a:lovemail:1527647157371535420>',
   stats:      '<:stats:1532429110775779459>',
   gavel:      '<:gavel:1532621057318584380>',
 } as const;

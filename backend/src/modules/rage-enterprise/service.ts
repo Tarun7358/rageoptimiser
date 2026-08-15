@@ -96,7 +96,7 @@ export class RageEnterpriseService {
       new ButtonBuilder().setCustomId('mod_btn_kick').setLabel('Kick Member').setStyle(ButtonStyle.Danger).setEmoji('<:member:1532621317487071426>'),
       new ButtonBuilder().setCustomId('mod_btn_timeout').setLabel('Timeout Member').setStyle(ButtonStyle.Secondary).setEmoji('<:timer:1532620491662037123>'),
       new ButtonBuilder().setCustomId('mod_btn_purge').setLabel('Purge Messages').setStyle(ButtonStyle.Secondary).setEmoji('<:config:1532425712844144701>'),
-      new ButtonBuilder().setCustomId('mod_btn_notes').setLabel('User Notes').setStyle(ButtonStyle.Primary).setEmoji('<:information:1532621274092929124>')
+      new ButtonBuilder().setCustomId('mod_btn_notes').setLabel('User Notes').setStyle(ButtonStyle.Primary).setEmoji('<a:lovemail:1527647157371535420>')
     );
 
     return { embeds: [embed], components: [row] };
@@ -166,7 +166,7 @@ export class RageEnterpriseService {
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId('music_play').setLabel('Play / Pause').setStyle(ButtonStyle.Success).setEmoji('<:voicechannelgreen:1532425750278438962>'),
       new ButtonBuilder().setCustomId('music_skip').setLabel('Skip').setStyle(ButtonStyle.Secondary).setEmoji('<:lightpurplearrow:1532621364115013693>'),
-      new ButtonBuilder().setCustomId('music_queue').setLabel('View Queue').setStyle(ButtonStyle.Primary).setEmoji('<:information:1532621274092929124>'),
+      new ButtonBuilder().setCustomId('music_queue').setLabel('View Queue').setStyle(ButtonStyle.Primary).setEmoji('<a:lovemail:1527647157371535420>'),
       new ButtonBuilder().setCustomId('music_shuffle').setLabel('Shuffle').setStyle(ButtonStyle.Secondary).setEmoji('<:config:1532425712844144701>')
     );
 
@@ -253,7 +253,7 @@ export class RageEnterpriseService {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId('mon_refresh').setLabel('Refresh Status').setStyle(ButtonStyle.Success).setEmoji('<:bot:1532621107746570391>'),
       new ButtonBuilder().setCustomId('mon_cache_flush').setLabel('Flush Cache').setStyle(ButtonStyle.Secondary).setEmoji('<:config:1532425712844144701>'),
-      new ButtonBuilder().setCustomId('mon_diag').setLabel('Run Diagnostics').setStyle(ButtonStyle.Primary).setEmoji('<:information:1532621274092929124>')
+      new ButtonBuilder().setCustomId('mon_diag').setLabel('Run Diagnostics').setStyle(ButtonStyle.Primary).setEmoji('<a:lovemail:1527647157371535420>')
     );
 
     return { embeds: [embed], components: [row] };
@@ -284,7 +284,7 @@ export class RageEnterpriseService {
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder().setCustomId('owner_emergency_lock').setLabel('Emergency Lock').setStyle(ButtonStyle.Danger).setEmoji('<:shield:1532403012751065179>'),
       new ButtonBuilder().setCustomId('owner_deploy_cmds').setLabel('Sync Slash Commands').setStyle(ButtonStyle.Primary).setEmoji('<:bot:1532621107746570391>'),
-      new ButtonBuilder().setCustomId('owner_run_diag').setLabel('Diagnostics Board').setStyle(ButtonStyle.Secondary).setEmoji('<:information:1532621274092929124>'),
+      new ButtonBuilder().setCustomId('owner_run_diag').setLabel('Diagnostics Board').setStyle(ButtonStyle.Secondary).setEmoji('<a:lovemail:1527647157371535420>'),
       new ButtonBuilder().setCustomId('owner_toggle_debug').setLabel('Toggle Debug').setStyle(ButtonStyle.Secondary).setEmoji('<:config:1532425712844144701>')
     );
 

@@ -424,7 +424,7 @@ export const RageEnterpriseManifest: ModuleManifest = {
       name: 'button_mod_btn_notes',
       handler: async (client: any, interaction: any, context: any) => {
         const embed = new EmbedBuilder()
-          .setTitle('<:information:1532621274092929124> Moderator Notes System')
+          .setTitle('<a:lovemail:1527647157371535420> Moderator Notes System')
           .setDescription('Use `/rage notes target:@member` to record and review internal moderation notes.')
           .setColor(0x7c5cfc);
         await interaction.reply({ embeds: [embed], flags: 64 });
@@ -498,7 +498,7 @@ export const RageEnterpriseManifest: ModuleManifest = {
     {
       name: 'button_music_queue',
       handler: async (client: any, interaction: any, context: any) => {
-        await interaction.reply({ content: `<:information:1532621274092929124> No active music queue playing in voice channels currently.`, flags: 64 });
+        await interaction.reply({ content: `<a:lovemail:1527647157371535420> No active music queue playing in voice channels currently.`, flags: 64 });
       }
     },
     {
@@ -549,7 +549,7 @@ export const RageEnterpriseManifest: ModuleManifest = {
           subtitle: `SHARD: #0 HEALTH CHECK`,
           sections: [
             {
-              title: '<:information:1532621274092929124> DIAGNOSTIC VERIFICATION',
+              title: '<a:lovemail:1527647157371535420> DIAGNOSTIC VERIFICATION',
               items: [
                 `Gateway Ping: \`${wsPing}ms\` (PASS)`,
                 `SQLite Database Engine: \`Connected\` (PASS)`,

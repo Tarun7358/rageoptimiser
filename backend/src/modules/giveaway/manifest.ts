@@ -54,7 +54,7 @@ async function endGiveaway(client: any, giveaway: IGiveaway, context: any, reaso
         { label: '<:member:1532621317487071426> Winners',  value: winnerMentions },
         { label: '📦 Prize',    value: gw.prize },
         { label: '👤 Hosted by', value: gw.hostTag },
-        { label: '<:information:1532621274092929124> Reason',   value: reason },
+        { label: '<a:lovemail:1527647157371535420> Reason',   value: reason },
       ],
       footerNote: `Rage Optimiser Enterprise  •  Giveaway Manager`,
     });
@@ -344,9 +344,9 @@ export const GiveawayManifest: ModuleManifest = {
             title: `Giveaway Info — ${gw.prize}`,
             accentColor: Colors.GOLD,
             fields: [
-              { label: '<:information:1532621274092929124> Status',       value: statusIcon },
+              { label: '<a:lovemail:1527647157371535420> Status',       value: statusIcon },
               { label: '<:member:1532621317487071426> Winners',      value: `${gw.winnerCount}` },
-              { label: '<:information:1532621274092929124> Entries',      value: `${(gw.entries || []).length}` },
+              { label: '<a:lovemail:1527647157371535420> Entries',      value: `${(gw.entries || []).length}` },
               { label: '👤 Host',         value: gw.hostTag },
               { label: '<:timer:1532620491662037123> Ends / Ended', value: ts(Math.floor(new Date(gw.endsAt).getTime() / 1000), 'F') },
               { label: '🆔 ID',           value: `\`${gw.id}\`` },

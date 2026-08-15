@@ -472,7 +472,7 @@ export const ModerationManifest: ModuleManifest = {
         const userWarns = await loadUserWarnings(guildId, user.id);
         
         const embed = new EmbedBuilder()
-          .setTitle(`<:information:1532621274092929124> Infraction Warning Log: ${userTag(user)}`)
+          .setTitle(`<a:lovemail:1527647157371535420> Infraction Warning Log: ${userTag(user)}`)
           .setColor('#99CC00')
           .setTimestamp()
           .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
@@ -579,7 +579,7 @@ export const ModerationManifest: ModuleManifest = {
             description: `Permissions for ${targetChannel} have been restricted to enforce security isolation.`,
             accentColor: Colors.DANGER,
             fields: [
-              { label: '<:information:1532621274092929124> Target Channel', value: `${targetChannel} (\`${targetChannel.name}\`)`, inline: true },
+              { label: '<a:lovemail:1527647157371535420> Target Channel', value: `${targetChannel} (\`${targetChannel.name}\`)`, inline: true },
               { label: '<:shield:1532403012751065179> Authorized By', value: `${interaction.user}`, inline: true },
               { label: '<:config:1532425712844144701> Lock Type', value: isVoice ? (makePrivate ? '`Voice & View Hidden`' : '`Voice Connect Blocked`') : (makePrivate ? '`Text & View Hidden`' : '`Send Messages Restricted`'), inline: true },
               { label: '<:wrong:1532390628330307634> Channel Status', value: '<:wrong:1532390628330307634> **LOCKED / PRIVATE**', inline: true },
@@ -662,7 +662,7 @@ export const ModerationManifest: ModuleManifest = {
             description: `Permissions for ${targetChannel} have been restored. Member access is active.`,
             accentColor: Colors.SUCCESS,
             fields: [
-              { label: '<:information:1532621274092929124> Target Channel', value: `${targetChannel} (\`${targetChannel.name}\`)`, inline: true },
+              { label: '<a:lovemail:1527647157371535420> Target Channel', value: `${targetChannel} (\`${targetChannel.name}\`)`, inline: true },
               { label: '<:shield:1532403012751065179> Authorized By', value: `${interaction.user}`, inline: true },
               { label: '<a:approved:1532390590707142956> Restoration', value: isVoice ? '`Voice Connection Restored`' : '`Messaging Restored`', inline: true },
               { label: '<a:approved:1532390590707142956> Channel Status', value: '<a:approved:1532390590707142956> **UNLOCKED / PUBLIC**', inline: true },
@@ -896,7 +896,7 @@ export const ModerationManifest: ModuleManifest = {
         const guildId = interaction.guildId;
         const userWarns = await loadUserWarnings(guildId, user.id);
         const embed = new EmbedBuilder()
-          .setTitle(`<:information:1532621274092929124> Infraction History: ${userTag(user)}`)
+          .setTitle(`<a:lovemail:1527647157371535420> Infraction History: ${userTag(user)}`)
           .setDescription(`Recorded historical warnings and administrative offenses for the specified account.`)
           .setColor('#ff4444')
           .setTimestamp()

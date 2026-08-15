@@ -236,7 +236,7 @@ export const DiagnosticsManifest: ModuleManifest = {
         // ─── MODULES ─────────────────────────────────────────────
         if (sub === 'modules') {
           const modules = context.getModulesState ? context.getModulesState() : [];
-          const statusIcon = (s: string) => s === 'enabled' ? VERIFIED_ICON : s === 'ready' ? INFO_ICON : s === 'error' ? WRONG_ICON : '<:information:1532621274092929124>';
+          const statusIcon = (s: string) => s === 'enabled' ? VERIFIED_ICON : s === 'ready' ? INFO_ICON : s === 'error' ? WRONG_ICON : '<a:lovemail:1527647157371535420>';
           const lines = modules.map((m: any) => `${statusIcon(m.status)} **${m.name}** — \`${m.status.toUpperCase()}\` (${m.progress}%)`);
           const embed = buildLimeOverviewCard({
             title: 'MODULE ENGINE STATUS',
@@ -390,7 +390,7 @@ export const DiagnosticsManifest: ModuleManifest = {
             color: Colors.BRAND,
             sections: [
               {
-                title: '<:information:1532621274092929124> CACHED OBJECTS',
+                title: '<a:lovemail:1527647157371535420> CACHED OBJECTS',
                 items: [
                   `Cached Guilds: \`${fmt(guilds)}\``,
                   `Cached Channels: \`${fmt(channels)}\``,

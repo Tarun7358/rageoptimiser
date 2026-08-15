@@ -173,7 +173,7 @@ export const RemindersManifest: ModuleManifest = {
 
         if (sub === 'list') {
           const mine = reminders.filter(r => r.userId === interaction.user.id);
-          if (mine.length === 0) return interaction.reply({ content: '<:information:1532621274092929124> You have no active reminders.', flags: 64 });
+          if (mine.length === 0) return interaction.reply({ content: '<a:lovemail:1527647157371535420> You have no active reminders.', flags: 64 });
           const lines = mine.map((r, i) => `**${i + 1}.** \`${r.id}\` — <t:${Math.floor(new Date(r.remindAt).getTime() / 1000)}:R> — ${r.message.substring(0, 50)}${r.message.length > 50 ? '...' : ''}`);
           return interaction.reply({ content: `<:timer:1532620491662037123> **Your Reminders (${mine.length}):**\n${lines.join('\n')}`, flags: 64 });
         }

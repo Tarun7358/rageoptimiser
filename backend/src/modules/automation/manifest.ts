@@ -89,7 +89,7 @@ export const AutomationManifest: ModuleManifest = {
             await message.reply('<a:approved:1532390590707142956> **RAGE OPTIMISER Core System is Online!**\nEverything is operational. Manage your settings on the local Dashboard.');
             context.logSyncEvent(`Automation Studio: Handled keyword trigger "!rage" in #${message.channel.name}.`, 'success');
           } else if (content === '!support' || content?.includes('need help')) {
-            await message.reply('<:information:1532621274092929124> Need help? Please open a support ticket using the ticket board or by running the `/setup-tickets` slash command!');
+            await message.reply('<a:lovemail:1527647157371535420> Need help? Please open a support ticket using the ticket board or by running the `/setup-tickets` slash command!');
             context.logSyncEvent(`Automation Studio: Handled keyword trigger for support help in #${message.channel.name}.`, 'info');
           }
         } catch (err) {

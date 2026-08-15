@@ -376,7 +376,7 @@ export const JoinToCreateManifest: ModuleManifest = {
             .setColor('#4f8cff')
             .addFields(
               { name: '<:voicechannelgreen:1532425750278438962> Channel', value: `<#${myChannel.channelId}>`, inline: true },
-              { name: '<:information:1532621274092929124> Name', value: myChannel.name, inline: true },
+              { name: '<a:lovemail:1527647157371535420> Name', value: myChannel.name, inline: true },
               { name: '<:shield:1532403012751065179> Status', value: myChannel.locked ? 'Locked' : 'Open', inline: true },
               { name: '<:config:1532425712844144701> Privacy Mode', value: privacyLabel[originTrigger?.privacy || 'public'] || 'Public', inline: true },
               { name: '<:member:1532621317487071426> User Limit', value: (myChannel.limit || 0) === 0 ? '∞ Unlimited' : `${myChannel.limit} max`, inline: true },

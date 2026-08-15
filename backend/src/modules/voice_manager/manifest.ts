@@ -394,7 +394,7 @@ export const VoiceManagerManifest: ModuleManifest = {
         // STATUS
         if (sub === 'status') {
           const voiceChannels = guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildVoice && c.members.size > 0);
-          if (voiceChannels.size === 0) return interaction.reply({ content: '<:information:1532621274092929124> No active voice channels right now.', flags: 64 });
+          if (voiceChannels.size === 0) return interaction.reply({ content: '<a:lovemail:1527647157371535420> No active voice channels right now.', flags: 64 });
 
           const lines = voiceChannels.map((c: any) =>
             `<:voicechannelgreen:1532425750278438962> **${c.name}** — ${c.members.size} member${c.members.size !== 1 ? 's' : ''}`
@@ -545,7 +545,7 @@ export const VoiceManagerManifest: ModuleManifest = {
 
         // HISTORY
         if (sub === 'history') {
-          return interaction.reply({ content: '<:information:1532621274092929124> **Voice Connections History**:\nNo historical connection data has been recorded in the local log stream.', flags: 64 });
+          return interaction.reply({ content: '<a:lovemail:1527647157371535420> **Voice Connections History**:\nNo historical connection data has been recorded in the local log stream.', flags: 64 });
         }
       }
     }

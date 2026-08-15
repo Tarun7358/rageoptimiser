@@ -374,7 +374,7 @@ export const BulkOpsManifest: ModuleManifest = {
         // BAN LIST
         if (sub === 'ban-list') {
           const bans = await guild.bans.fetch();
-          if (bans.size === 0) return interaction.editReply({ content: '<:information:1532621274092929124> No banned users.' });
+          if (bans.size === 0) return interaction.editReply({ content: '<a:lovemail:1527647157371535420> No banned users.' });
           const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.username} (${b.user.id}) — ${b.reason || 'No reason'}`);
           return interaction.editReply({ content: `<:shield:1532403012751065179> **Banned Users (${bans.size}):**\n${lines.join('\n')}` });
         }

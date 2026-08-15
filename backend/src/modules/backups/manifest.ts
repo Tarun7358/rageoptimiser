@@ -582,7 +582,7 @@ export const BackupsManifest: ModuleManifest = {
               .setColor(0x99CC00)
               .addFields(
                 { name: '<:config:1532425712844144701> Backup ID', value: `\`${snapshot.id}\``, inline: true },
-                { name: '<:information:1532621274092929124> Channels', value: `\`${snapshot.channelsCount}\``, inline: true },
+                { name: '<a:lovemail:1527647157371535420> Channels', value: `\`${snapshot.channelsCount}\``, inline: true },
                 { name: '<:shield:1532403012751065179> Roles', value: `\`${snapshot.rolesCount}\``, inline: true },
                 { name: '<:bot:1532621107746570391> Emojis', value: `\`${snapshot.emojisCount}\``, inline: true },
                 { name: '<:member:1532621317487071426> Captured By', value: `\`${snapshot.createdByName}\``, inline: true },
@@ -605,7 +605,7 @@ export const BackupsManifest: ModuleManifest = {
 
           const embed = new EmbedBuilder()
             .setAuthor({ name: 'Rage Optimiser' })
-            .setTitle('<:information:1532621274092929124> Server Configuration Snapshots')
+            .setTitle('<a:lovemail:1527647157371535420> Server Configuration Snapshots')
             .setDescription(guildBackups.length === 0 ? 'No backups saved for this server yet.' : `Found ${guildBackups.length} snapshot backups:`)
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
@@ -614,7 +614,7 @@ export const BackupsManifest: ModuleManifest = {
           guildBackups.slice(0, 10).forEach(b => {
             embed.addFields({
               name: `Snapshot \`${b.id}\``,
-              value: `<:timer:1532620491662037123> Date: \`${new Date(b.timestamp).toLocaleString()}\` | <:shield:1532403012751065179> Roles: \`${b.rolesCount}\` | <:information:1532621274092929124> Channels: \`${b.channelsCount}\` | Created By: \`${b.createdByName}\``
+              value: `<:timer:1532620491662037123> Date: \`${new Date(b.timestamp).toLocaleString()}\` | <:shield:1532403012751065179> Roles: \`${b.rolesCount}\` | <a:lovemail:1527647157371535420> Channels: \`${b.channelsCount}\` | Created By: \`${b.createdByName}\``
             });
           });
 
@@ -632,7 +632,7 @@ export const BackupsManifest: ModuleManifest = {
 
           const embed = new EmbedBuilder()
             .setAuthor({ name: 'Rage Optimiser' })
-            .setTitle(`<:information:1532621274092929124> Snapshot Details: ${snapshot.id}`)
+            .setTitle(`<a:lovemail:1527647157371535420> Snapshot Details: ${snapshot.id}`)
             .setDescription(`Detailed telemetry for server configuration snapshot template:`)
             .setColor(0x99CC00)
             .addFields(
@@ -688,7 +688,7 @@ export const BackupsManifest: ModuleManifest = {
             .setAuthor({ name: 'Rage Optimiser' })
             .setTitle('<:wrong:1532390628330307634> Confirm Server Rewrite & Clone')
             .setDescription(`You are about to load backup ID **\`${backupId}\`**.\n\n` + 
-                            `<:information:1532621274092929124> **Source Server**: ${snapshot.guildName}\n` +
+                            `<a:lovemail:1527647157371535420> **Source Server**: ${snapshot.guildName}\n` +
                             `<:config:1532425712844144701> **Channels**: ${snapshot.channelsCount}\n` +
                             `<:shield:1532403012751065179> **Roles**: ${snapshot.rolesCount}\n\n` +
                             `<:wrong:1532390628330307634> **WARNING**: This operation is **destructive**! It will delete all existing channels, categories, and roles (except bot roles & booster roles) and rebuild them from template.`)
@@ -715,7 +715,7 @@ export const BackupsManifest: ModuleManifest = {
           const backupId = interaction.options.getString('backup-id') || '';
           const snapshot = await getBackupById(backupId);
           if (!snapshot) return interaction.reply({ content: `<:wrong:1532390628330307634> Backup with ID \`${backupId}\` not found.`, flags: 64 });
-          return interaction.reply({ content: `<:information:1532621274092929124> **Backup Comparison (vs Current Guild)** for \`${backupId}\`:\n• **Roles**: ${snapshot.rolesCount} backup roles vs ${guild.roles.cache.size} current roles.\n• **Channels**: ${snapshot.channelsCount} backup channels vs ${guild.channels.cache.size} current channels.\nNo configuration drift identified.`, flags: 64 });
+          return interaction.reply({ content: `<a:lovemail:1527647157371535420> **Backup Comparison (vs Current Guild)** for \`${backupId}\`:\n• **Roles**: ${snapshot.rolesCount} backup roles vs ${guild.roles.cache.size} current roles.\n• **Channels**: ${snapshot.channelsCount} backup channels vs ${guild.channels.cache.size} current channels.\nNo configuration drift identified.`, flags: 64 });
         }
         else if (sub === 'preview') {
           const backupId = interaction.options.getString('backup-id') || '';
@@ -723,7 +723,7 @@ export const BackupsManifest: ModuleManifest = {
           if (!snapshot) return interaction.reply({ content: `<:wrong:1532390628330307634> Backup with ID \`${backupId}\` not found.`, flags: 64 });
           const embed = new EmbedBuilder()
             .setAuthor({ name: 'Rage Optimiser' })
-            .setTitle(`<:information:1532621274092929124> Backup Snapshot Preview: ${snapshot.id}`)
+            .setTitle(`<a:lovemail:1527647157371535420> Backup Snapshot Preview: ${snapshot.id}`)
             .setDescription(`Analysis of backup templates file metadata:\n• Created by: **${snapshot.createdByName}**\n• Timestamp: **${new Date(snapshot.timestamp).toLocaleString()}**\n• Channels count: **${snapshot.channelsCount}**\n• Roles count: **${snapshot.rolesCount}**\n• Emojis count: **${snapshot.emojisCount || 0}**`)
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })

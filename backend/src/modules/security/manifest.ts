@@ -1576,7 +1576,7 @@ export const SecurityManifest: ModuleManifest = {
             .setThumbnail(targetMember.user.displayAvatarURL({ size: 256 }))
             .addFields(
               { name: '<:vip:1532620837117759508> Highest Role', value: `${targetMember.roles.highest}`, inline: true },
-              { name: '<:information:1532621274092929124> Total Roles', value: `\`${targetMember.roles.cache.size - 1}\``, inline: true },
+              { name: '<a:lovemail:1527647157371535420> Total Roles', value: `\`${targetMember.roles.cache.size - 1}\``, inline: true },
               { name: '<:timer:1532620491662037123> Joined Server', value: `<t:${Math.floor(targetMember.joinedTimestamp / 1000)}:R>`, inline: true },
               { name: '<:ticket:1532620631466836021> Assigned Roles', value: rolesList.length > 1024 ? rolesList.substring(0, 1020) + '...' : rolesList, inline: false }
             )
@@ -1593,7 +1593,7 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           const infoEmbed = new EmbedBuilder()
-            .setTitle(`<:information:1532621274092929124> Role Information: @${role.name}`)
+            .setTitle(`<a:lovemail:1527647157371535420> Role Information: @${role.name}`)
             .setColor(0x99CC00)
             .addFields(
               { name: '<:link:1532620952087826602> Role ID', value: `\`${role.id}\``, inline: true },
@@ -1601,7 +1601,7 @@ export const SecurityManifest: ModuleManifest = {
               { name: '<:lightpurplearrow:1532621364115013693> Position', value: `\`#${role.position}\``, inline: true },
               { name: '<:member:1532621317487071426> Member Count', value: `\`${role.members.size}\` members`, inline: true },
               { name: '<:config:1532425712844144701> Hoisted', value: role.hoist ? '<a:approved:1532390590707142956> Yes' : '<:wrong:1532390628330307634> No', inline: true },
-              { name: '<:information:1532621274092929124> Mentionable', value: role.mentionable ? '<a:approved:1532390590707142956> Yes' : '<:wrong:1532390628330307634> No', inline: true },
+              { name: '<a:lovemail:1527647157371535420> Mentionable', value: role.mentionable ? '<a:approved:1532390590707142956> Yes' : '<:wrong:1532390628330307634> No', inline: true },
               { name: '<:config:1532425712844144701> Managed / Integration', value: role.managed ? 'Bot Integration' : 'Custom Role', inline: true },
               { name: '<:timer:1532620491662037123> Created At', value: `<t:${Math.floor(role.createdTimestamp / 1000)}:F>`, inline: true }
             )
@@ -1726,11 +1726,11 @@ export const SecurityManifest: ModuleManifest = {
           }
 
           if (!rows || rows.length === 0) {
-            return interaction.reply({ content: `<:information:1532621274092929124> No moderation case records found ${target ? `for ${target.user.tag}` : 'in this server'}.` });
+            return interaction.reply({ content: `<a:lovemail:1527647157371535420> No moderation case records found ${target ? `for ${target.user.tag}` : 'in this server'}.` });
           }
 
           const embed = new EmbedBuilder()
-            .setTitle(`<:information:1532621274092929124> Moderation Case History ${target ? `• ${target.user.tag}` : ''}`)
+            .setTitle(`<a:lovemail:1527647157371535420> Moderation Case History ${target ? `• ${target.user.tag}` : ''}`)
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
             .setTimestamp();
@@ -2117,7 +2117,7 @@ export const SecurityManifest: ModuleManifest = {
           if (adminRoles.size > 5) riskFactors.push(`<:wrong:1532390628330307634> Excessive Admin Roles: There are ${adminRoles.size} roles with Administrator permissions.`);
 
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Real-time Risk Analysis')
+            .setTitle('<a:lovemail:1527647157371535420> Real-time Risk Analysis')
             .setColor(0x99CC00)
             .setDescription(riskFactors.length > 0 ? riskFactors.join('\n') : '<a:approved:1532390590707142956> No critical risk factors identified. Server configuration is hardened.')
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
@@ -2265,22 +2265,22 @@ export const SecurityManifest: ModuleManifest = {
         }
 
         if (sub === 'audit') {
-          return interaction.reply({ content: '<:information:1532621274092929124> **Security Audit Log Timeline** (Recent 10 entries):\nNo suspicious security threats detected.', flags: 64 });
+          return interaction.reply({ content: '<a:lovemail:1527647157371535420> **Security Audit Log Timeline** (Recent 10 entries):\nNo suspicious security threats detected.', flags: 64 });
         }
         if (sub === 'hierarchy') {
           return interaction.reply({ content: '<:shield:1532403012751065179> **Role Hierarchy Vulnerability Check**:\nAll admin roles are placed correctly in the server role list.', flags: 64 });
         }
         if (sub === 'exposed') {
-          return interaction.reply({ content: '<:information:1532621274092929124> **Exposed Channel Permissions Check**:\n0 channels found with broad public admin rights.', flags: 64 });
+          return interaction.reply({ content: '<a:lovemail:1527647157371535420> **Exposed Channel Permissions Check**:\n0 channels found with broad public admin rights.', flags: 64 });
         }
         if (sub === 'inactive-admins') {
           return interaction.reply({ content: '<:timer:1532620491662037123> **Inactive Administrator Check** (Last 30 Days):\n0 inactive administrator accounts found.', flags: 64 });
         }
         if (sub === 'permissions') {
-          return interaction.reply({ content: '<:information:1532621274092929124> **Role Permission Score Report**:\nAll roles scored above target baseline (100% compliant).', flags: 64 });
+          return interaction.reply({ content: '<a:lovemail:1527647157371535420> **Role Permission Score Report**:\nAll roles scored above target baseline (100% compliant).', flags: 64 });
         }
         if (sub === 'compare') {
-          return interaction.reply({ content: '<:information:1532621274092929124> **Security Baseline POST Check**:\nServer state matches target secure configuration.', flags: 64 });
+          return interaction.reply({ content: '<a:lovemail:1527647157371535420> **Security Baseline POST Check**:\nServer state matches target secure configuration.', flags: 64 });
         }
         if (sub === 'restore-perms') {
           return interaction.reply({ content: '<a:approved:1532390590707142956> **Restore Permissions Overwrites**:\nDefault permission overwrites successfully restored.', flags: 64 });

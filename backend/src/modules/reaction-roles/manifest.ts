@@ -94,7 +94,7 @@ export const ReactionRolesManifest: ModuleManifest = {
         if (sub === 'list') {
           const roleMap = rrMod?.config?.roleMap || {};
           if (Object.keys(roleMap).length === 0) {
-            return interaction.reply({ content: '<:information:1532621274092929124> No reaction roles currently configured.', flags: 64 });
+            return interaction.reply({ content: '<a:lovemail:1527647157371535420> No reaction roles currently configured.', flags: 64 });
           }
           const lines = Object.entries(roleMap).map(([e, rId]) => `${e} ➔ <@&${rId}>`);
           return interaction.reply({ content: `**Reaction Role Mappings:**\n${lines.join('\n')}`, flags: 64 });

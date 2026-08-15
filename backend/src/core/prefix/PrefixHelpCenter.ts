@@ -33,11 +33,11 @@ export class PrefixHelpCenter {
     'Voice Protection': { icon: '<:voicechannelgreen:1532425750278438962>', description: 'Voice Security & Disconnect Controls' },
     'Join To Create': { icon: '<:voicechannelgreen:1532425750278438962>', description: 'Dynamic Voice Channel Generators' },
     'Analytics': { icon: '<:stats:1532429110775779459>', description: 'Guild Telemetry, Audit Logs & Security History' },
-    'Logging': { icon: '<:information:1532621274092929124>', description: 'Real-time Event Channels & Audit Trail' },
-    'Audit': { icon: '<:information:1532621274092929124>', description: 'Administrative Audit Logs & Case Histories' },
+    'Logging': { icon: '<a:lovemail:1527647157371535420>', description: 'Real-time Event Channels & Audit Trail' },
+    'Audit': { icon: '<a:lovemail:1527647157371535420>', description: 'Administrative Audit Logs & Case Histories' },
     'Leveling & Economy': { icon: '<:vip:1532620837117759508>', description: 'Balance, Daily, Work, Shop, Inventory & Ranks' },
     'Giveaways': { icon: '<:cart:1532621146208473115>', description: 'Automated Member Giveaways & Prize Rolls' },
-    'Announcements': { icon: '<:information:1532621274092929124>', description: 'Scheduled Broadcasts & Embedded Notices' },
+    'Announcements': { icon: '<a:lovemail:1527647157371535420>', description: 'Scheduled Broadcasts & Embedded Notices' },
     'Reminders': { icon: '<:timer:1532620491662037123>', description: 'Personal & Server Timed Reminders' },
     'Reaction Roles': { icon: '<:membericons:1532426097428267180>', description: 'Self-Assign Role Panels & Triggers' },
     'Automations': { icon: '<:bot:1532621107746570391>', description: 'Custom Auto-Responders & Event Hooks' },
@@ -415,7 +415,7 @@ export class PrefixHelpCenter {
 
     if (cmd.examples && cmd.examples.length > 0) {
       embed.addFields({
-        name: '<:information:1532621274092929124> Practical Usage Examples',
+        name: '<a:lovemail:1527647157371535420> Practical Usage Examples',
         value: cmd.examples.map(e => `\`${this.formatExample(e, prefix)}\``).join('\n'),
         inline: false
       });
@@ -458,7 +458,7 @@ export class PrefixHelpCenter {
 
     if (subCmd.examples && subCmd.examples.length > 0) {
       embed.addFields({
-        name: '<:information:1532621274092929124> Subcommand Usage Examples',
+        name: '<a:lovemail:1527647157371535420> Subcommand Usage Examples',
         value: subCmd.examples.map((e: string) => `\`${this.formatExample(e, prefix)}\``).join('\n'),
         inline: false
       });
@@ -467,7 +467,7 @@ export class PrefixHelpCenter {
       const matchingEx = mainCmd.examples.filter(e => e.includes(subKey));
       if (matchingEx.length > 0) {
         embed.addFields({
-          name: '<:information:1532621274092929124> Practical Subcommand Examples',
+          name: '<a:lovemail:1527647157371535420> Practical Subcommand Examples',
           value: matchingEx.map(e => `\`${this.formatExample(e, prefix)}\``).join('\n'),
           inline: false
         });

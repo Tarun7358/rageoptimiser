@@ -110,7 +110,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
           const subs = await SocialSubscriptionRepository.findAll(guildId);
           if (subs.length === 0) {
             const embed = new EmbedBuilder()
-              .setTitle('<:information:1532621274092929124> Social Updates Subscriptions')
+              .setTitle('<a:lovemail:1527647157371535420> Social Updates Subscriptions')
               .setDescription('No active subscriptions configured. Use `r!social-updates add <youtube|instagram> <handle/channel_id> <#channel>` or the Web Dashboard to add YouTube channels or Instagram accounts.')
               .setColor(0x99CC00)
               .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
@@ -120,7 +120,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
             `• **${s.provider.toUpperCase()}** \`${s.sourceName}\` → <#${s.discordChannelId}> — ${s.enabled ? '<a:approved:1532390590707142956> Active' : '<:wrong:1532390628330307634> Paused'} (Health: **${s.validationStatus}**)`
           );
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Social Updates Subscriptions')
+            .setTitle('<a:lovemail:1527647157371535420> Social Updates Subscriptions')
             .setDescription(lines.join('\n'))
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
@@ -129,7 +129,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
           const subs = await SocialSubscriptionRepository.findAll(guildId);
           const active = subs.filter((s: any) => s.enabled).length;
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Social Updates Status')
+            .setTitle('<a:lovemail:1527647157371535420> Social Updates Status')
             .setDescription(`**Active Subscriptions:** ${active} / ${subs.length}\n**System Diagnostics:** <a:approved:1532390590707142956> Operational`)
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
@@ -168,7 +168,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
         } else if (action === 'statistics') {
           const analytics = await SocialSubscriptionRepository.getAnalytics(guildId);
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Social Updates Analytics & Telemetry')
+            .setTitle('<a:lovemail:1527647157371535420> Social Updates Analytics & Telemetry')
             .setColor(0x99CC00)
             .addFields(
               { name: 'Total Subscriptions', value: `${analytics.totalSubscriptions}`, inline: true },
@@ -314,7 +314,7 @@ export const SocialUpdatesManifest: ModuleManifest = {
           return interaction.reply({ embeds: [embed], flags: 64 });
         } else {
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Social Updates Control Manual')
+            .setTitle('<a:lovemail:1527647157371535420> Social Updates Control Manual')
             .setDescription([
               `> <:lightpurplearrow:1532621364115013693> **\`r!social-updates add <yt|ig> <handle/id> <#channel>\`** — Add new social feed`,
               `> <:lightpurplearrow:1532621364115013693> **\`r!social-updates remove <id>\`** — Remove a social subscription`,
@@ -670,7 +670,7 @@ export function registerSocialUpdatesCommands(): void {
         const subs = await SocialSubscriptionRepository.findAll(guildId);
         if (subs.length === 0) {
           const embed = new EmbedBuilder()
-            .setTitle('<:information:1532621274092929124> Social Updates Subscriptions')
+            .setTitle('<a:lovemail:1527647157371535420> Social Updates Subscriptions')
             .setDescription('No active subscriptions configured. Use `r!social add <youtube|instagram> <handle/channel_id> <#channel>` to add YouTube channels or Instagram accounts.')
             .setColor(0x99CC00)
             .setFooter({ text: 'Rage Optimiser • Social Updates Engine' });
@@ -680,7 +680,7 @@ export function registerSocialUpdatesCommands(): void {
           `• **${s.provider.toUpperCase()}** \`${s.sourceName}\` → <#${s.discordChannelId}> — ${s.enabled ? '<a:approved:1532390590707142956> Active' : '<:wrong:1532390628330307634> Paused'} (Health: **${s.validationStatus}**) [ID: \`${s.id}\`]`
         );
         const embed = new EmbedBuilder()
-          .setTitle('<:information:1532621274092929124> Social Updates Subscriptions')
+          .setTitle('<a:lovemail:1527647157371535420> Social Updates Subscriptions')
           .setDescription(lines.join('\n'))
           .setColor(0x99CC00)
           .setFooter({ text: 'Rage Optimiser • Social Updates Engine' });
@@ -691,7 +691,7 @@ export function registerSocialUpdatesCommands(): void {
         const subs = await SocialSubscriptionRepository.findAll(guildId);
         const active = subs.filter((s: any) => s.enabled).length;
         const embed = new EmbedBuilder()
-          .setTitle('<:information:1532621274092929124> Social Updates Engine Status')
+          .setTitle('<a:lovemail:1527647157371535420> Social Updates Engine Status')
           .setDescription(`**Active Subscriptions:** ${active} / ${subs.length}\n**System Diagnostics:** <a:approved:1532390590707142956> Operational`)
           .setColor(0x99CC00)
           .setFooter({ text: 'Rage Optimiser • Social Updates Engine' });
@@ -728,7 +728,7 @@ export function registerSocialUpdatesCommands(): void {
       if (action === 'statistics' || action === 'stats' || action === 'analytics') {
         const analytics = await SocialSubscriptionRepository.getAnalytics(guildId);
         const embed = new EmbedBuilder()
-          .setTitle('<:information:1532621274092929124> Social Updates Analytics & Telemetry')
+          .setTitle('<a:lovemail:1527647157371535420> Social Updates Analytics & Telemetry')
           .setColor(0x99CC00)
           .addFields(
             { name: 'Total Subscriptions', value: `${analytics.totalSubscriptions}`, inline: true },
@@ -816,7 +816,7 @@ export function registerSocialUpdatesCommands(): void {
 
       // Default Help Manual
       const embed = new EmbedBuilder()
-        .setTitle('<:information:1532621274092929124> Social Updates Control Manual')
+        .setTitle('<a:lovemail:1527647157371535420> Social Updates Control Manual')
         .setDescription([
           `> <:lightpurplearrow:1532621364115013693> **\`r!social add <yt|ig> <handle/id> <#channel>\`** — Add new social feed`,
           `> <:lightpurplearrow:1532621364115013693> **\`r!social remove <id>\`** — Remove a social subscription`,
