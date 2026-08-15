@@ -220,16 +220,15 @@ export const StatsCounterManifest: ModuleManifest = {
         const guild = interaction.guild;
         if (!guild) return;
 
-        // Check permissions
-        const hasPerm = (await checkWhitelistPermission(interaction.user.id, guild, context)) ||
-                         interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild) ||
-                         interaction.user.id === guild.ownerId;
-        if (!hasPerm) {
+        // Check permissions: Strict Guild Owner & Extra Owner access
+        const { isOwnerOrExtraOwner } = await import('../../utils/whitelistCheck.js');
+        const isOwnerOrExtra = await isOwnerOrExtraOwner(interaction.user.id, guild);
+        if (!isOwnerOrExtra) {
           return interaction.reply({
             embeds: [
               createLimeEmbed({
-                title: 'Permission Denied',
-                description: `${WRONG_ICON} You require **Manage Server** permission to configure Stats Counters.`
+                title: 'Access Denied',
+                description: `${WRONG_ICON} Access Denied: Only the **Guild Owner** and **Extra Owners** can configure or use Stats Counter commands.`
               })
             ],
             flags: 64
