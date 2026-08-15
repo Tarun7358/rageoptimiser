@@ -59,9 +59,14 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
     if (!res.ok) return { subs: 'N/A', views: 'N/A' };
     const html = await res.text();
 
-    const subMatch = html.match(/"subscriberCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
+    const subMatch = html.match(/"content":"([^"]*subscribers?)"/i) ||
+                     html.match(/([\d\.]+[KMB]?)\s+subscribers/i) ||
+                     html.match(/"subscriberCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
                      html.match(/"subscriberCountText":\s*\{[^\}]*"text":"([^"]+)"\}/) ||
-                     html.match(/"subscriberCountText":\{"accessibility":\{"accessibilityData":\{"label":"([^"]+)"\}/);
+                     html.match(/-\s*([\d\.]+[KMB]?)\s+subscribers/i);
+
+    const videoMatch = html.match(/"content":"([^"]*videos?)"/i) ||
+                       html.match(/([\d,]+)\s+videos/i);
 
     const viewMatch = html.match(/"viewCountText":\s*\{[^\}]*"simpleText":"([^"]+)"\}/) ||
                       html.match(/"viewCountText":\s*\{[^\}]*"text":"([^"]+)"\}/) ||
@@ -69,7 +74,7 @@ export async function fetchYouTubeSubscribers(channelHandle: string): Promise<{ 
                       html.match(/([\d,]+)\s+views/i);
 
     const rawSub = subMatch ? subMatch[1] : '0';
-    const rawViews = viewMatch ? viewMatch[1] : '0';
+    const rawViews = viewMatch ? viewMatch[1] : (videoMatch ? videoMatch[1] : '0');
 
     return { subs: cleanSubCount(rawSub), views: formatViews(rawViews) };
   } catch (err) {
