@@ -82,3 +82,20 @@ export function isUrlCommandBypass(message: any, clientUserId?: string): boolean
     return false;
   }
 }
+
+const handledAntiLinkMessageIds = new Set<string>();
+
+export function isMessageAntiLinkHandled(messageId: string): boolean {
+  if (!messageId) return false;
+  return handledAntiLinkMessageIds.has(messageId);
+}
+
+export function markMessageAntiLinkHandled(messageId: string): void {
+  if (!messageId) return;
+  handledAntiLinkMessageIds.add(messageId);
+  if (handledAntiLinkMessageIds.size > 2000) {
+    const first = handledAntiLinkMessageIds.values().next().value;
+    if (first) handledAntiLinkMessageIds.delete(first);
+  }
+}
+

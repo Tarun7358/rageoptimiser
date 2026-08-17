@@ -2,7 +2,7 @@ import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { Embeds, Colors, buildStatusCard, createLimeEmbed, buildLimeOverviewCard, buildMinimalAction, buildLimeWarnCard, VERIFIED_ICON, WRONG_ICON, SHIELD_ICON, GAVEL_ICON, LINK_ICON, INFO_ICON, CONFIG_ICON, VIP_ICON, BOT_ICON } from '../../core/UIFactory.js';
 import { checkWhitelistPermission } from '../../utils/whitelistCheck.js';
-import { isUrlCommandBypass } from '../../utils/antiLinkBypass.js';
+import { isUrlCommandBypass, isMessageAntiLinkHandled, markMessageAntiLinkHandled } from '../../utils/antiLinkBypass.js';
 
 function userTag(user: any): string {
   return user?.globalName ?? user?.username ?? user?.tag ?? user?.id ?? 'Unknown';
@@ -292,7 +292,7 @@ export const AutomodManifest: ModuleManifest = {
           });
         }
 
-        const modules = context.getModulesState ? context.getModulesState() : [];
+        const modules = context.getModulesState ? context.getModulesState(guild.id) : [];
         const amMod = modules.find((m: any) => m.id === 'automod');
         const config = amMod?.config || {};
 
@@ -606,7 +606,7 @@ export const AutomodManifest: ModuleManifest = {
         if (message.author.bot) return;
         if (!message.guild) return;
         
-        const modules = context.getModulesState ? context.getModulesState() : [];
+        const modules = context.getModulesState ? context.getModulesState(message.guild.id) : [];
         const amMod = modules.find((m: any) => m.id === 'automod');
 
         // DEBUG: Log automod module state
@@ -635,6 +635,8 @@ export const AutomodManifest: ModuleManifest = {
         }
 
         if (blockLinks && hasLink) {
+          if ((message as any)._antiLinkHandled || isMessageAntiLinkHandled(message.id)) return;
+
           const ignoredChannels: string[] = config.ignoredChannels || [];
           const ignoredRoles: string[] = config.ignoredRoles || [];
 
@@ -650,6 +652,8 @@ export const AutomodManifest: ModuleManifest = {
           console.log(`[AntiLink Debug] Bypass check: channelIgnored=${isChannelIgnored} | roleIgnored=${hasIgnoredRole} | ownerOrAdmin=${isOwnerOrAdmin} | whitelisted=${isWhitelisted} | urlCmd=${isUrlCmd}`);
 
           if (!isChannelIgnored && !hasIgnoredRole && !isOwnerOrAdmin && !isWhitelisted && !isUrlCmd) {
+            (message as any)._antiLinkHandled = true;
+            markMessageAntiLinkHandled(message.id);
             deleted = true;
             reason = 'Posting unauthorized links';
             console.log(`[AntiLink Debug] → DELETING message from ${message.author.username}`);

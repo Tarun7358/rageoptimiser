@@ -1062,6 +1062,37 @@ export function registerConfigCommands(): void {
           });
         }
 
+        if (['antieveryone', 'everyone', 'here', 'antihere', 'massping'].includes(action)) {
+          const toggle = effectiveArgs[2]?.toLowerCase();
+          if (!toggle || !['on', 'off', 'enable', 'disable'].includes(toggle)) {
+            return message.reply({
+              embeds: [createLimeEmbed({
+                title: 'Anti-Everyone / Anti-Here Configuration Syntax',
+                description: `${WRONG_EMOJI} **Syntax**: \`r!config automod antieveryone <on|off>\`\nExample: \`r!config automod antieveryone off\``
+              })]
+            });
+          }
+
+          const isEnabled = ['on', 'enable'].includes(toggle);
+          updateAmConfig({ antiEveryoneEnabled: isEnabled });
+
+          const secModule = modules.find((m: any) => m.id === 'security');
+          if (secModule && extra?.updateModuleConfig) {
+            const secConfig = secModule.config || {};
+            const rules = { ...(secConfig.rules || {}) };
+            const existing = rules.anti_everyone_here || { enabled: true, limit: 1, window: 10, action: 'quarantine', recovery: true };
+            rules.anti_everyone_here = { ...existing, enabled: isEnabled };
+            extra.updateModuleConfig('security', { ...secConfig, rules });
+          }
+
+          return message.reply({
+            embeds: [createLimeEmbed({
+              title: 'Anti-Everyone / Anti-Here Tag Filter Settings Saved',
+              description: `${APPROVED_ICON} Anti-Everyone tag filter is now **\`${isEnabled ? 'ENABLED' : 'DISABLED'}\`**.`
+            })]
+          });
+        }
+
         if (action === 'antispam') {
           const toggle = effectiveArgs[2]?.toLowerCase();
           const maxMsgs = parseInt(effectiveArgs[3], 10);

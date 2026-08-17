@@ -320,7 +320,7 @@ export class TrustedActorAbuseHandler {
     } catch (e) {}
 
     // 3. Fallbacks
-    return providedChannelId || guild.systemChannelId || guild.publicUpdatesChannelId || null;
+    return providedChannelId || null;
   }
 
   private static async applyQuarantine(guild: Guild, member: GuildMember): Promise<void> {

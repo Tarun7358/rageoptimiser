@@ -436,13 +436,13 @@ export class ModuleRegistry {
 
   private createDefaultModulesState(): ModuleState[] {
     const states: ModuleState[] = [];
-    const disabledByDefault = ['security', 'automod', 'voice-protection', 'join-role-guard', 'logging', 'backups'];
+    const alwaysEnabledCore = ['config', 'diagnostics', 'bulk_ops', 'rage-enterprise', 'botstats', 'discord-dashboard', 'brain'];
     this.manifests.forEach(manifest => {
-      const isOff = disabledByDefault.includes(manifest.id);
+      const isCore = alwaysEnabledCore.includes(manifest.id);
       states.push({
         id: manifest.id,
         name: manifest.name,
-        status: isOff ? 'disabled' : 'enabled',
+        status: isCore ? 'enabled' : 'disabled',
         progress: 0,
         errors: [],
         config: manifest.id === 'security'

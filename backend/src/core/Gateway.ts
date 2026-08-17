@@ -419,19 +419,11 @@ export class Gateway {
 
       // Send welcome message to server owner (DM) and guild channel
       try {
-        const musicClientId = process.env.MUSIC_CLIENT_ID || '1520323151928623125';
-        const musicPerms = process.env.MUSIC_BOT_PERMISSIONS || '36700160';
-        const musicInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${musicClientId}&permissions=${musicPerms}&scope=bot%20applications.commands&guild_id=${guild.id}`;
-
         const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setLabel('📄 A-Z Command Manual')
             .setStyle(ButtonStyle.Link)
             .setURL('https://rageoptimiser.com/manual'),
-          new ButtonBuilder()
-            .setLabel('Add Rage Music Bot')
-            .setStyle(ButtonStyle.Link)
-            .setURL(musicInviteUrl),
           new ButtonBuilder()
             .setLabel('Support Server')
             .setStyle(ButtonStyle.Link)
@@ -485,13 +477,6 @@ export class Gateway {
                 '',
                 '*Keep these commands confidential to maintain maximum server security.*'
               ]
-            },
-            {
-              title: `${LINK_ICON} ADD RAGE MUSIC BOT (OPTIONAL)`,
-              items: [
-                'Music streaming and voice features run on a **dedicated high-performance audio engine**.',
-                `[${VERIFIED_ICON} Click Here to Invite Rage Music to ${guild.name}](${musicInviteUrl})`
-              ]
             }
           ],
           footerText: 'Rage Optimiser Enterprise • Server Owner Security Clearance'
@@ -534,12 +519,6 @@ export class Gateway {
                   '• `r!enable automod` — Activate Anti-Link & Anti-Spam filters',
                   '• `r!enable all` — Activate full enterprise protection suite',
                   '• `r!config` or `/config` — Open interactive server control dashboard'
-                ]
-              },
-              {
-                title: `${LINK_ICON} RAGE MUSIC BOT INTEGRATION`,
-                items: [
-                  `High-performance audio streaming is available via **Rage Music Bot**.\n[${VERIFIED_ICON} Click Here to Add Rage Music](${musicInviteUrl})`
                 ]
               }
             ],

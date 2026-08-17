@@ -300,15 +300,19 @@ export function buildLimeWarnCard(opts: {
   const color = opts.color ?? Colors.LIME;
 
   const desc = [
-    `Reason: . ${opts.user} , **${opts.reason}**`,
-    ` ,`,
-    ` has been warned " Your Limit is ${current}/${max} " Exceeding the limts will leads to punishments ,`
+    `> **Offender**: ${opts.user}`,
+    `> **Reason**: \`${opts.reason}\``,
+    `> **Warning Level**: \`Limit ${current}/${max}\``,
+    ``,
+    `*Exceeding safety limits will result in automated security punishments.*`
   ].join('\n');
 
   const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle(`Warned ${opts.category} | ${VERIFIED_ICON}`)
-    .setDescription(desc);
+    .setDescription(desc)
+    .setFooter({ text: 'Rage Optimiser • AutoMod Protection' })
+    .setTimestamp();
 
   if (opts.thumbnailUrl) {
     embed.setThumbnail(opts.thumbnailUrl);

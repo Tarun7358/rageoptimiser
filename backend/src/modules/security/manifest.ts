@@ -1,7 +1,7 @@
 import { AuditLogEvent, PermissionFlagsBits, EmbedBuilder, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { checkWhitelistPermission, getGuildAndCheckPermission, checkBypassImmunity, isOwnerOrExtraOwner } from '../../utils/whitelistCheck.js';
-import { isUrlCommandBypass } from '../../utils/antiLinkBypass.js';
+import { isUrlCommandBypass, isMessageAntiLinkHandled, markMessageAntiLinkHandled } from '../../utils/antiLinkBypass.js';
 import { Database } from '../../core/Database.js';
 import { getPrebotEntry, PREBOT_PERMISSIONS } from '../prebot_whitelist/manifest.js';
 import { checkRoleAssignment } from '../join-role-guard/manifest.js';
@@ -3392,8 +3392,8 @@ export const SecurityManifest: ModuleManifest = {
               .setFooter({ text: 'Rage Optimiser • Zero-Trust Security Architecture' })
               .setTimestamp();
 
-            // Send Security Alert Embed to Log Channel
-            const logChanId = config.logChannelId || guild.systemChannelId || guild.publicUpdatesChannelId;
+            // Send Security Alert Embed to Log Channel (if configured)
+            const logChanId = config.logChannelId;
             if (logChanId) {
               const logChan = guild.channels.cache.get(logChanId);
               if (logChan && logChan.isTextBased()) {
@@ -3985,13 +3985,22 @@ export const SecurityManifest: ModuleManifest = {
         const config = secModule.config || {};
         const guild = message.guild;
 
+        const automodModule = modules.find((m: any) => m.id === 'automod');
+        const automodConfig = automodModule?.config || {};
+        const isAutoModDisabled = automodModule && (automodModule.status === 'disabled' || automodConfig.autoModEnabled === false);
+
         // ─────────────────────────────────────────────────────────────────────────────
         // ANTI-EVERYONE & ANTI-HERE MENTION PROTECTION MODULE
         // ─────────────────────────────────────────────────────────────────────────────
         const hasEveryoneOrHere = message.mentions?.everyone === true || message.content?.includes('@everyone') || message.content?.includes('@here');
         if (hasEveryoneOrHere) {
           const ruleEveryone = getEffectiveRule(config.rules, 'anti_everyone_here', config);
-          if (ruleEveryone.enabled && config.antiNukeEnabled !== false) {
+          const isEveryoneActive = ruleEveryone.enabled &&
+            (config.antiNukeEnabled !== false) &&
+            (automodConfig.antiEveryoneEnabled !== false) &&
+            !isAutoModDisabled;
+
+          if (isEveryoneActive) {
             const isBypassed = await isExecutorBypassed(guild, message.author.id, config, context, 'anti_everyone_here');
             if (!isBypassed) {
               // Delete offending mention message immediately
@@ -4027,7 +4036,9 @@ export const SecurityManifest: ModuleManifest = {
         const hasLink = LINK_REGEX.test(content) || content.includes('http://') || content.includes('https://') || content.includes('www.') || content.includes('discord.gg') || content.includes('discord.com/invite') || content.includes('dsc.gg');
 
         if (!hasLink) return;
-        if ((message as any)._antiLinkHandled) return;
+        if ((message as any)._antiLinkHandled || isMessageAntiLinkHandled(message.id)) return;
+
+        const isAutomodActive = automodModule && automodModule.status === 'enabled' && automodConfig.blockLinks !== false;
 
         // Context-Aware Command Bypass Check (e.g. r!play https://youtube.com/...)
         if (isUrlCommandBypass(message, client?.user?.id)) return;
@@ -4036,8 +4047,6 @@ export const SecurityManifest: ModuleManifest = {
         if (isBypassed) return;
 
         // Ignored Channels & Ignored Roles Check
-        const automodModule = (context.getModulesState ? context.getModulesState() : []).find((m: any) => m.id === 'automod');
-        const automodConfig = automodModule?.config || {};
 
         const ignoredChannels: string[] = [
           ...(rule.ignoredChannels || []),
@@ -4077,6 +4086,10 @@ export const SecurityManifest: ModuleManifest = {
           }
         }
 
+        // Synchronously mark message handled to prevent concurrent listener race duplicates
+        (message as any)._antiLinkHandled = true;
+        markMessageAntiLinkHandled(message.id);
+
         // BUG FIX: Track rate limit FIRST (always), then act on EVERY link, not just after threshold.
         // Previously, a non-whitelisted user could post (limit-1) links freely before anything happened.
         // Now every single link is deleted immediately. The rate-limit is still checked to escalate
@@ -4086,9 +4099,7 @@ export const SecurityManifest: ModuleManifest = {
         // Always delete the message containing a link from a non-whitelisted user
         await message.delete().catch(() => { });
 
-        const isAutomodActive = automodModule && automodModule.status === 'enabled' && automodConfig.blockLinks !== false;
-        if (!isAutomodActive && !(message as any)._antiLinkHandled) {
-          (message as any)._antiLinkHandled = true;
+        if (!isAutomodActive) {
           const dmEmbed = new EmbedBuilder()
             .setTitle(`<:link:1532620952087826602> Anti-Link Enforcement — ${message.guild.name}`)
             .setDescription(`Your message in **#${message.channel.name || 'channel'}** was removed because it contained an unauthorized link.\n\n**Server**: ${message.guild.name}\n**Action**: Message removed & link blocked.`)
@@ -4135,17 +4146,20 @@ export const SecurityManifest: ModuleManifest = {
               .setTimestamp();
             await message.member.send({ embeds: [dmEmbed] }).catch(() => { });
 
-            const warningEmbed = new EmbedBuilder()
-              .setTitle('<:link:1532620952087826602> Anti-Link Protection')
-              .setColor('#ff4444')
-              .setThumbnail(message.author.displayAvatarURL({ size: 256 }) || null)
-              .setDescription(`> ${message.author}, your message was removed because external link sharing exceeds server limits.\n\n**Violator**: ${message.author} (\`${message.author.username}\` • \`ID: ${message.author.id}\`)\n**Channel**: <#${message.channel.id}>\n**Enforcement**: Message Purged & Warned`)
-              .setFooter({ text: 'Rage Optimiser Security Guard • Auto-deletes in 8s' })
-              .setTimestamp();
+            // Send warning embed in channel ONLY if AutoMod is not active (to avoid duplicate embeds)
+            if (!isAutomodActive) {
+              const warningEmbed = new EmbedBuilder()
+                .setTitle('<:link:1532620952087826602> Anti-Link Protection')
+                .setColor('#ff4444')
+                .setThumbnail(message.author.displayAvatarURL({ size: 256 }) || null)
+                .setDescription(`> ${message.author}, your message was removed because external link sharing exceeds server limits.\n\n**Violator**: ${message.author} (\`${message.author.username}\` • \`ID: ${message.author.id}\`)\n**Channel**: <#${message.channel.id}>\n**Enforcement**: Message Purged & Warned`)
+                .setFooter({ text: 'Rage Optimiser Security Guard • Auto-deletes in 8s' })
+                .setTimestamp();
 
-            const warningMsg = await message.channel.send({ embeds: [warningEmbed] }).catch(() => null);
-            if (warningMsg) {
-              setTimeout(() => warningMsg.delete().catch(() => { }), 8000);
+              const warningMsg = await message.channel.send({ embeds: [warningEmbed] }).catch(() => null);
+              if (warningMsg) {
+                setTimeout(() => warningMsg.delete().catch(() => { }), 8000);
+              }
             }
           } else if (rule.action === 'timeout') {
             const duration = (rule.timeoutDuration || 5) * 60 * 1000;

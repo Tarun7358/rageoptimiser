@@ -145,6 +145,10 @@ export const BulkOpsManifest: ModuleManifest = {
 
         const sub = interaction.options.getSubcommand(false);
         const guild = interaction.guild;
+        if (!guild) {
+          return interaction.reply({ content: '<:wrong:1532390628330307634> Bulk commands must be run inside a server.', flags: 64 });
+        }
+
         if (!sub) {
           const embed = new EmbedBuilder()
             .setTitle('<:config:1532425712844144701> Bulk Operations Manager')
@@ -159,7 +163,7 @@ export const BulkOpsManifest: ModuleManifest = {
           return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
-        await interaction.deferReply({ flags: 64 });
+        await interaction.deferReply({ flags: 64 }).catch(() => {});
 
         const logBulk = (action: string, count: number) => {
           context.logSyncEvent(`[Bulk Ops] ${interaction.user.username} — ${action} (${count} items).`, 'warn');
@@ -172,297 +176,330 @@ export const BulkOpsManifest: ModuleManifest = {
             .setDescription(`${verifiedIcon} ${interaction.user} **Has ${action}** ${detail}`);
         };
 
-        // ROLE ADD
-        if (sub === 'role-add') {
-          const role = interaction.options.getRole('role');
-          const filterRole = interaction.options.getRole('filter_role');
-          const members = await guild.members.fetch();
-          let targets = members.filter((m: any) => !m.user.bot);
-          if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
+        try {
+          // ROLE ADD
+          if (sub === 'role-add') {
+            const role = interaction.options.getRole('role');
+            if (!role) {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Please specify a valid target role to add.' });
+            }
 
-          let count = 0;
-          for (const [, member] of targets) {
-            if (!member.roles.cache.has(role.id)) {
-              await member.roles.add(role).catch(() => {});
+            const filterRole = interaction.options.getRole('filter_role');
+            const members = await guild.members.fetch().catch(() => guild.members.cache);
+            let targets = members.filter((m: any) => !m.user.bot);
+            if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
+
+            let count = 0;
+            for (const [, member] of targets) {
+              if (!member.roles.cache.has(role.id)) {
+                const res = await member.roles.add(role).catch(() => null);
+                if (res) count++;
+                await new Promise(r => setTimeout(r, 100));
+              }
+            }
+            logBulk('Role Add', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Added Role', `${role} **to ${count} members**`)] });
+          }
+
+          // ROLE REMOVE
+          if (sub === 'role-remove') {
+            const role = interaction.options.getRole('role');
+            if (!role) {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Please specify a valid target role to remove.' });
+            }
+
+            const filterRole = interaction.options.getRole('filter_role');
+            const members = await guild.members.fetch().catch(() => guild.members.cache);
+            let targets = members.filter((m: any) => !m.user.bot && m.roles.cache.has(role.id));
+            if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
+
+            let count = 0;
+            for (const [, member] of targets) {
+              const res = await member.roles.remove(role).catch(() => null);
+              if (res) count++;
+              await new Promise(r => setTimeout(r, 100));
+            }
+            logBulk('Role Remove', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Removed Role', `${role} **from ${count} members**`)] });
+          }
+
+          // CHANNEL LOCK
+          if (sub === 'channel-lock') {
+            const cat = interaction.options.getChannel('category');
+            const channels = cat
+              ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+              : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+            let count = 0;
+            for (const [, ch] of channels) {
+              await ch.permissionOverwrites.edit(guild.id, { SendMessages: false }).catch(() => {});
+              count++;
+            }
+            logBulk('Channel Lock', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Locked Channels', `**${count} text channels**`)] });
+          }
+
+          // CHANNEL UNLOCK
+          if (sub === 'channel-unlock') {
+            const cat = interaction.options.getChannel('category');
+            const channels = cat
+              ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+              : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+            let count = 0;
+            for (const [, ch] of channels) {
+              await ch.permissionOverwrites.edit(guild.id, { SendMessages: null }).catch(() => {});
+              count++;
+            }
+            logBulk('Channel Unlock', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Unlocked Channels', `**${count} text channels**`)] });
+          }
+
+          // CHANNEL HIDE
+          if (sub === 'channel-hide') {
+            const cat = interaction.options.getChannel('category');
+            const channels = cat
+              ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
+              : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+            let count = 0;
+            for (const [, ch] of channels) {
+              await ch.permissionOverwrites.edit(guild.id, { ViewChannel: false }).catch(() => {});
+              count++;
+            }
+            logBulk('Channel Hide', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Hidden Channels', `**${count} channels**`)] });
+          }
+
+          // CHANNEL UNHIDE
+          if (sub === 'channel-unhide') {
+            const cat = interaction.options.getChannel('category');
+            const channels = cat
+              ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
+              : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+            let count = 0;
+            for (const [, ch] of channels) {
+              await ch.permissionOverwrites.edit(guild.id, { ViewChannel: null }).catch(() => {});
+              count++;
+            }
+            logBulk('Channel Unhide', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Unhidden Channels', `**${count} channels**`)] });
+          }
+
+          // CHANNEL SLOWMODE
+          if (sub === 'channel-slowmode') {
+            const seconds = Math.max(interaction.options.getInteger('seconds') ?? 0, 0);
+            const cat = interaction.options.getChannel('category');
+            const channels = cat
+              ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
+              : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
+            let count = 0;
+            for (const [, ch] of channels) {
+              await ch.setRateLimitPerUser(seconds).catch(() => {});
+              count++;
+            }
+            logBulk('Channel Slowmode', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Set Slowmode', `**${seconds}s on ${count} channels**`)] });
+          }
+
+          // RENAME CHANNELS
+          if (sub === 'rename-channels') {
+            const cat = interaction.options.getChannel('category');
+            if (!cat) {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Please specify a valid category.' });
+            }
+            const prefix = interaction.options.getString('prefix') || '';
+            const suffix = interaction.options.getString('suffix') || '';
+            if (!prefix && !suffix) return interaction.editReply({ content: '<:wrong:1532390628330307634> Provide at least a prefix or suffix.' });
+            const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
+            let count = 0;
+            for (const [, ch] of channels) {
+              const newName = `${prefix}${ch.name}${suffix}`;
+              await ch.setName(newName).catch(() => {});
               count++;
               await new Promise(r => setTimeout(r, 200));
             }
-          }
-          logBulk('Role Add', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Added Role', `${role} **to ${count} members**`)] });
-        }
-
-        // ROLE REMOVE
-        if (sub === 'role-remove') {
-          const role = interaction.options.getRole('role');
-          const filterRole = interaction.options.getRole('filter_role');
-          const members = await guild.members.fetch();
-          let targets = members.filter((m: any) => !m.user.bot && m.roles.cache.has(role.id));
-          if (filterRole) targets = targets.filter((m: any) => m.roles.cache.has(filterRole.id));
-
-          let count = 0;
-          for (const [, member] of targets) {
-            await member.roles.remove(role).catch(() => {});
-            count++;
-            await new Promise(r => setTimeout(r, 200));
-          }
-          logBulk('Role Remove', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Removed Role', `${role} **from ${count} members**`)] });
-        }
-
-        // CHANNEL LOCK
-        if (sub === 'channel-lock') {
-          const cat = interaction.options.getChannel('category');
-          const channels = cat
-            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
-            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
-          let count = 0;
-          for (const [, ch] of channels) {
-            await ch.permissionOverwrites.edit(guild.id, { SendMessages: false }).catch(() => {});
-            count++;
-          }
-          logBulk('Channel Lock', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Locked Channels', `**${count} text channels**`)] });
-        }
-
-        // CHANNEL UNLOCK
-        if (sub === 'channel-unlock') {
-          const cat = interaction.options.getChannel('category');
-          const channels = cat
-            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
-            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
-          let count = 0;
-          for (const [, ch] of channels) {
-            await ch.permissionOverwrites.edit(guild.id, { SendMessages: null }).catch(() => {});
-            count++;
-          }
-          logBulk('Channel Unlock', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Unlocked Channels', `**${count} text channels**`)] });
-        }
-
-        // CHANNEL HIDE
-        if (sub === 'channel-hide') {
-          const cat = interaction.options.getChannel('category');
-          const channels = cat
-            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
-            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
-          let count = 0;
-          for (const [, ch] of channels) {
-            await ch.permissionOverwrites.edit(guild.id, { ViewChannel: false }).catch(() => {});
-            count++;
-          }
-          logBulk('Channel Hide', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Hidden Channels', `**${count} channels**`)] });
-        }
-
-        // CHANNEL UNHIDE
-        if (sub === 'channel-unhide') {
-          const cat = interaction.options.getChannel('category');
-          const channels = cat
-            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id)
-            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
-          let count = 0;
-          for (const [, ch] of channels) {
-            await ch.permissionOverwrites.edit(guild.id, { ViewChannel: null }).catch(() => {});
-            count++;
-          }
-          logBulk('Channel Unhide', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Unhidden Channels', `**${count} channels**`)] });
-        }
-
-        // CHANNEL SLOWMODE
-        if (sub === 'channel-slowmode') {
-          const seconds = interaction.options.getInteger('seconds');
-          const cat = interaction.options.getChannel('category');
-          const channels = cat
-            ? guild.channels.cache.filter((c: any) => c.parentId === cat.id && c.type === ChannelType.GuildText)
-            : guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildText);
-          let count = 0;
-          for (const [, ch] of channels) {
-            await ch.setRateLimitPerUser(seconds).catch(() => {});
-            count++;
-          }
-          logBulk('Channel Slowmode', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Set Slowmode', `**${seconds}s on ${count} channels**`)] });
-        }
-
-        // RENAME CHANNELS
-        if (sub === 'rename-channels') {
-          const cat = interaction.options.getChannel('category');
-          const prefix = interaction.options.getString('prefix') || '';
-          const suffix = interaction.options.getString('suffix') || '';
-          if (!prefix && !suffix) return interaction.editReply({ content: '<:wrong:1532390628330307634> Provide at least a prefix or suffix.' });
-          const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
-          let count = 0;
-          for (const [, ch] of channels) {
-            const newName = `${prefix}${ch.name}${suffix}`;
-            await ch.setName(newName).catch(() => {});
-            count++;
-            await new Promise(r => setTimeout(r, 300));
-          }
-          logBulk('Rename Channels', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Renamed Channels', `**${count} channels**`)] });
-        }
-
-        // PURGE
-        if (sub === 'purge') {
-          const amount = Math.max(interaction.options.getInteger('amount'), 1);
-          const target = interaction.options.getChannel('channel') || interaction.channel;
-          const user = interaction.options.getUser('user');
-          
-          let remaining = amount;
-          let totalDeleted = 0;
-          let beforeId: string | undefined = undefined;
-
-          if (amount > 100) {
-            const initEmbed = new EmbedBuilder()
-              .setColor(0x84cc16)
-              .setDescription(`${verifiedIcon} ${interaction.user} **Has Initialized Purge** **${amount} messages** in ${target}`);
-            await interaction.editReply({ embeds: [initEmbed] });
+            logBulk('Rename Channels', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Renamed Channels', `**${count} channels**`)] });
           }
 
-          while (remaining > 0) {
-            const fetchLimit = Math.min(remaining, 100);
-            const limitToFetch = user ? 100 : fetchLimit;
+          // PURGE
+          if (sub === 'purge') {
+            const amount = Math.max(interaction.options.getInteger('amount') || 10, 1);
+            const target = interaction.options.getChannel('channel') || interaction.channel;
+            const user = interaction.options.getUser('user');
             
-            const fetchOptions: any = { limit: limitToFetch };
-            if (beforeId) {
-              fetchOptions.before = beforeId;
+            let remaining = amount;
+            let totalDeleted = 0;
+            let beforeId: string | undefined = undefined;
+
+            if (amount > 100) {
+              const initEmbed = new EmbedBuilder()
+                .setColor(0x84cc16)
+                .setDescription(`${verifiedIcon} ${interaction.user} **Has Initialized Purge** **${amount} messages** in ${target}`);
+              await interaction.editReply({ embeds: [initEmbed] });
             }
 
-            const messages = await target.messages.fetch(fetchOptions).catch(() => null);
-            if (!messages || messages.size === 0) {
-              break;
-            }
+            while (remaining > 0) {
+              const fetchLimit = Math.min(remaining, 100);
+              const limitToFetch = user ? 100 : fetchLimit;
+              
+              const fetchOptions: any = { limit: limitToFetch };
+              if (beforeId) {
+                fetchOptions.before = beforeId;
+              }
 
-            beforeId = messages.lastKey();
+              const messages = await target.messages.fetch(fetchOptions).catch(() => null);
+              if (!messages || messages.size === 0) {
+                break;
+              }
 
-            let targetMessages = messages;
-            if (user) {
-              targetMessages = messages.filter((m: any) => m.author.id === user.id);
-              if (targetMessages.size > remaining) {
-                targetMessages = targetMessages.first(remaining);
+              beforeId = messages.lastKey();
+
+              let targetMessages = messages;
+              if (user) {
+                targetMessages = messages.filter((m: any) => m.author.id === user.id);
+                if (targetMessages.size > remaining) {
+                  targetMessages = targetMessages.first(remaining);
+                }
+              }
+
+              if (targetMessages.size === 0) {
+                continue;
+              }
+
+              const deleted = await target.bulkDelete(targetMessages, true).catch(() => new Map());
+              totalDeleted += deleted.size;
+
+              if (user) {
+                remaining -= deleted.size;
+              } else {
+                remaining -= limitToFetch;
+              }
+
+              if (deleted.size === 0) {
+                break;
+              }
+
+              if (remaining > 0) {
+                await new Promise(r => setTimeout(r, 1000));
               }
             }
 
-            if (targetMessages.size === 0) {
-              continue;
-            }
-
-            const deleted = await target.bulkDelete(targetMessages, true).catch(() => new Map());
-            totalDeleted += deleted.size;
-
-            if (user) {
-              remaining -= deleted.size;
-            } else {
-              remaining -= limitToFetch;
-            }
-
-            if (deleted.size === 0) {
-              break;
-            }
-
-            if (remaining > 0) {
-              await new Promise(r => setTimeout(r, 1000));
-            }
+            logBulk('Purge', totalDeleted);
+            return interaction.editReply({ embeds: [buildMinimalCard('Purged Messages', `**${totalDeleted} messages in** ${target}`)] });
           }
 
-          logBulk('Purge', totalDeleted);
-          return interaction.editReply({ embeds: [buildMinimalCard('Purged Messages', `**${totalDeleted} messages in** ${target}`)] });
-        }
-
-        // BAN LIST
-        if (sub === 'ban-list') {
-          const bans = await guild.bans.fetch();
-          if (bans.size === 0) return interaction.editReply({ content: '<a:lovemail:1527647157371535420> No banned users.' });
-          const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.username} (${b.user.id}) — ${b.reason || 'No reason'}`);
-          return interaction.editReply({ content: `<:shield:1532403012751065179> **Banned Users (${bans.size}):**\n${lines.join('\n')}` });
-        }
-
-        // MASS BAN
-        if (sub === 'mass-ban') {
-          const idsStr = interaction.options.getString('user_ids');
-          const reason = interaction.options.getString('reason') || 'Mass ban by moderator';
-          const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
-          if (ids.length === 0) return interaction.editReply({ content: '<:wrong:1532390628330307634> No valid user IDs provided.' });
-          let count = 0;
-          for (const id of ids) {
-            await guild.members.ban(id, { reason }).catch(() => {});
-            count++;
-            await new Promise(r => setTimeout(r, 200));
+          // BAN LIST
+          if (sub === 'ban-list') {
+            const bans = await guild.bans.fetch().catch(() => new Map());
+            if (bans.size === 0) return interaction.editReply({ content: '<a:lovemail:1527647157371535420> No banned users found.' });
+            const lines = [...bans.values()].slice(0, 20).map((b: any, i: number) => `**${i + 1}.** ${b.user.username} (${b.user.id}) — ${b.reason || 'No reason'}`);
+            return interaction.editReply({ content: `<:shield:1532403012751065179> **Banned Users (${bans.size}):**\n${lines.join('\n')}` });
           }
-          logBulk('Mass Ban', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Mass Banned', `**${count} users**`)] });
-        }
 
-        // MASS UNBAN
-        if (sub === 'mass-unban') {
-          const idsStr = interaction.options.getString('user_ids');
-          const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
-          if (ids.length === 0) return interaction.editReply({ content: '<:wrong:1532390628330307634> No valid user IDs provided.' });
-          let count = 0;
-          for (const id of ids) {
-            await guild.members.unban(id, 'Mass unban').catch(() => {});
-            count++;
-            await new Promise(r => setTimeout(r, 200));
-          }
-          logBulk('Mass Unban', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Mass Unbanned', `**${count} users**`)] });
-        }
-
-        // CLONE CHANNEL
-        if (sub === 'clone-channel') {
-          const source = interaction.options.getChannel('channel');
-          const cloned = await source.clone({ reason: `Cloned by ${interaction.user.username}` });
-          logBulk('Clone Channel', 1);
-          return interaction.editReply({ embeds: [buildMinimalCard('Cloned Channel', `${source} → ${cloned}`)] });
-        }
-
-        // SYNC PERMISSIONS
-        if (sub === 'sync-permissions') {
-          const cat = interaction.options.getChannel('category');
-          let count = 0;
-          if (cat) {
-            const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
-            for (const [, ch] of channels) {
-              await ch.lockPermissions().catch(() => {});
-              count++;
+          // MASS BAN
+          if (sub === 'mass-ban') {
+            const idsStr = interaction.options.getString('user_ids') || '';
+            const reason = interaction.options.getString('reason') || 'Mass ban by moderator';
+            const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
+            if (ids.length === 0) return interaction.editReply({ content: '<:wrong:1532390628330307634> No valid user IDs provided.' });
+            let count = 0;
+            for (const id of ids) {
+              const res = await guild.members.ban(id, { reason }).catch(() => null);
+              if (res) count++;
+              await new Promise(r => setTimeout(r, 200));
             }
-          } else {
-            const categories = guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildCategory);
-            for (const [catId] of categories) {
-              const children = guild.channels.cache.filter((c: any) => c.parentId === catId);
-              for (const [, ch] of children) {
+            logBulk('Mass Ban', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Mass Banned', `**${count} users**`)] });
+          }
+
+          // MASS UNBAN
+          if (sub === 'mass-unban') {
+            const idsStr = interaction.options.getString('user_ids') || '';
+            const ids = idsStr.split(/[\s,]+/).filter((id: string) => /^\d+$/.test(id));
+            if (ids.length === 0) return interaction.editReply({ content: '<:wrong:1532390628330307634> No valid user IDs provided.' });
+            let count = 0;
+            for (const id of ids) {
+              const res = await guild.members.unban(id, 'Mass unban').catch(() => null);
+              if (res) count++;
+              await new Promise(r => setTimeout(r, 200));
+            }
+            logBulk('Mass Unban', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Mass Unbanned', `**${count} users**`)] });
+          }
+
+          // CLONE CHANNEL
+          if (sub === 'clone-channel') {
+            const source = interaction.options.getChannel('channel');
+            if (!source || typeof source.clone !== 'function') {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Please specify a valid channel to clone.' });
+            }
+            const cloned = await source.clone({ reason: `Cloned by ${interaction.user.username}` }).catch(() => null);
+            if (!cloned) {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Failed to clone channel. Please check bot permissions.' });
+            }
+            logBulk('Clone Channel', 1);
+            return interaction.editReply({ embeds: [buildMinimalCard('Cloned Channel', `${source} → ${cloned}`)] });
+          }
+
+          // SYNC PERMISSIONS
+          if (sub === 'sync-permissions') {
+            const cat = interaction.options.getChannel('category');
+            let count = 0;
+            if (cat) {
+              const channels = guild.channels.cache.filter((c: any) => c.parentId === cat.id);
+              for (const [, ch] of channels) {
                 await ch.lockPermissions().catch(() => {});
                 count++;
               }
+            } else {
+              const categories = guild.channels.cache.filter((c: any) => c.type === ChannelType.GuildCategory);
+              for (const [catId] of categories) {
+                const children = guild.channels.cache.filter((c: any) => c.parentId === catId);
+                for (const [, ch] of children) {
+                  await ch.lockPermissions().catch(() => {});
+                  count++;
+                }
+              }
             }
+            logBulk('Sync Permissions', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Synced Permissions', `**${count} channels**`)] });
           }
-          logBulk('Sync Permissions', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Synced Permissions', `**${count} channels**`)] });
-        }
 
-        // CREATE CHANNELS
-        if (sub === 'create-channels') {
-          const namesStr = interaction.options.getString('names');
-          const type = interaction.options.getString('type') || 'text';
-          const cat = interaction.options.getChannel('category');
-          const names = namesStr.split(',').map((n: string) => n.trim()).filter(Boolean);
-          let count = 0;
-          for (const name of names) {
-            await guild.channels.create({
-              name,
-              type: type === 'voice' ? ChannelType.GuildVoice : ChannelType.GuildText,
-              parent: cat?.id || null
-            }).catch(() => {});
-            count++;
-            await new Promise(r => setTimeout(r, 300));
+          // CREATE CHANNELS
+          if (sub === 'create-channels') {
+            const namesStr = interaction.options.getString('names') || '';
+            const type = interaction.options.getString('type') || 'text';
+            const cat = interaction.options.getChannel('category');
+            const names = namesStr.split(',').map((n: string) => n.trim()).filter(Boolean);
+            if (names.length === 0) {
+              return interaction.editReply({ content: '<:wrong:1532390628330307634> Please provide at least one channel name.' });
+            }
+
+            let count = 0;
+            for (const name of names) {
+              const created = await guild.channels.create({
+                name,
+                type: type === 'voice' ? ChannelType.GuildVoice : ChannelType.GuildText,
+                parent: cat?.id || null
+              }).catch(() => null);
+              if (created) count++;
+              await new Promise(r => setTimeout(r, 300));
+            }
+            logBulk('Create Channels', count);
+            return interaction.editReply({ embeds: [buildMinimalCard('Created Channels', `**${count} channels**`)] });
           }
-          logBulk('Create Channels', count);
-          return interaction.editReply({ embeds: [buildMinimalCard('Created Channels', `**${count} channels**`)] });
-        }
 
-        return interaction.editReply({ content: '<:wrong:1532390628330307634> Unknown bulk operation.' });
+          return interaction.editReply({ content: '<:wrong:1532390628330307634> Unknown bulk operation.' });
+        } catch (err: any) {
+          console.error('[BulkOps] Error executing bulk operation:', err);
+          const errEmbed = new EmbedBuilder()
+            .setColor(0xEF4444)
+            .setDescription(`<:wrong:1532390628330307634> **Bulk Operation Error**: \`${err?.message || 'Execution failed'}\``);
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ embeds: [errEmbed] }).catch(() => {});
+          } else {
+            await interaction.reply({ embeds: [errEmbed], flags: 64 }).catch(() => {});
+          }
+        }
       }
     }
   ]
