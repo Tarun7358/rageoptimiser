@@ -43,6 +43,7 @@ export class PrefixHelpCenter {
     'Promotion': { icon: '<:link:1532620952087826602>', description: '24h Auto-Clearing Promotion Channels & Cooldowns' },
     'Tickets': { icon: '<:ticket:1532620631466836021>', description: 'Support Ticket Panels, Transcripts & Staff Controls' },
     'Reaction Roles': { icon: '<:member:1532621317487071426>', description: 'Self-Assign Role Grid Panels & Numbered Buttons' },
+    'Roles': { icon: '<:vip:1532620837117759508>', description: 'Interactive Dropdown Self Roles, Button Menus & r!iam' },
     'Automations': { icon: '<:bot:1532621107746570391>', description: 'Custom Auto-Responders & Event Hooks' },
     'Social Updates': { icon: '<:link:1532620952087826602>', description: 'YouTube & Social Media Stream Alerts' },
     'System': { icon: '<:bot:1532621107746570391>', description: 'System Diagnostics, Bot Health, Uptime & Latency' },

@@ -67,6 +67,14 @@ export const ANIMATED_ARROW_RED = '<a:animatedarrowred:1538167386790830190>';
 export const ANIMATED_ARROW_PINK = '<a:animatedarrowpink2:1538167377597042808>';
 export const ANIMATED_ARROW_ORANGE = '<a:animatedarroworange:1538167381778759680>';
 export const ANIMATED_APPROVED_ICON = '<a:387155approved:1538586763226779658>';
+export const VERIFIED_BLUE_ICON = '<:verifiedblue:1518869383219253328>';
+export const VERIFIED_GREEN_ICON = '<:verifiedgreen:1518869413846188152>';
+export const VERIFIED_PURPLE_ICON = '<:verifiedpurple:1518869442086572102>';
+export const CROWN_ANIMATED_ICON = '<a:1115crown3:1518868785493184518>';
+export const SPIN_ANIMATED_ICON = '<a:Spin:1518868846214123520>';
+export const ANIMATED_PINK_ARROW = '<a:pinkarrow:1527647307955310722>';
+export const ANIMATED_WHITE_ARROW = '<a:animatedarrowwhite:1527647357473132554>';
+export const BLACK_BUTTERFLY_ICON = '<a:1941blackbutterfly2:1527646894904578110>';
 
 
 // ─────────────────────────────────────────────
