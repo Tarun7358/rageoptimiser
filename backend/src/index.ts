@@ -71,6 +71,7 @@ import { AutomationManifest } from './modules/automation/manifest.js';
 import { VoiceManifest } from './modules/voice/manifest.js';
 import { MemberWhitelistManifest, registerWhitelistCommands } from './modules/member_whitelist/manifest.js';
 import { ReactionRolesManifest, registerReactionRolesCommands } from './modules/reaction-roles/manifest.js';
+import { SelfRolesManifest, registerSelfRolesCommands } from './modules/self-roles/manifest.js';
 import { LevelingManifest, registerLevelingCommands } from './modules/leveling/manifest.js';
 import { AutomodManifest } from './modules/automod/manifest.js';
 
@@ -128,6 +129,7 @@ export const ALL_MANIFESTS = [
   PrebotWhitelistManifest,
   BotStatsManifest,
   ReactionRolesManifest,
+  SelfRolesManifest,
   LevelingManifest,
   AutomodManifest,
   GiveawayManifest,
@@ -229,6 +231,7 @@ async function bootstrap() {
     registerAnalyticsCommands();
     registerWhitelistCommands();
     registerBlacklistCommands();
+    registerSelfRolesCommands();
 
     await gateway.connect();
     console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules registered.`);
