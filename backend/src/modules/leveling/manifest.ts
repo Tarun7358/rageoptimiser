@@ -6,6 +6,7 @@ import {
   buildRichCard, buildListCard, buildStatusCard,
   progressBar, fmt, ts,
 } from '../../core/UIFactory.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
 // Safe display name helper
 function userTag(user: any): string {
@@ -624,3 +625,126 @@ export const LevelingManifest: ModuleManifest = {
     }
   ]
 };
+
+export function registerLevelingCommands() {
+  PrefixRegistry.register({
+    name: 'rank',
+    description: 'Check your or another member\'s current Level, XP, and progression bar',
+    category: 'Leveling & Economy',
+    usage: 'r!rank [@user]',
+    aliases: ['level', 'lvl', 'xp'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!rank', 'r!rank @User'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'leaderboard',
+    description: 'View the top active server members ranked by total XP',
+    category: 'Leveling & Economy',
+    usage: 'r!leaderboard',
+    aliases: ['lb', 'top', 'xptop'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!leaderboard', 'r!lb'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'balance',
+    description: 'Check your or another user\'s current coin wallet balance',
+    category: 'Leveling & Economy',
+    usage: 'r!balance [@user]',
+    aliases: ['bal', 'coins', 'wallet'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!balance', 'r!bal @User'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'daily',
+    description: 'Claim your 24-hour daily coin bonus (+500 coins)',
+    category: 'Leveling & Economy',
+    usage: 'r!daily',
+    aliases: ['reward', 'bonus'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!daily'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'work',
+    description: 'Work an hourly shift to earn coins (100–300 coins)',
+    category: 'Leveling & Economy',
+    usage: 'r!work',
+    aliases: ['shift', 'job'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!work'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'transfer',
+    description: 'Transfer coins from your wallet to another member',
+    category: 'Leveling & Economy',
+    usage: 'r!transfer <@user> <amount>',
+    aliases: ['pay', 'givecoins', 'sendcoins'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!pay @User 500', 'r!transfer @User 1000'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'shop',
+    description: 'Browse available roles and items in the server economy shop',
+    category: 'Leveling & Economy',
+    usage: 'r!shop',
+    aliases: ['store', 'market'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!shop'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'inventory',
+    description: 'View your owned shop items and rewards inventory',
+    category: 'Leveling & Economy',
+    usage: 'r!inventory',
+    aliases: ['inv', 'bag'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!inventory', 'r!inv'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'rob',
+    description: 'Attempt to rob coins from another user (High Risk!)',
+    category: 'Leveling & Economy',
+    usage: 'r!rob <@user>',
+    aliases: ['steal', 'heist'],
+    userPermissions: [],
+    cooldownSeconds: 5,
+    examples: ['r!rob @User'],
+    moduleOwnerId: 'leveling'
+  });
+
+  PrefixRegistry.register({
+    name: 'slots',
+    description: 'Play the casino slot machine with your coins',
+    category: 'Leveling & Economy',
+    usage: 'r!slots <bet>',
+    aliases: ['slot', 'gamble', 'bet'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: ['r!slots 100', 'r!gamble 500'],
+    moduleOwnerId: 'leveling'
+  });
+}
+

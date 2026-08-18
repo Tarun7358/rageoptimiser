@@ -58,8 +58,28 @@ export class NotificationService {
    * Build a Discord embed from an EmbedConfig and resolved template data.
    */
   static buildEmbed(rawConfig: EmbedConfig, data: Record<string, string>): EmbedBuilder {
+    // Standard default YouTube alert embed UI
+    const defaultUI: EmbedConfig = {
+      color: '#FF0000',
+      authorEnabled: true,
+      authorName: '{channel.name}',
+      authorIcon: '{channel.avatar}',
+      authorUrl: '{channel.url}',
+      titleEnabled: true,
+      title: '{video.title}',
+      titleUrl: '{video.url}',
+      imageEnabled: true,
+      image: '{video.thumbnail}',
+      footerEnabled: true,
+      footerText: '{channel.name}',
+      footerIcon: '{channel.avatar}',
+      timestampEnabled: true
+    };
+
+    const merged = { ...defaultUI, ...rawConfig };
+
     // Resolve all template variables in the embed config
-    const cfg = TemplateEngine.resolveEmbedConfig(rawConfig as Record<string, any>, data) as EmbedConfig;
+    const cfg = TemplateEngine.resolveEmbedConfig(merged as Record<string, any>, data) as EmbedConfig;
 
     const embed = new EmbedBuilder();
 

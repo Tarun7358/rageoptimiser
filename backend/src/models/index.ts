@@ -303,3 +303,49 @@ export interface ITrustedActorAbuseLog {
   createdAt?: number;
 }
 
+// ---- Promotion Channel Engine ----
+export interface IPromotionMessage {
+  id: string;
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  authorId: string;
+  authorTag: string;
+  postedAt: string | Date;
+  expiresAt: string | Date;
+}
+
+export interface IPromotionConfig {
+  enabled: boolean;
+  channelId: string | null;
+  autoDeleteHours: number;      // default: 24
+  cleanupNoticeType: 'channel_notice' | 'user_dm' | 'silent';
+  requireLink: boolean;         // default: true
+  userCooldownHours: number;    // default: 24
+  autoReact: boolean;           // default: true
+  reactionEmoji: string;        // default: '🚀'
+  activeMessages: IPromotionMessage[];
+}
+
+// ---- Enterprise Ticket System ----
+export interface ITicketCategory {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+}
+
+export interface ITicketConfig {
+  enabled: boolean;
+  categoryId: string | null;          // Parent category for created ticket channels
+  transcriptChannelId: string | null; // Channel for closing transcripts & logs
+  supportRoleIds: string[];           // Support staff role IDs
+  ticketCounter: number;
+  maxOpenPerUser: number;
+  categories: ITicketCategory[];
+  activeTickets: ITicket[];
+}
+
+
+
+

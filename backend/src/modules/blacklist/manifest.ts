@@ -1,6 +1,7 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { IBlacklistEntry, BlacklistType } from '../../models/index.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
 let blacklistCache: Map<string, IBlacklistEntry[]> = new Map();
 
@@ -506,3 +507,34 @@ export const BlacklistManifest: ModuleManifest = {
     }
   ]
 };
+
+export function registerBlacklistCommands() {
+  PrefixRegistry.register({
+    name: 'blacklist',
+    description: 'Multi-Type Automated Enforcement System (Users, Bots, Words, Links, Roles, Channels, Invites)',
+    category: 'Security',
+    usage: 'r!blacklist [user | role | channel | word | domain | invite | regex | bot | emoji | sticker | view | clear | export]',
+    aliases: ['bl', 'blacklists', 'blocklist', 'banword'],
+    userPermissions: ['Administrator'],
+    cooldownSeconds: 3,
+    examples: [
+      'r!bl user add @User Spamming',
+      'r!bl word add badword',
+      'r!bl domain add phishing-site.com',
+      'r!bl view',
+      'r!bl export'
+    ],
+    moduleOwnerId: 'blacklist',
+    subcommands: [
+      { name: 'user add <@user> [reason]', description: 'Blacklist a user with automated enforcement (ban, kick, timeout)', examples: ['r!bl user add @User Spamming'] },
+      { name: 'word add <word> [action]', description: 'Blacklist a word or phrase with automated deletion & punishment', examples: ['r!bl word add scam delete'] },
+      { name: 'domain add <domain>', description: 'Blacklist phishing or malicious web links', examples: ['r!bl domain add grabify.link'] },
+      { name: 'bot add <bot_id>', description: 'Blacklist unauthorized bots to auto-kick them immediately on join', examples: ['r!bl bot add 123456789'] },
+      { name: 'role add <@role>', description: 'Blacklist a role from message creation permissions', examples: ['r!bl role add @Role'] },
+      { name: 'channel add <#channel>', description: 'Blacklist a channel from message creation permissions', examples: ['r!bl channel add #general'] },
+      { name: 'view', description: 'View current active blacklist entry counts across all categories', examples: ['r!bl view'] },
+      { name: 'export', description: 'Export full server blacklist data to JSON file', examples: ['r!bl export'] }
+    ]
+  });
+}
+

@@ -69,13 +69,13 @@ import { LoggingManifest, registerLoggingCommands } from './modules/logging/mani
 import { BackupsManifest } from './modules/backups/manifest.js';
 import { AutomationManifest } from './modules/automation/manifest.js';
 import { VoiceManifest } from './modules/voice/manifest.js';
-import { MemberWhitelistManifest } from './modules/member_whitelist/manifest.js';
-import { ReactionRolesManifest } from './modules/reaction-roles/manifest.js';
-import { LevelingManifest } from './modules/leveling/manifest.js';
+import { MemberWhitelistManifest, registerWhitelistCommands } from './modules/member_whitelist/manifest.js';
+import { ReactionRolesManifest, registerReactionRolesCommands } from './modules/reaction-roles/manifest.js';
+import { LevelingManifest, registerLevelingCommands } from './modules/leveling/manifest.js';
 import { AutomodManifest } from './modules/automod/manifest.js';
 
-import { GiveawayManifest } from './modules/giveaway/manifest.js';
-import { RemindersManifest } from './modules/reminders/manifest.js';
+import { GiveawayManifest, registerGiveawayCommands } from './modules/giveaway/manifest.js';
+import { RemindersManifest, registerRemindersCommands } from './modules/reminders/manifest.js';
 import { AnnouncementsManifest } from './modules/announcements/manifest.js';
 import { JoinToCreateManifest } from './modules/joinToCreate/manifest.js';
 import { VoiceManagerManifest } from './modules/voice_manager/manifest.js';
@@ -85,10 +85,10 @@ import { VoiceProtectionManifest } from './modules/voice-protection/index.js';
 import { JoinRoleAssignmentGuardManifest } from './modules/join-role-guard/manifest.js';
 import { SocialUpdatesManifest, registerSocialUpdatesCommands } from './modules/social-updates/manifest.js';
 import { registerWelcomeCommands } from './modules/community/manifest.js';
-import { AnalyticsManifest } from './modules/analytics/manifest.js';
+import { AnalyticsManifest, registerAnalyticsCommands } from './modules/analytics/manifest.js';
 import { AuditManifest } from './modules/audit/manifest.js';
 import { ModerationManifest } from './modules/moderation/manifest.js';
-import { BlacklistManifest } from './modules/blacklist/manifest.js';
+import { BlacklistManifest, registerBlacklistCommands } from './modules/blacklist/manifest.js';
 import { CommunityManifest } from './modules/community/manifest.js';
 import { DiscordDashboardManifest } from './modules/discord-dashboard/manifest.js';
 import { VerificationManifest } from './modules/verification/manifest.js';
@@ -107,6 +107,8 @@ import { BrainEventInterceptor } from './brain/BrainEventInterceptor.js';
 
 import { EmbedBuilderManifest, registerEmbedPrefixCommands } from './modules/embed_builder/manifest.js';
 import { StatsCounterManifest, syncGuildStatCounters, registerStatsCounterCommands } from './modules/stats-counter/manifest.js';
+import { PromotionManifest, registerPromotionCommands } from './modules/promotion/manifest.js';
+import { TicketsManifest, registerTicketsCommands } from './modules/tickets/manifest.js';
 
 // All manifests in one place
 export const ALL_MANIFESTS = [
@@ -143,6 +145,8 @@ export const ALL_MANIFESTS = [
   RageEnterpriseManifest,
   BrainManifest,
   StatsCounterManifest,
+  PromotionManifest,
+  TicketsManifest,
 ];
 
 let registry: ModuleRegistry;
@@ -216,6 +220,15 @@ async function bootstrap() {
     registerEmbedPrefixCommands();
     registerSocialUpdatesCommands();
     registerStatsCounterCommands();
+    registerPromotionCommands();
+    registerTicketsCommands();
+    registerReactionRolesCommands();
+    registerGiveawayCommands();
+    registerLevelingCommands();
+    registerRemindersCommands();
+    registerAnalyticsCommands();
+    registerWhitelistCommands();
+    registerBlacklistCommands();
 
     await gateway.connect();
     console.log(`✅ Rage Optimiser booted with ${ALL_MANIFESTS.length} modules registered.`);

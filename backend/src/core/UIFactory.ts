@@ -45,6 +45,30 @@ export const VOICE_ICON = '<:voicechannelgreen:1532425750278438962>';
 export const STATS_ICON = '<:stats:1532429110775779459>';
 export const CART_ICON = '<:cart:1532621146208473115>';
 
+// ─── Server Custom Emojis (Bot 1266048940101599293 Guilds) ───
+export const YOUTUBE_ICON = '<:9100youtube:1538152286839373905>';
+export const DISCORD_ICON = '<:discord:1538152301322174534>';
+export const INSTAGRAM_ICON = '<:instagram:1538152297845231736>';
+export const TWITTER_ICON = '<:twitter:1538152305411498074>';
+export const SNAPCHAT_ICON = '<:snapchat:1538152290551332897>';
+export const FACEBOOK_ICON = '<:facebook:1538152294250709072>';
+export const WHATSAPP_ICON = '<a:whatsapp:1538167411617042482>';
+export const GOLD_CROWN_ICON = '<:goldcrown:1538152266568306769>';
+export const GOLD_NITRO_ICON = '<a:goldnitro:1538152283542388766>';
+export const VERIFIED_GOLD_ICON = '<:twittergoldcheckmark:1538152262755557498>';
+export const FREE_FIRE_ICON = '<:Free_Fire:1534196322943373453>';
+export const VALO_ICON = '<:VALO:1534198653286354984>';
+export const ROBLOX_ICON = '<:ROBOLOX:1534198700275142927>';
+export const DEVELOPER_ICON = '<a:Developer:1538167332063678534>';
+export const ANNOUNCEMENTS_ICON = '<a:announcements:1538167338904457216>';
+export const SOUNDWAVE_ICON = '<a:soundwave:1538167360287154288>';
+export const RED_TICK_ICON = '<a:redtick:1538167393522557039>';
+export const ANIMATED_ARROW_RED = '<a:animatedarrowred:1538167386790830190>';
+export const ANIMATED_ARROW_PINK = '<a:animatedarrowpink2:1538167377597042808>';
+export const ANIMATED_ARROW_ORANGE = '<a:animatedarroworange:1538167381778759680>';
+export const ANIMATED_APPROVED_ICON = '<a:387155approved:1538586763226779658>';
+
+
 // ─────────────────────────────────────────────
 // DESIGN TOKENS (Matching Lime.gg visual design with Rage Optimiser branding)
 // ─────────────────────────────────────────────
@@ -242,7 +266,7 @@ export function buildMinimalAction(opts: {
   const color = opts.color ?? Colors.LIME;
   let text = `> ${VERIFIED_ICON} ${opts.user} **${opts.action}**`;
   if (opts.target) {
-    text += ` ${opts.target}`;
+    text += ` **${opts.target}**`;
   }
   if (opts.toOrFrom && opts.extra) {
     text += ` **${opts.toOrFrom}** ${opts.extra}`;
@@ -258,8 +282,7 @@ export function buildMinimalAction(opts: {
   return new EmbedBuilder()
     .setColor(color)
     .setDescription(text)
-    .setFooter({ text: 'Rage Optimiser • Unbypassable Security' })
-    .setTimestamp();
+    .setFooter({ text: 'Rage Optimiser • Unbypassable Security' });
 }
 
 export function buildLimeActionCard(opts: {
@@ -274,8 +297,7 @@ export function buildLimeActionCard(opts: {
     .setColor(opts.color ?? Colors.LIME)
     .setTitle(opts.title)
     .setDescription(opts.description)
-    .setFooter({ text: opts.footerText ?? 'Rage Optimiser • Unbypassable Security' })
-    .setTimestamp();
+    .setFooter({ text: opts.footerText ?? 'Rage Optimiser • Unbypassable Security' });
 
   if (opts.fields && opts.fields.length > 0) {
     embed.addFields(opts.fields);
@@ -300,19 +322,16 @@ export function buildLimeWarnCard(opts: {
   const color = opts.color ?? Colors.LIME;
 
   const desc = [
-    `> **Offender**: ${opts.user}`,
-    `> **Reason**: \`${opts.reason}\``,
-    `> **Warning Level**: \`Limit ${current}/${max}\``,
-    ``,
-    `*Exceeding safety limits will result in automated security punishments.*`
+    `> **Reason**: . ${opts.user} . , **Used blacklisted word: "${opts.reason}"**`,
+    `> `,
+    `> has been warned " Your Limit is ${current}/${max} " Exceeding the limits will lead to punishments ,`
   ].join('\n');
 
   const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle(`Warned ${opts.category} | ${VERIFIED_ICON}`)
     .setDescription(desc)
-    .setFooter({ text: 'Rage Optimiser • AutoMod Protection' })
-    .setTimestamp();
+    .setFooter({ text: 'Rage Optimiser • AutoMod Protection' });
 
   if (opts.thumbnailUrl) {
     embed.setThumbnail(opts.thumbnailUrl);
@@ -334,37 +353,71 @@ export function buildLimeOverviewCard(opts: {
 }): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(opts.color ?? Colors.LIME)
-    .setAuthor({ name: 'Rage Optimiser' })
-    .setTimestamp();
+    .setFooter({ text: opts.footerText ?? 'Rage Optimiser Unbypassable Security | Menu Expried Resue it' });
 
-  embed.setFooter({ text: opts.footerText ?? 'Rage Optimiser • Unbypassable Security' });
+  const hasEmoji = opts.title.trim().startsWith('<a:') || opts.title.trim().startsWith('<:');
+  const titleText = opts.title.trim();
+  const displayTitle = hasEmoji ? titleText : `${VERIFIED_ICON} ${titleText.toUpperCase()}`;
+  const subText = opts.subtitle ? opts.subtitle : 'Rage Optimiser - IS GLOBAL';
 
-  let desc = `> • **${opts.title.toUpperCase()}**\n`;
-  desc += `> • **${opts.subtitle ? opts.subtitle.toUpperCase() : 'RAGE OPTIMISER'}**\n\n`;
+  let desc = `## ${displayTitle}\n**${subText}**\n\n`;
 
   for (const sec of opts.sections) {
     if (sec.title) {
-      desc += `> **${sec.title}**\n`;
+      desc += `### **${sec.title}**\n`;
     }
-    for (const rawItem of sec.items) {
-      const lines = String(rawItem).split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        if (trimmed.startsWith('<a:') || trimmed.startsWith('<:') || trimmed.startsWith('<@') || trimmed.startsWith('@') || trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('`') || trimmed.startsWith('>')) {
-          desc += `> ${trimmed.startsWith('>') ? trimmed.slice(1).trim() : trimmed}\n`;
-        } else if (trimmed === 'None' || trimmed.startsWith('No members') || trimmed.startsWith('No roles')) {
-          desc += `> *${trimmed}*\n`;
-        } else {
-          desc += `> ${VERIFIED_ICON} ${trimmed}\n`;
-        }
-      }
-    }
-    desc += `\n`;
+    desc += `>>> `;
+    const formattedItems = sec.items.map(item => {
+      const trimmed = item.trim();
+      if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('>')) return trimmed;
+      return `${trimmed}`;
+    }).join('\n');
+
+    desc += formattedItems + `\n\n`;
   }
 
   embed.setDescription(desc.trim());
   if (opts.thumbnail) embed.setThumbnail(opts.thumbnail);
+
+  return embed;
+}
+
+export function buildTicketPanelEmbed(opts: {
+  serverName: string;
+  statusText?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  bannerUrl?: string;
+}): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(Colors.LIME)
+    .setTitle('Rage Supports| Queries')
+    .setThumbnail(opts.thumbnailUrl || DEFAULT_BRAND_IMAGE_URL)
+    .setImage(opts.bannerUrl || DEFAULT_BRAND_IMAGE_URL)
+    .setFooter({ text: 'Rage Optimiser Enterprise • Support Desk' });
+
+  const fieldsText = [
+    `**Server:** ${opts.serverName}`,
+    `**Status:** ${opts.statusText || 'Active Support Panel'}`,
+    `**Description:** ${opts.description || 'Create a ticket if you face any issues , faq on Rage Optimiser we are ready to support you always'}`
+  ].join('\n');
+
+  const bulletsText = [
+    `• Give your details when creating a ticket , reasons & questions`,
+    ``,
+    `• Response time will be within 24 hours & issues will be resolved in 48 hours`,
+    `• If you face any issues in Antinuke , Automods or Any modules please don't hesitate even for 1 minute to our Rage Optimiser official support each and every ticket is 100 % validated and reviews are very strictly updated 100 % conversation will be there with us`,
+    ``,
+    `• If you face any down time in bot or modules please let us know the event by sharing the images on ticket channels`,
+    ``,
+    `• Don't leave the queries and questions blank so that we can't address you please consider filling the details`,
+    ``,
+    `• Ticket data will always be available with us and your dm so any time you can request for getting transcript`
+  ].join('\n');
+
+  const cautionText = `Please Don't Create Tickets for Fun! , The impact will be more dangerous!`;
+
+  embed.setDescription(`${fieldsText}\n\n${bulletsText}\n\n${cautionText}`);
 
   return embed;
 }

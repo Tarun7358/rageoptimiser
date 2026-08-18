@@ -1,6 +1,7 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import { IReminder } from '../../models/index.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
 const reminderTimers: Map<string, NodeJS.Timeout> = new Map();
 
@@ -321,3 +322,30 @@ export const RemindersManifest: ModuleManifest = {
     }
   ]
 };
+
+export function registerRemindersCommands() {
+  PrefixRegistry.register({
+    name: 'remind',
+    description: 'Enterprise timed reminder system with DM delivery and recurring intervals',
+    category: 'Reminders',
+    usage: 'r!remind [set <time> <message> | list | cancel <id> | snooze <id> <time> | clear]',
+    aliases: ['reminder', 'reminders'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: [
+      'r!remind set 10m Check server status',
+      'r!remind set 1d Pay hosting bill',
+      'r!remind list',
+      'r!remind cancel rm_12345'
+    ],
+    moduleOwnerId: 'reminders',
+    subcommands: [
+      { name: 'set <time> <message>', description: 'Schedule a new reminder (e.g. 10m, 2h, 1d)', examples: ['r!remind set 30m Check stats'] },
+      { name: 'list', description: 'List all of your active pending reminders', examples: ['r!remind list'] },
+      { name: 'cancel <id>', description: 'Cancel an active reminder by ID', examples: ['r!remind cancel rm_12345'] },
+      { name: 'snooze <id> <time>', description: 'Extend the duration of an active reminder', examples: ['r!remind snooze rm_12345 15m'] },
+      { name: 'clear', description: 'Clear and cancel all of your pending reminders', examples: ['r!remind clear'] }
+    ]
+  });
+}
+

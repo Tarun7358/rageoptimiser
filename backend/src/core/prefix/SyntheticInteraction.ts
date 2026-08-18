@@ -64,7 +64,27 @@ export class SyntheticInteraction {
     if (this.replied) return this.followUp(options);
     if (this.deferred && this.replyMessage) return this.editReply(options);
 
+    const isEphemeral = typeof options === 'object' && (options?.flags === 64 || options?.ephemeral === true);
     const payload = PayloadFormatter.normalize(options, this.user);
+
+    if (isEphemeral) {
+      // 1. Attempt Direct Message (DM) to executor
+      const dmSent = await this.user.send(payload).catch(() => null);
+      if (dmSent) {
+        this.replyMessage = dmSent;
+        this.replied = true;
+        this.message.delete().catch(() => null);
+        return dmSent;
+      }
+      // 2. Fallback: temporary channel message that auto-deletes after 6 seconds
+      const sent = await this.message.reply(payload).catch(() => null);
+      if (sent) {
+        this.replyMessage = sent;
+        this.replied = true;
+        setTimeout(() => sent.delete().catch(() => null), 6000);
+        return sent;
+      }
+    }
 
     const sent = await this.message.reply(payload);
     this.replyMessage = sent;
@@ -81,7 +101,21 @@ export class SyntheticInteraction {
   }
 
   public async editReply(options: any): Promise<any> {
+    const isEphemeral = typeof options === 'object' && (options?.flags === 64 || options?.ephemeral === true);
     const payload = PayloadFormatter.normalize(options, this.user);
+
+    if (isEphemeral) {
+      const dmSent = await this.user.send(payload).catch(() => null);
+      if (dmSent) {
+        this.message.delete().catch(() => null);
+        if (this.replyMessage && this.replyMessage.deletable) {
+          this.replyMessage.delete().catch(() => null);
+        }
+        this.replyMessage = dmSent;
+        return dmSent;
+      }
+    }
+
     if (this.replyMessage) {
       return await this.replyMessage.edit(payload as any);
     }
@@ -89,7 +123,14 @@ export class SyntheticInteraction {
   }
 
   public async followUp(options: any): Promise<any> {
+    const isEphemeral = typeof options === 'object' && (options?.flags === 64 || options?.ephemeral === true);
     const payload = PayloadFormatter.normalize(options, this.user);
+
+    if (isEphemeral) {
+      const dmSent = await this.user.send(payload).catch(() => null);
+      if (dmSent) return dmSent;
+    }
+
     return await (this.channel as TextChannel).send(payload);
   }
 

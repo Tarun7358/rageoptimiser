@@ -180,7 +180,9 @@ export class NotificationQueue {
         ...(job.item.extra || {})
       };
 
-      const mentionRoles: string[] = JSON.parse(sub.mentionRoles || '[]');
+      const parsedRoles: string[] = JSON.parse(sub.mentionRoles || '[]');
+      const mentionRoles: string[] = parsedRoles.length > 0 ? parsedRoles : ['everyone', 'here'];
+
       templateData['role.mention'] = mentionRoles
         .map((r: string) => r === 'everyone' ? '@everyone' : r === 'here' ? '@here' : `<@&${r}>`)
         .join(' ');
@@ -191,10 +193,12 @@ export class NotificationQueue {
         : [];
 
       const mentionContent = NotificationService.buildMentionContent(mentionRoles, templateData);
+
       const customContent = embedConfig.messageContent
         ? TemplateEngine.resolve(embedConfig.messageContent, templateData)
-        : '';
-      const content = [mentionContent, customContent].filter(Boolean).join('\n').substring(0, 2000) || undefined;
+        : `**${templateData['channel.name'] || 'Channel'}** is going live . ${mentionContent}\n${templateData['video.url'] || ''}`;
+
+      const content = customContent.substring(0, 2000);
 
       const msg = await channel.send({
         content,

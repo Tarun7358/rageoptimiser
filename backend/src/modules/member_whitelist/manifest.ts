@@ -1,6 +1,7 @@
 import { ModuleManifest, DiscordResourceRegistry } from '../../core/types.js';
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ComponentType, Role, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { checkWhitelistPermission, getGuildAndCheckPermission, protections, migrateToUnifiedWhitelist, WHITELIST_MENU_OPTIONS, mapSelectedOptionsToRules, resolveSelectedOptions, getUnifiedWhitelistEntries } from '../../utils/whitelistCheck.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 // BUG-008 FIX: Import the canonical wrapInteraction from Gateway to eliminate the
 // copy-pasted duplicate that caused double-wrapping and divergent bug-fix paths.
 import { wrapInteraction } from '../../core/Gateway.js';
@@ -1091,3 +1092,32 @@ export const MemberWhitelistManifest: ModuleManifest = {
     }
   ]
 };
+
+export function registerWhitelistCommands() {
+  PrefixRegistry.register({
+    name: 'whitelist',
+    description: 'Enterprise Global Whitelist & Anti-Nuke Bypass Management Engine',
+    category: 'Security',
+    usage: 'r!whitelist [add <@user|@role> | remove <@user|@role> | list | overview | config <@user|@role> | punishment]',
+    aliases: ['wl', 'trust', 'whitelists', 'trusted'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: [
+      'r!wl add @User',
+      'r!wl add @Role',
+      'r!wl remove @User',
+      'r!wl list',
+      'r!wl config @User'
+    ],
+    moduleOwnerId: 'member_whitelist',
+    subcommands: [
+      { name: 'add <@user|@role>', description: 'Add a user, bot, or role to the global Anti-Nuke whitelist', examples: ['r!wl add @User'] },
+      { name: 'remove <@user|@role>', description: 'Remove a user or role from the global whitelist', examples: ['r!wl remove @User'] },
+      { name: 'list', description: 'List all active whitelisted users, bots, and roles', examples: ['r!wl list'] },
+      { name: 'overview', description: 'View interactive global whitelist overview and action controls', examples: ['r!wl overview'] },
+      { name: 'config <@user|@role>', description: 'Open granular sub-module bypass configuration UI for a whitelisted target', examples: ['r!wl config @User'] },
+      { name: 'punishment view', description: 'View and configure violator punishment rules (quarantine, ban, kick, strip roles)', examples: ['r!wl punishment view'] }
+    ]
+  });
+}
+

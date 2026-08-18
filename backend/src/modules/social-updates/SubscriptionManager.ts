@@ -80,7 +80,7 @@ export class SubscriptionManager {
         sourceAvatar: validation.sourceAvatar || undefined,
         discordChannelId,
         embedConfig: JSON.stringify(defaultEmbed),
-        mentionRoles: JSON.stringify(options.mentionRoles || []),
+        mentionRoles: JSON.stringify(options.mentionRoles && options.mentionRoles.length > 0 ? options.mentionRoles : ['everyone', 'here']),
         pollingMode: options.pollingMode || 'normal',
         contentTypes: JSON.stringify(defaultContentTypes),
         enabled: 1,

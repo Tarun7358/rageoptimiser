@@ -45,17 +45,64 @@ export class PrefixRegistry {
   private static _duplicateWarnings = 0;
 
   public static DEFAULT_ALIASES: Record<string, string> = {
+    // Security & Zero-Trust
+    'wl': 'whitelist',
+    'an': 'antinuke',
+    'eo': 'extraowner',
+    'pb': 'prebot',
+    'nop': 'noprefix',
+    'q': 'quarantine',
+    'quar': 'quarantine',
+    'unq': 'unquarantine',
+    'em': 'emergency',
+    'panic': 'emergency',
+
+    // AutoMod & Filters
+    'am': 'automod',
+    'al': 'antilink',
+    'as': 'antispam',
+    'ae': 'antieveryone',
+    'bl': 'blacklist',
+
+    // Promotion Engine
+    'promo': 'promotion',
+    'pr': 'promotion',
+
+    // Moderation Shortcuts
     'b': 'ban',
     'k': 'kick',
     'm': 'mute',
+    'to': 'timeout',
     'u': 'unmute',
+    'um': 'unmute',
+    'uto': 'untimeout',
     'w': 'warn',
+    'ws': 'warnings',
     'warns': 'warnings',
+    'cw': 'clearwarnings',
     'clearwarn': 'clearwarnings',
+    'c': 'purge',
     'clear': 'purge',
+    'tr': 'temprole',
+
+    // Configuration & Utilities
+    'cfg': 'config',
+    'en': 'enable',
+    'dis': 'disable',
+    'pfx': 'prefix',
+    'diag': 'diagnostics',
+    'bs': 'botstats',
+    'gw': 'giveaway',
+    'rr': 'reactionrole',
+    'vc': 'voicemaster',
+    'jtc': 'joinToCreate',
+
+    // Informational & System
+    'h': 'help',
+    'cmds': 'commands',
     'p': 'play',
     's': 'skip',
-    'q': 'queue',
+    'q_music': 'queue',
     'np': 'nowplaying',
     'ui': 'userinfo',
     'av': 'avatar',
@@ -63,16 +110,10 @@ export class PrefixRegistry {
     'ri': 'roleinfo',
     'ci': 'channelinfo',
     'bi': 'botinfo',
-    'rr': 'reactionrole',
-    'vc': 'voicemaster',
-    'h': 'help',
-    'cmds': 'commands',
     'stat': 'stats',
     'ver': 'version',
     'sec': 'security',
-    'log': 'logs',
-    'quar': 'quarantine',
-    'unq': 'unquarantine'
+    'log': 'logs'
   };
 
   // ─────────────────────────────────────────────

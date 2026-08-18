@@ -1,0 +1,4154 @@
+{
+  "guilds": [
+    {
+      "guildId": "957493841139740692",
+      "guildName": "Wolf 777",
+      "emojis": []
+    },
+    {
+      "guildId": "1251899530337718292",
+      "guildName": "TL KIRUKIEEE  GAMING YT💜",
+      "emojis": []
+    },
+    {
+      "guildId": "1266048940101599293",
+      "guildName": "Aura Xtremez",
+      "emojis": [
+        {
+          "id": "1511379867583774890",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1511379867583774890>"
+        },
+        {
+          "id": "1511379871803248721",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1511379871803248721>"
+        },
+        {
+          "id": "1511379877180215296",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1511379877180215296>"
+        },
+        {
+          "id": "1511379882033156247",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1511379882033156247>"
+        },
+        {
+          "id": "1511379887842394153",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1511379887842394153>"
+        },
+        {
+          "id": "1511379892862976000",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1511379892862976000>"
+        },
+        {
+          "id": "1511379897946214470",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1511379897946214470>"
+        },
+        {
+          "id": "1511379902362816714",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1511379902362816714>"
+        },
+        {
+          "id": "1511379906787807293",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1511379906787807293>"
+        },
+        {
+          "id": "1511379911539953816",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1511379911539953816>"
+        },
+        {
+          "id": "1511379916665651260",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1511379916665651260>"
+        },
+        {
+          "id": "1511379921216208896",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1511379921216208896>"
+        },
+        {
+          "id": "1511379925754708170",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1511379925754708170>"
+        },
+        {
+          "id": "1511379930737279126",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1511379930737279126>"
+        },
+        {
+          "id": "1511379935237902517",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1511379935237902517>"
+        },
+        {
+          "id": "1511379940002631790",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1511379940002631790>"
+        },
+        {
+          "id": "1511379944356184160",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1511379944356184160>"
+        },
+        {
+          "id": "1511379949473239161",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1511379949473239161>"
+        },
+        {
+          "id": "1511379953923657870",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1511379953923657870>"
+        },
+        {
+          "id": "1511379959053156363",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1511379959053156363>"
+        },
+        {
+          "id": "1511379963738066946",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1511379963738066946>"
+        },
+        {
+          "id": "1511379969299845140",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1511379969299845140>"
+        },
+        {
+          "id": "1511379974391599284",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1511379974391599284>"
+        },
+        {
+          "id": "1511379979236020234",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1511379979236020234>"
+        },
+        {
+          "id": "1511379983971520678",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1511379983971520678>"
+        },
+        {
+          "id": "1511379989000359976",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1511379989000359976>"
+        },
+        {
+          "id": "1518692960886067300",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1518692960886067300>"
+        },
+        {
+          "id": "1518868785493184518",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1518868785493184518>"
+        },
+        {
+          "id": "1518868846214123520",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1518868846214123520>"
+        },
+        {
+          "id": "1518868865478557757",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1518868865478557757>"
+        },
+        {
+          "id": "1518868948559462572",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1518868948559462572>"
+        },
+        {
+          "id": "1518869023008493661",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1518869023008493661>"
+        },
+        {
+          "id": "1518869043879088148",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1518869043879088148>"
+        },
+        {
+          "id": "1518869072933163038",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1518869072933163038>"
+        },
+        {
+          "id": "1518869089546928338",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1518869089546928338>"
+        },
+        {
+          "id": "1518869109243248651",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1518869109243248651>"
+        },
+        {
+          "id": "1518869123193638942",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1518869123193638942>"
+        },
+        {
+          "id": "1518869141358907475",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1518869141358907475>"
+        },
+        {
+          "id": "1518869210321649744",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1518869210321649744>"
+        },
+        {
+          "id": "1518869245633499217",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1518869245633499217>"
+        },
+        {
+          "id": "1518869281016774668",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1518869281016774668>"
+        },
+        {
+          "id": "1518869294505525359",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1518869294505525359>"
+        },
+        {
+          "id": "1518869308162314310",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1518869308162314310>"
+        },
+        {
+          "id": "1518869326042497045",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1518869326042497045>"
+        },
+        {
+          "id": "1518869355520331886",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1518869355520331886>"
+        },
+        {
+          "id": "1518869383219253328",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1518869383219253328>"
+        },
+        {
+          "id": "1518869399006871582",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1518869399006871582>"
+        },
+        {
+          "id": "1518869413846188152",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1518869413846188152>"
+        },
+        {
+          "id": "1518869427519754251",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1518869427519754251>"
+        },
+        {
+          "id": "1518869442086572102",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1518869442086572102>"
+        },
+        {
+          "id": "1518869455172534296",
+          "name": "verifiedblack",
+          "animated": false,
+          "formatted": "<:verifiedblack:1518869455172534296>"
+        },
+        {
+          "id": "1518869469466726592",
+          "name": "verifiedyellow",
+          "animated": false,
+          "formatted": "<:verifiedyellow:1518869469466726592>"
+        },
+        {
+          "id": "1518869483140419604",
+          "name": "verifiedlightblue",
+          "animated": false,
+          "formatted": "<:verifiedlightblue:1518869483140419604>"
+        },
+        {
+          "id": "1518869574118801438",
+          "name": "5verified",
+          "animated": false,
+          "formatted": "<:5verified:1518869574118801438>"
+        },
+        {
+          "id": "1518869587049844787",
+          "name": "goldenverified",
+          "animated": false,
+          "formatted": "<:goldenverified:1518869587049844787>"
+        },
+        {
+          "id": "1518869600899432468",
+          "name": "verifiedtwitter",
+          "animated": true,
+          "formatted": "<a:verifiedtwitter:1518869600899432468>"
+        },
+        {
+          "id": "1518869614183055501",
+          "name": "3verified",
+          "animated": false,
+          "formatted": "<:3verified:1518869614183055501>"
+        },
+        {
+          "id": "1518869628783165551",
+          "name": "1verified",
+          "animated": false,
+          "formatted": "<:1verified:1518869628783165551>"
+        },
+        {
+          "id": "1518869641525723207",
+          "name": "2verified",
+          "animated": false,
+          "formatted": "<:2verified:1518869641525723207>"
+        },
+        {
+          "id": "1518869685914042539",
+          "name": "verified",
+          "animated": false,
+          "formatted": "<:verified:1518869685914042539>"
+        },
+        {
+          "id": "1518869743019360306",
+          "name": "sophierainstare",
+          "animated": false,
+          "formatted": "<:sophierainstare:1518869743019360306>"
+        },
+        {
+          "id": "1518869761969360936",
+          "name": "sophierainheadache",
+          "animated": false,
+          "formatted": "<:sophierainheadache:1518869761969360936>"
+        },
+        {
+          "id": "1518869794076495994",
+          "name": "twitterox",
+          "animated": false,
+          "formatted": "<:twitterox:1518869794076495994>"
+        },
+        {
+          "id": "1518869819980779600",
+          "name": "35776gethopofftwitterxbeansign",
+          "animated": true,
+          "formatted": "<a:35776gethopofftwitterxbeansign:1518869819980779600>"
+        },
+        {
+          "id": "1518869910716027010",
+          "name": "41981doghop",
+          "animated": true,
+          "formatted": "<a:41981doghop:1518869910716027010>"
+        },
+        {
+          "id": "1518869924989112451",
+          "name": "sophierainsmile",
+          "animated": false,
+          "formatted": "<:sophierainsmile:1518869924989112451>"
+        },
+        {
+          "id": "1518869942047346719",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1518869942047346719>"
+        },
+        {
+          "id": "1518869961060253811",
+          "name": "63407ijbol",
+          "animated": true,
+          "formatted": "<a:63407ijbol:1518869961060253811>"
+        },
+        {
+          "id": "1518870039963500544",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1518870039963500544>"
+        },
+        {
+          "id": "1522698401559347250",
+          "name": "reacted",
+          "animated": false,
+          "formatted": "<:reacted:1522698401559347250>"
+        },
+        {
+          "id": "1527641424169009412",
+          "name": "YouTube",
+          "animated": false,
+          "formatted": "<:YouTube:1527641424169009412>"
+        },
+        {
+          "id": "1527641441134710824",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1527641441134710824>"
+        },
+        {
+          "id": "1527641458989989948",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1527641458989989948>"
+        },
+        {
+          "id": "1527641483220353154",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1527641483220353154>"
+        },
+        {
+          "id": "1527641540934107146",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1527641540934107146>"
+        },
+        {
+          "id": "1527641560173383770",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1527641560173383770>"
+        },
+        {
+          "id": "1527641577768485065",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1527641577768485065>"
+        },
+        {
+          "id": "1527641594998558790",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1527641594998558790>"
+        },
+        {
+          "id": "1527641617861709864",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1527641617861709864>"
+        },
+        {
+          "id": "1527641639924011028",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1527641639924011028>"
+        },
+        {
+          "id": "1527641661533065276",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1527641661533065276>"
+        },
+        {
+          "id": "1527646894904578110",
+          "name": "1941blackbutterfly2",
+          "animated": true,
+          "formatted": "<a:1941blackbutterfly2:1527646894904578110>"
+        },
+        {
+          "id": "1527646931759796316",
+          "name": "blackbat",
+          "animated": true,
+          "formatted": "<a:blackbat:1527646931759796316>"
+        },
+        {
+          "id": "1527646996519981086",
+          "name": "blackbat1",
+          "animated": false,
+          "formatted": "<:blackbat1:1527646996519981086>"
+        },
+        {
+          "id": "1527647054120226937",
+          "name": "animatedarrowpink2",
+          "animated": true,
+          "formatted": "<a:animatedarrowpink2:1527647054120226937>"
+        },
+        {
+          "id": "1527647087087583413",
+          "name": "animatedarroworange",
+          "animated": true,
+          "formatted": "<a:animatedarroworange:1527647087087583413>"
+        },
+        {
+          "id": "1527647119010431026",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1527647119010431026>"
+        },
+        {
+          "id": "1527647157371535420",
+          "name": "lovemail",
+          "animated": true,
+          "formatted": "<a:lovemail:1527647157371535420>"
+        },
+        {
+          "id": "1527647199108796607",
+          "name": "redtick",
+          "animated": true,
+          "formatted": "<a:redtick:1527647199108796607>"
+        },
+        {
+          "id": "1527647224354312376",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1527647224354312376>"
+        },
+        {
+          "id": "1527647307955310722",
+          "name": "pinkarrow",
+          "animated": true,
+          "formatted": "<a:pinkarrow:1527647307955310722>"
+        },
+        {
+          "id": "1527647357473132554",
+          "name": "animatedarrowwhite",
+          "animated": true,
+          "formatted": "<a:animatedarrowwhite:1527647357473132554>"
+        },
+        {
+          "id": "1532275971330408508",
+          "name": "whatsapp",
+          "animated": true,
+          "formatted": "<a:whatsapp:1532275971330408508>"
+        },
+        {
+          "id": "1532390590707142956",
+          "name": "approved",
+          "animated": true,
+          "formatted": "<a:approved:1532390590707142956>"
+        },
+        {
+          "id": "1532390628330307634",
+          "name": "wrong",
+          "animated": false,
+          "formatted": "<:wrong:1532390628330307634>"
+        },
+        {
+          "id": "1532403012751065179",
+          "name": "shield",
+          "animated": false,
+          "formatted": "<:shield:1532403012751065179>"
+        },
+        {
+          "id": "1532403057470476559",
+          "name": "unlockedid",
+          "animated": false,
+          "formatted": "<:unlockedid:1532403057470476559>"
+        },
+        {
+          "id": "1532425679017087086",
+          "name": "redticket",
+          "animated": false,
+          "formatted": "<:redticket:1532425679017087086>"
+        },
+        {
+          "id": "1532425712844144701",
+          "name": "config",
+          "animated": false,
+          "formatted": "<:config:1532425712844144701>"
+        },
+        {
+          "id": "1532425750278438962",
+          "name": "voicechannelgreen",
+          "animated": false,
+          "formatted": "<:voicechannelgreen:1532425750278438962>"
+        },
+        {
+          "id": "1532425779860734004",
+          "name": "paperplane",
+          "animated": false,
+          "formatted": "<:paperplane:1532425779860734004>"
+        },
+        {
+          "id": "1532425826019184750",
+          "name": "voicechannellimitedgreen",
+          "animated": false,
+          "formatted": "<:voicechannellimitedgreen:1532425826019184750>"
+        },
+        {
+          "id": "1532426097428267180",
+          "name": "membericons",
+          "animated": false,
+          "formatted": "<:membericons:1532426097428267180>"
+        },
+        {
+          "id": "1532426273366741143",
+          "name": "50738home",
+          "animated": false,
+          "formatted": "<:50738home:1532426273366741143>"
+        },
+        {
+          "id": "1532429110775779459",
+          "name": "stats",
+          "animated": false,
+          "formatted": "<:stats:1532429110775779459>"
+        },
+        {
+          "id": "1532620447693279302",
+          "name": "moonoutline",
+          "animated": false,
+          "formatted": "<:moonoutline:1532620447693279302>"
+        },
+        {
+          "id": "1532620491662037123",
+          "name": "timer",
+          "animated": false,
+          "formatted": "<:timer:1532620491662037123>"
+        },
+        {
+          "id": "1532620536322986025",
+          "name": "developer",
+          "animated": false,
+          "formatted": "<:developer:1532620536322986025>"
+        },
+        {
+          "id": "1532620580266836148",
+          "name": "ticks",
+          "animated": false,
+          "formatted": "<:ticks:1532620580266836148>"
+        },
+        {
+          "id": "1532620631466836021",
+          "name": "ticket",
+          "animated": false,
+          "formatted": "<:ticket:1532620631466836021>"
+        },
+        {
+          "id": "1532620680011710584",
+          "name": "line1",
+          "animated": false,
+          "formatted": "<:line1:1532620680011710584>"
+        },
+        {
+          "id": "1532620723397595276",
+          "name": "forwardslash",
+          "animated": false,
+          "formatted": "<:forwardslash:1532620723397595276>"
+        },
+        {
+          "id": "1532620785187815454",
+          "name": "shield",
+          "animated": false,
+          "formatted": "<:shield:1532620785187815454>"
+        },
+        {
+          "id": "1532620837117759508",
+          "name": "vip",
+          "animated": false,
+          "formatted": "<:vip:1532620837117759508>"
+        },
+        {
+          "id": "1532620893661036585",
+          "name": "mention",
+          "animated": false,
+          "formatted": "<:mention:1532620893661036585>"
+        },
+        {
+          "id": "1532620952087826602",
+          "name": "link",
+          "animated": false,
+          "formatted": "<:link:1532620952087826602>"
+        },
+        {
+          "id": "1532621001118973983",
+          "name": "arrow",
+          "animated": false,
+          "formatted": "<:arrow:1532621001118973983>"
+        },
+        {
+          "id": "1532621057318584380",
+          "name": "gavel",
+          "animated": false,
+          "formatted": "<:gavel:1532621057318584380>"
+        },
+        {
+          "id": "1532621107746570391",
+          "name": "bot",
+          "animated": false,
+          "formatted": "<:bot:1532621107746570391>"
+        },
+        {
+          "id": "1532621146208473115",
+          "name": "cart",
+          "animated": false,
+          "formatted": "<:cart:1532621146208473115>"
+        },
+        {
+          "id": "1532621228492460172",
+          "name": "booster",
+          "animated": false,
+          "formatted": "<:booster:1532621228492460172>"
+        },
+        {
+          "id": "1532621274092929124",
+          "name": "information",
+          "animated": false,
+          "formatted": "<:information:1532621274092929124>"
+        },
+        {
+          "id": "1532621317487071426",
+          "name": "member",
+          "animated": false,
+          "formatted": "<:member:1532621317487071426>"
+        },
+        {
+          "id": "1532621364115013693",
+          "name": "lightpurplearrow",
+          "animated": false,
+          "formatted": "<:lightpurplearrow:1532621364115013693>"
+        },
+        {
+          "id": "1534196322943373453",
+          "name": "Free_Fire",
+          "animated": false,
+          "formatted": "<:Free_Fire:1534196322943373453>"
+        },
+        {
+          "id": "1534198653286354984",
+          "name": "VALO",
+          "animated": false,
+          "formatted": "<:VALO:1534198653286354984>"
+        },
+        {
+          "id": "1534198700275142927",
+          "name": "ROBOLOX",
+          "animated": false,
+          "formatted": "<:ROBOLOX:1534198700275142927>"
+        },
+        {
+          "id": "1538586763226779658",
+          "name": "387155approved",
+          "animated": true,
+          "formatted": "<a:387155approved:1538586763226779658>"
+        }
+      ]
+    },
+    {
+      "guildId": "1305508377148919808",
+      "guildName": "TAMIL AURA ZONERZ",
+      "emojis": [
+        {
+          "id": "1527335025031381022",
+          "name": "YouTube",
+          "animated": false,
+          "formatted": "<:YouTube:1527335025031381022>"
+        },
+        {
+          "id": "1527335047965708430",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1527335047965708430>"
+        },
+        {
+          "id": "1527335068924641512",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1527335068924641512>"
+        },
+        {
+          "id": "1527335086922530956",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1527335086922530956>"
+        },
+        {
+          "id": "1527335119696691350",
+          "name": "verified",
+          "animated": true,
+          "formatted": "<a:verified:1527335119696691350>"
+        },
+        {
+          "id": "1527335138772385842",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1527335138772385842>"
+        },
+        {
+          "id": "1527335153804902651",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1527335153804902651>"
+        },
+        {
+          "id": "1527335172398383115",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1527335172398383115>"
+        },
+        {
+          "id": "1527335189771194560",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1527335189771194560>"
+        },
+        {
+          "id": "1527335213921730700",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1527335213921730700>"
+        },
+        {
+          "id": "1527335233379106980",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1527335233379106980>"
+        },
+        {
+          "id": "1527335254912925869",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1527335254912925869>"
+        }
+      ]
+    },
+    {
+      "guildId": "1378669065190637640",
+      "guildName": "REVAN SATHEESH's server",
+      "emojis": []
+    },
+    {
+      "guildId": "1426816585720660071",
+      "guildName": "𝗦ᴘɪᴅᴇʏ.𝘦𝘹𝘦  •Δ•",
+      "emojis": []
+    },
+    {
+      "guildId": "1465273570946056226",
+      "guildName": "𝗧𝗔𝗭 𝗔𝗥𝗜𝗦𝗘 櫻",
+      "emojis": []
+    },
+    {
+      "guildId": "1490334525778034922",
+      "guildName": "☠⚓ＳＴＲＡＷ  ＨＡＴ ＰＩＲＡＴＥＳ⚓🏴☠",
+      "emojis": [
+        {
+          "id": "1500747140287172628",
+          "name": "deiiiii",
+          "animated": true,
+          "formatted": "<a:deiiiii:1500747140287172628>"
+        },
+        {
+          "id": "1500747232557928458",
+          "name": "ANGRY",
+          "animated": false,
+          "formatted": "<:ANGRY:1500747232557928458>"
+        },
+        {
+          "id": "1500747472039968768",
+          "name": "HEHE",
+          "animated": false,
+          "formatted": "<:HEHE:1500747472039968768>"
+        },
+        {
+          "id": "1500747601937436682",
+          "name": "DOG_DING_DING",
+          "animated": true,
+          "formatted": "<a:DOG_DING_DING:1500747601937436682>"
+        },
+        {
+          "id": "1500749210226655363",
+          "name": "SABASH_KANNA",
+          "animated": true,
+          "formatted": "<a:SABASH_KANNA:1500749210226655363>"
+        },
+        {
+          "id": "1500749575772700743",
+          "name": "PING_PONG",
+          "animated": true,
+          "formatted": "<a:PING_PONG:1500749575772700743>"
+        },
+        {
+          "id": "1500749720111550494",
+          "name": "OMALA_DEIIIII",
+          "animated": true,
+          "formatted": "<a:OMALA_DEIIIII:1500749720111550494>"
+        },
+        {
+          "id": "1500749803359834182",
+          "name": "DISHHHHHHHH",
+          "animated": true,
+          "formatted": "<a:DISHHHHHHHH:1500749803359834182>"
+        },
+        {
+          "id": "1500749928664797278",
+          "name": "HEHEHEEEEE",
+          "animated": false,
+          "formatted": "<:HEHEHEEEEE:1500749928664797278>"
+        },
+        {
+          "id": "1500750037431353344",
+          "name": "UMBUUU",
+          "animated": true,
+          "formatted": "<a:UMBUUU:1500750037431353344>"
+        },
+        {
+          "id": "1500750098932564091",
+          "name": "MEOWWWWW",
+          "animated": true,
+          "formatted": "<a:MEOWWWWW:1500750098932564091>"
+        },
+        {
+          "id": "1500751533338263562",
+          "name": "DANCE_BRO",
+          "animated": true,
+          "formatted": "<a:DANCE_BRO:1500751533338263562>"
+        },
+        {
+          "id": "1500751699231506473",
+          "name": "HIIIIIII",
+          "animated": true,
+          "formatted": "<a:HIIIIIII:1500751699231506473>"
+        },
+        {
+          "id": "1500752202996912169",
+          "name": "OVER___",
+          "animated": false,
+          "formatted": "<:OVER___:1500752202996912169>"
+        }
+      ]
+    },
+    {
+      "guildId": "1495001702825328774",
+      "guildName": "DESTINY    !!🏠",
+      "emojis": [
+        {
+          "id": "1538162745789390858",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1538162745789390858>"
+        },
+        {
+          "id": "1538162749190963341",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1538162749190963341>"
+        },
+        {
+          "id": "1538162752835551353",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1538162752835551353>"
+        },
+        {
+          "id": "1538162756492988468",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1538162756492988468>"
+        },
+        {
+          "id": "1538162759911608362",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1538162759911608362>"
+        },
+        {
+          "id": "1538162763770241115",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1538162763770241115>"
+        },
+        {
+          "id": "1538162767104581772",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1538162767104581772>"
+        },
+        {
+          "id": "1538162770372071474",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1538162770372071474>"
+        },
+        {
+          "id": "1538162773572329554",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1538162773572329554>"
+        },
+        {
+          "id": "1538162776986492988",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1538162776986492988>"
+        },
+        {
+          "id": "1538162780325019808",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1538162780325019808>"
+        },
+        {
+          "id": "1538162783697510480",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1538162783697510480>"
+        },
+        {
+          "id": "1538162787862319144",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1538162787862319144>"
+        },
+        {
+          "id": "1538162791238729789",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1538162791238729789>"
+        },
+        {
+          "id": "1538162794598375536",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1538162794598375536>"
+        },
+        {
+          "id": "1538162798658453524",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1538162798658453524>"
+        },
+        {
+          "id": "1538162801988608060",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1538162801988608060>"
+        },
+        {
+          "id": "1538162805201436722",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1538162805201436722>"
+        },
+        {
+          "id": "1538162808590565416",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1538162808590565416>"
+        },
+        {
+          "id": "1538162811845353622",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1538162811845353622>"
+        },
+        {
+          "id": "1538162815234211941",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1538162815234211941>"
+        },
+        {
+          "id": "1538162818849833032",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1538162818849833032>"
+        },
+        {
+          "id": "1538162822259671070",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1538162822259671070>"
+        },
+        {
+          "id": "1538162825506332703",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1538162825506332703>"
+        },
+        {
+          "id": "1538162828949585951",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1538162828949585951>"
+        },
+        {
+          "id": "1538162832464416788",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1538162832464416788>"
+        },
+        {
+          "id": "1538162835463471147",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1538162835463471147>"
+        },
+        {
+          "id": "1538162840316153867",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1538162840316153867>"
+        },
+        {
+          "id": "1538162843516407860",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1538162843516407860>"
+        },
+        {
+          "id": "1538162848323076126",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1538162848323076126>"
+        },
+        {
+          "id": "1538162851720724613",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1538162851720724613>"
+        },
+        {
+          "id": "1538162856569208982",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1538162856569208982>"
+        },
+        {
+          "id": "1538162860931289129",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1538162860931289129>"
+        },
+        {
+          "id": "1538162866857975818",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1538162866857975818>"
+        },
+        {
+          "id": "1538162870263615548",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1538162870263615548>"
+        },
+        {
+          "id": "1538162873807806584",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1538162873807806584>"
+        },
+        {
+          "id": "1538162877360381983",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1538162877360381983>"
+        },
+        {
+          "id": "1538162880761954385",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1538162880761954385>"
+        },
+        {
+          "id": "1538162884637360189",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1538162884637360189>"
+        },
+        {
+          "id": "1538162888924078190",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1538162888924078190>"
+        },
+        {
+          "id": "1538162892988485693",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1538162892988485693>"
+        },
+        {
+          "id": "1538162896264237066",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1538162896264237066>"
+        },
+        {
+          "id": "1538162899539730462",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1538162899539730462>"
+        },
+        {
+          "id": "1538162902714945658",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1538162902714945658>"
+        },
+        {
+          "id": "1538162906196082719",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1538162906196082719>"
+        },
+        {
+          "id": "1538162910071754802",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1538162910071754802>"
+        },
+        {
+          "id": "1538162913435721758",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1538162913435721758>"
+        },
+        {
+          "id": "1538162916853813349",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1538162916853813349>"
+        },
+        {
+          "id": "1538162920444268556",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1538162920444268556>"
+        },
+        {
+          "id": "1538162924114419712",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1538162924114419712>"
+        }
+      ]
+    },
+    {
+      "guildId": "1500331625517547642",
+      "guildName": "GOKUL 💝♾",
+      "emojis": []
+    },
+    {
+      "guildId": "1500487419462553760",
+      "guildName": "INFERNOVA",
+      "emojis": [
+        {
+          "id": "1538152149689696336",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1538152149689696336>"
+        },
+        {
+          "id": "1538152153342943332",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1538152153342943332>"
+        },
+        {
+          "id": "1538152157063286804",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1538152157063286804>"
+        },
+        {
+          "id": "1538152160552947713",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1538152160552947713>"
+        },
+        {
+          "id": "1538152163916644482",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1538152163916644482>"
+        },
+        {
+          "id": "1538152167234342912",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1538152167234342912>"
+        },
+        {
+          "id": "1538152170770399342",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1538152170770399342>"
+        },
+        {
+          "id": "1538152177749463110",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1538152177749463110>"
+        },
+        {
+          "id": "1538152180949848127",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1538152180949848127>"
+        },
+        {
+          "id": "1538152184938500096",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1538152184938500096>"
+        },
+        {
+          "id": "1538152188457787432",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1538152188457787432>"
+        },
+        {
+          "id": "1538152192219947069",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1538152192219947069>"
+        },
+        {
+          "id": "1538152196435214376",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1538152196435214376>"
+        },
+        {
+          "id": "1538152199631274044",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1538152199631274044>"
+        },
+        {
+          "id": "1538152203070603277",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1538152203070603277>"
+        },
+        {
+          "id": "1538152206681776168",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1538152206681776168>"
+        },
+        {
+          "id": "1538152210276294747",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1538152210276294747>"
+        },
+        {
+          "id": "1538152213803835432",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1538152213803835432>"
+        },
+        {
+          "id": "1538152217150754836",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1538152217150754836>"
+        },
+        {
+          "id": "1538152220191629392",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1538152220191629392>"
+        },
+        {
+          "id": "1538152223694135337",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1538152223694135337>"
+        },
+        {
+          "id": "1538152226944585800",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1538152226944585800>"
+        },
+        {
+          "id": "1538152230438436944",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1538152230438436944>"
+        },
+        {
+          "id": "1538152233701478452",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1538152233701478452>"
+        },
+        {
+          "id": "1538152238697029662",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1538152238697029662>"
+        },
+        {
+          "id": "1538152241754546326",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1538152241754546326>"
+        },
+        {
+          "id": "1538152245152194641",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1538152245152194641>"
+        },
+        {
+          "id": "1538152248637390878",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1538152248637390878>"
+        },
+        {
+          "id": "1538152252194160650",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1538152252194160650>"
+        },
+        {
+          "id": "1538152255390359656",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1538152255390359656>"
+        },
+        {
+          "id": "1538152259374944336",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1538152259374944336>"
+        },
+        {
+          "id": "1538152262755557498",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1538152262755557498>"
+        },
+        {
+          "id": "1538152266568306769",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1538152266568306769>"
+        },
+        {
+          "id": "1538152269671833663",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1538152269671833663>"
+        },
+        {
+          "id": "1538152273249706064",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1538152273249706064>"
+        },
+        {
+          "id": "1538152276718395422",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1538152276718395422>"
+        },
+        {
+          "id": "1538152279948140566",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1538152279948140566>"
+        },
+        {
+          "id": "1538152283542388766",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1538152283542388766>"
+        },
+        {
+          "id": "1538152286839373905",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1538152286839373905>"
+        },
+        {
+          "id": "1538152290551332897",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1538152290551332897>"
+        },
+        {
+          "id": "1538152294250709072",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1538152294250709072>"
+        },
+        {
+          "id": "1538152297845231736",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1538152297845231736>"
+        },
+        {
+          "id": "1538152301322174534",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1538152301322174534>"
+        },
+        {
+          "id": "1538152305411498074",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1538152305411498074>"
+        },
+        {
+          "id": "1538152308683046913",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1538152308683046913>"
+        },
+        {
+          "id": "1538152311895887903",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1538152311895887903>"
+        },
+        {
+          "id": "1538152314924306462",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1538152314924306462>"
+        },
+        {
+          "id": "1538152318032281701",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1538152318032281701>"
+        },
+        {
+          "id": "1538152321245253644",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1538152321245253644>"
+        },
+        {
+          "id": "1538152324294512770",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1538152324294512770>"
+        },
+        {
+          "id": "1538167252233363546",
+          "name": "verifiedblack",
+          "animated": false,
+          "formatted": "<:verifiedblack:1538167252233363546>"
+        },
+        {
+          "id": "1538167255387603036",
+          "name": "verifiedyellow",
+          "animated": false,
+          "formatted": "<:verifiedyellow:1538167255387603036>"
+        },
+        {
+          "id": "1538167258835062855",
+          "name": "verifiedlightblue",
+          "animated": false,
+          "formatted": "<:verifiedlightblue:1538167258835062855>"
+        },
+        {
+          "id": "1538167261783785563",
+          "name": "5verified",
+          "animated": false,
+          "formatted": "<:5verified:1538167261783785563>"
+        },
+        {
+          "id": "1538167268301869136",
+          "name": "verifiedtwitter",
+          "animated": true,
+          "formatted": "<a:verifiedtwitter:1538167268301869136>"
+        },
+        {
+          "id": "1538167291428995102",
+          "name": "35776gethopofftwitterxbeansign",
+          "animated": true,
+          "formatted": "<a:35776gethopofftwitterxbeansign:1538167291428995102>"
+        },
+        {
+          "id": "1538167294637641768",
+          "name": "41981doghop",
+          "animated": true,
+          "formatted": "<a:41981doghop:1538167294637641768>"
+        },
+        {
+          "id": "1538167301835071589",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1538167301835071589>"
+        },
+        {
+          "id": "1538167306578821140",
+          "name": "63407ijbol",
+          "animated": true,
+          "formatted": "<a:63407ijbol:1538167306578821140>"
+        },
+        {
+          "id": "1538167310156701820",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1538167310156701820>"
+        },
+        {
+          "id": "1538167327298949192",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1538167327298949192>"
+        },
+        {
+          "id": "1538167332063678534",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1538167332063678534>"
+        },
+        {
+          "id": "1538167335054090251",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1538167335054090251>"
+        },
+        {
+          "id": "1538167338904457216",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1538167338904457216>"
+        },
+        {
+          "id": "1538167342033539145",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1538167342033539145>"
+        },
+        {
+          "id": "1538167348404682884",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1538167348404682884>"
+        },
+        {
+          "id": "1538167352690999418",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1538167352690999418>"
+        },
+        {
+          "id": "1538167356348702730",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1538167356348702730>"
+        },
+        {
+          "id": "1538167360287154288",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1538167360287154288>"
+        },
+        {
+          "id": "1538167363596329062",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1538167363596329062>"
+        },
+        {
+          "id": "1538167366674944130",
+          "name": "1941blackbutterfly2",
+          "animated": true,
+          "formatted": "<a:1941blackbutterfly2:1538167366674944130>"
+        },
+        {
+          "id": "1538167369950822631",
+          "name": "blackbat",
+          "animated": true,
+          "formatted": "<a:blackbat:1538167369950822631>"
+        },
+        {
+          "id": "1538167377597042808",
+          "name": "animatedarrowpink2",
+          "animated": true,
+          "formatted": "<a:animatedarrowpink2:1538167377597042808>"
+        },
+        {
+          "id": "1538167381778759680",
+          "name": "animatedarroworange",
+          "animated": true,
+          "formatted": "<a:animatedarroworange:1538167381778759680>"
+        },
+        {
+          "id": "1538167386790830190",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1538167386790830190>"
+        },
+        {
+          "id": "1538167390087544982",
+          "name": "lovemail",
+          "animated": true,
+          "formatted": "<a:lovemail:1538167390087544982>"
+        },
+        {
+          "id": "1538167393522557039",
+          "name": "redtick",
+          "animated": true,
+          "formatted": "<a:redtick:1538167393522557039>"
+        },
+        {
+          "id": "1538167398060793877",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1538167398060793877>"
+        },
+        {
+          "id": "1538167401806307370",
+          "name": "pinkarrow",
+          "animated": true,
+          "formatted": "<a:pinkarrow:1538167401806307370>"
+        },
+        {
+          "id": "1538167406696988715",
+          "name": "animatedarrowwhite",
+          "animated": true,
+          "formatted": "<a:animatedarrowwhite:1538167406696988715>"
+        },
+        {
+          "id": "1538167411617042482",
+          "name": "whatsapp",
+          "animated": true,
+          "formatted": "<a:whatsapp:1538167411617042482>"
+        },
+        {
+          "id": "1538167415102373888",
+          "name": "approved",
+          "animated": true,
+          "formatted": "<a:approved:1538167415102373888>"
+        }
+      ]
+    },
+    {
+      "guildId": "1506072610578890813",
+      "guildName": "Zᴇɴɪᴛꜱᴜ Fᴀᴍ",
+      "emojis": []
+    },
+    {
+      "guildId": "1507671152389128272",
+      "guildName": "Rage Optimizer",
+      "emojis": []
+    },
+    {
+      "guildId": "1508399161798819840",
+      "guildName": "<<clasher>>",
+      "emojis": [
+        {
+          "id": "1538149629961572362",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1538149629961572362>"
+        },
+        {
+          "id": "1538149632905973774",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1538149632905973774>"
+        },
+        {
+          "id": "1538149637033033770",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1538149637033033770>"
+        },
+        {
+          "id": "1538149640485085248",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1538149640485085248>"
+        },
+        {
+          "id": "1538149645342081034",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1538149645342081034>"
+        },
+        {
+          "id": "1538149648643006494",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1538149648643006494>"
+        },
+        {
+          "id": "1538149652204093471",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1538149652204093471>"
+        },
+        {
+          "id": "1538149655617994792",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1538149655617994792>"
+        },
+        {
+          "id": "1538149658793218138",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1538149658793218138>"
+        },
+        {
+          "id": "1538149661980758086",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1538149661980758086>"
+        },
+        {
+          "id": "1538149666040971326",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1538149666040971326>"
+        },
+        {
+          "id": "1538149670491263038",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1538149670491263038>"
+        },
+        {
+          "id": "1538149673980661761",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1538149673980661761>"
+        },
+        {
+          "id": "1538149677327974420",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1538149677327974420>"
+        },
+        {
+          "id": "1538149680519585884",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1538149680519585884>"
+        },
+        {
+          "id": "1538149685737300031",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1538149685737300031>"
+        },
+        {
+          "id": "1538149689386598421",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1538149689386598421>"
+        },
+        {
+          "id": "1538149692960022619",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1538149692960022619>"
+        },
+        {
+          "id": "1538149696399351938",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1538149696399351938>"
+        },
+        {
+          "id": "1538149699150680108",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1538149699150680108>"
+        },
+        {
+          "id": "1538149703147986945",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1538149703147986945>"
+        },
+        {
+          "id": "1538149706629251105",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1538149706629251105>"
+        },
+        {
+          "id": "1538149709871456296",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1538149709871456296>"
+        },
+        {
+          "id": "1538149713042214923",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1538149713042214923>"
+        },
+        {
+          "id": "1538149716305387590",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1538149716305387590>"
+        },
+        {
+          "id": "1538149721288482936",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1538149721288482936>"
+        },
+        {
+          "id": "1538149724597653514",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1538149724597653514>"
+        },
+        {
+          "id": "1538149728464666745",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1538149728464666745>"
+        },
+        {
+          "id": "1538149731325313059",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1538149731325313059>"
+        },
+        {
+          "id": "1538149734508793888",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1538149734508793888>"
+        },
+        {
+          "id": "1538149738560364555",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1538149738560364555>"
+        },
+        {
+          "id": "1538149742389891082",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1538149742389891082>"
+        },
+        {
+          "id": "1538149745611243553",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1538149745611243553>"
+        },
+        {
+          "id": "1538149749247574066",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1538149749247574066>"
+        },
+        {
+          "id": "1538149752426987530",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1538149752426987530>"
+        },
+        {
+          "id": "1538149755866316851",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1538149755866316851>"
+        },
+        {
+          "id": "1538149759246667806",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1538149759246667806>"
+        },
+        {
+          "id": "1538149762501714002",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1538149762501714002>"
+        },
+        {
+          "id": "1538149766083379222",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1538149766083379222>"
+        },
+        {
+          "id": "1538149769359269910",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1538149769359269910>"
+        },
+        {
+          "id": "1538149772769239070",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1538149772769239070>"
+        },
+        {
+          "id": "1538149776032268348",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1538149776032268348>"
+        },
+        {
+          "id": "1538149779815534642",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1538149779815534642>"
+        },
+        {
+          "id": "1538149782814724116",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1538149782814724116>"
+        },
+        {
+          "id": "1538149785947734096",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1538149785947734096>"
+        },
+        {
+          "id": "1538149789106184273",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1538149789106184273>"
+        },
+        {
+          "id": "1538149792230670436",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1538149792230670436>"
+        },
+        {
+          "id": "1538149795317686292",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1538149795317686292>"
+        },
+        {
+          "id": "1538149798778118144",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1538149798778118144>"
+        },
+        {
+          "id": "1538149801835765790",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1538149801835765790>"
+        },
+        {
+          "id": "1538164733801402411",
+          "name": "verifiedblack",
+          "animated": false,
+          "formatted": "<:verifiedblack:1538164733801402411>"
+        },
+        {
+          "id": "1538164737165238322",
+          "name": "verifiedyellow",
+          "animated": false,
+          "formatted": "<:verifiedyellow:1538164737165238322>"
+        },
+        {
+          "id": "1538164740319215636",
+          "name": "verifiedlightblue",
+          "animated": false,
+          "formatted": "<:verifiedlightblue:1538164740319215636>"
+        },
+        {
+          "id": "1538164743729315920",
+          "name": "5verified",
+          "animated": false,
+          "formatted": "<:5verified:1538164743729315920>"
+        },
+        {
+          "id": "1538164750653980715",
+          "name": "verifiedtwitter",
+          "animated": true,
+          "formatted": "<a:verifiedtwitter:1538164750653980715>"
+        },
+        {
+          "id": "1538164774859440189",
+          "name": "35776gethopofftwitterxbeansign",
+          "animated": true,
+          "formatted": "<a:35776gethopofftwitterxbeansign:1538164774859440189>"
+        },
+        {
+          "id": "1538164778781114488",
+          "name": "41981doghop",
+          "animated": true,
+          "formatted": "<a:41981doghop:1538164778781114488>"
+        },
+        {
+          "id": "1538164786985041980",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1538164786985041980>"
+        },
+        {
+          "id": "1538164792659804242",
+          "name": "63407ijbol",
+          "animated": true,
+          "formatted": "<a:63407ijbol:1538164792659804242>"
+        },
+        {
+          "id": "1538164806958448771",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1538164806958448771>"
+        },
+        {
+          "id": "1538164816252764190",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1538164816252764190>"
+        },
+        {
+          "id": "1538164820099211379",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1538164820099211379>"
+        },
+        {
+          "id": "1538164823773413389",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1538164823773413389>"
+        },
+        {
+          "id": "1538164828093546597",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1538164828093546597>"
+        },
+        {
+          "id": "1538164831364980768",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1538164831364980768>"
+        },
+        {
+          "id": "1538164834963685417",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1538164834963685417>"
+        },
+        {
+          "id": "1538164838516138094",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1538164838516138094>"
+        },
+        {
+          "id": "1538164841779302521",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1538164841779302521>"
+        },
+        {
+          "id": "1538164845696913510",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1538164845696913510>"
+        },
+        {
+          "id": "1538164849438232596",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1538164849438232596>"
+        },
+        {
+          "id": "1538164864407572611",
+          "name": "1941blackbutterfly2",
+          "animated": true,
+          "formatted": "<a:1941blackbutterfly2:1538164864407572611>"
+        },
+        {
+          "id": "1538164867427475559",
+          "name": "blackbat",
+          "animated": true,
+          "formatted": "<a:blackbat:1538164867427475559>"
+        },
+        {
+          "id": "1538164874956505149",
+          "name": "animatedarrowpink2",
+          "animated": true,
+          "formatted": "<a:animatedarrowpink2:1538164874956505149>"
+        },
+        {
+          "id": "1538164879838416907",
+          "name": "animatedarroworange",
+          "animated": true,
+          "formatted": "<a:animatedarroworange:1538164879838416907>"
+        },
+        {
+          "id": "1538164885068714125",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1538164885068714125>"
+        },
+        {
+          "id": "1538164888642527352",
+          "name": "lovemail",
+          "animated": true,
+          "formatted": "<a:lovemail:1538164888642527352>"
+        },
+        {
+          "id": "1538164892044103681",
+          "name": "redtick",
+          "animated": true,
+          "formatted": "<a:redtick:1538164892044103681>"
+        },
+        {
+          "id": "1538164896355852330",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1538164896355852330>"
+        },
+        {
+          "id": "1538164901116121129",
+          "name": "pinkarrow",
+          "animated": true,
+          "formatted": "<a:pinkarrow:1538164901116121129>"
+        },
+        {
+          "id": "1538164905155240018",
+          "name": "animatedarrowwhite",
+          "animated": true,
+          "formatted": "<a:animatedarrowwhite:1538164905155240018>"
+        },
+        {
+          "id": "1538164908477382766",
+          "name": "whatsapp",
+          "animated": true,
+          "formatted": "<a:whatsapp:1538164908477382766>"
+        },
+        {
+          "id": "1538164911845412914",
+          "name": "approved",
+          "animated": true,
+          "formatted": "<a:approved:1538164911845412914>"
+        }
+      ]
+    },
+    {
+      "guildId": "1509079867428311141",
+      "guildName": "𝑹𝑬𝑿 𝑪𝑹𝑶𝑷 𝑳𝑰𝑽𝑬 ⚡",
+      "emojis": [
+        {
+          "id": "1518686825768812695",
+          "name": "check",
+          "animated": false,
+          "formatted": "<:check:1518686825768812695>"
+        },
+        {
+          "id": "1518687507011604600",
+          "name": "51004castoricecurse",
+          "animated": false,
+          "formatted": "<:51004castoricecurse:1518687507011604600>"
+        },
+        {
+          "id": "1518687574619586814",
+          "name": "180984alunedisgusted",
+          "animated": false,
+          "formatted": "<:180984alunedisgusted:1518687574619586814>"
+        },
+        {
+          "id": "1518688940897337516",
+          "name": "1543_scream",
+          "animated": true,
+          "formatted": "<a:1543_scream:1518688940897337516>"
+        },
+        {
+          "id": "1518689085777121290",
+          "name": "523754cathappy",
+          "animated": false,
+          "formatted": "<:523754cathappy:1518689085777121290>"
+        },
+        {
+          "id": "1518689433845502152",
+          "name": "501481nobrain",
+          "animated": false,
+          "formatted": "<:501481nobrain:1518689433845502152>"
+        },
+        {
+          "id": "1518690007962091610",
+          "name": "440174redcard",
+          "animated": false,
+          "formatted": "<:440174redcard:1518690007962091610>"
+        },
+        {
+          "id": "1518690363580092496",
+          "name": "869666redcrown",
+          "animated": true,
+          "formatted": "<a:869666redcrown:1518690363580092496>"
+        },
+        {
+          "id": "1518970578768232499",
+          "name": "Dark4luvontop",
+          "animated": false,
+          "formatted": "<:Dark4luvontop:1518970578768232499>"
+        },
+        {
+          "id": "1518970815071391880",
+          "name": "4evr",
+          "animated": false,
+          "formatted": "<:4evr:1518970815071391880>"
+        },
+        {
+          "id": "1529822822669746246",
+          "name": "4evr",
+          "animated": true,
+          "formatted": "<a:4evr:1529822822669746246>"
+        },
+        {
+          "id": "1538578888924332032",
+          "name": "1522_Flying_Hearts_Blue",
+          "animated": true,
+          "formatted": "<a:1522_Flying_Hearts_Blue:1538578888924332032>"
+        },
+        {
+          "id": "1538578919454933002",
+          "name": "amazed_panda",
+          "animated": true,
+          "formatted": "<a:amazed_panda:1538578919454933002>"
+        },
+        {
+          "id": "1538578991466942496",
+          "name": "PandaPeeking",
+          "animated": true,
+          "formatted": "<a:PandaPeeking:1538578991466942496>"
+        },
+        {
+          "id": "1538579021212688505",
+          "name": "zz_cutePandaEheh",
+          "animated": true,
+          "formatted": "<a:zz_cutePandaEheh:1538579021212688505>"
+        },
+        {
+          "id": "1538579049876692992",
+          "name": "5736nekocatwoah",
+          "animated": false,
+          "formatted": "<:5736nekocatwoah:1538579049876692992>"
+        },
+        {
+          "id": "1538579078658007155",
+          "name": "259419darkbluearrow",
+          "animated": true,
+          "formatted": "<a:259419darkbluearrow:1538579078658007155>"
+        },
+        {
+          "id": "1538579099872788560",
+          "name": "9780_White_Christmas_Sparkles",
+          "animated": true,
+          "formatted": "<a:9780_White_Christmas_Sparkles:1538579099872788560>"
+        },
+        {
+          "id": "1538579128129822800",
+          "name": "UtilityDeveloper",
+          "animated": true,
+          "formatted": "<a:UtilityDeveloper:1538579128129822800>"
+        },
+        {
+          "id": "1538579165375242340",
+          "name": "minecraftlogopng2",
+          "animated": false,
+          "formatted": "<:minecraftlogopng2:1538579165375242340>"
+        },
+        {
+          "id": "1538579195872157757",
+          "name": "YouTube_Logo",
+          "animated": false,
+          "formatted": "<:YouTube_Logo:1538579195872157757>"
+        },
+        {
+          "id": "1538579233482346567",
+          "name": "uh_stafflogo",
+          "animated": true,
+          "formatted": "<a:uh_stafflogo:1538579233482346567>"
+        },
+        {
+          "id": "1538579267619917905",
+          "name": "discord_logo",
+          "animated": true,
+          "formatted": "<a:discord_logo:1538579267619917905>"
+        },
+        {
+          "id": "1538579294396227634",
+          "name": "nekocatsip",
+          "animated": false,
+          "formatted": "<:nekocatsip:1538579294396227634>"
+        },
+        {
+          "id": "1538579336146460823",
+          "name": "sparkles_blue",
+          "animated": true,
+          "formatted": "<a:sparkles_blue:1538579336146460823>"
+        },
+        {
+          "id": "1538579369809674310",
+          "name": "crownkingblue",
+          "animated": true,
+          "formatted": "<a:crownkingblue:1538579369809674310>"
+        },
+        {
+          "id": "1538579450705354834",
+          "name": "butterfly_blue",
+          "animated": true,
+          "formatted": "<a:butterfly_blue:1538579450705354834>"
+        },
+        {
+          "id": "1538579493726330982",
+          "name": "Fireaestheticpastelblue",
+          "animated": true,
+          "formatted": "<a:Fireaestheticpastelblue:1538579493726330982>"
+        },
+        {
+          "id": "1538579537284169809",
+          "name": "panda_katil",
+          "animated": true,
+          "formatted": "<a:panda_katil:1538579537284169809>"
+        },
+        {
+          "id": "1538579654615506945",
+          "name": "panda_hacker",
+          "animated": true,
+          "formatted": "<a:panda_hacker:1538579654615506945>"
+        },
+        {
+          "id": "1538579705702121472",
+          "name": "Panda_Sleepy_Clap",
+          "animated": true,
+          "formatted": "<a:Panda_Sleepy_Clap:1538579705702121472>"
+        },
+        {
+          "id": "1538579778473558067",
+          "name": "Panda_Rage",
+          "animated": true,
+          "formatted": "<a:Panda_Rage:1538579778473558067>"
+        },
+        {
+          "id": "1538579814062227497",
+          "name": "Panda_Happy_Animated",
+          "animated": true,
+          "formatted": "<a:Panda_Happy_Animated:1538579814062227497>"
+        },
+        {
+          "id": "1538579851366113340",
+          "name": "Panda_Popcorn_Animated",
+          "animated": true,
+          "formatted": "<a:Panda_Popcorn_Animated:1538579851366113340>"
+        },
+        {
+          "id": "1538580453077024818",
+          "name": "943832alertastaff2000",
+          "animated": true,
+          "formatted": "<a:943832alertastaff2000:1538580453077024818>"
+        },
+        {
+          "id": "1538619062790131712",
+          "name": "1466815950182678670",
+          "animated": true,
+          "formatted": "<a:1466815950182678670:1538619062790131712>"
+        },
+        {
+          "id": "1538620220904574996",
+          "name": "1504180974337134608",
+          "animated": true,
+          "formatted": "<a:1504180974337134608:1538620220904574996>"
+        }
+      ]
+    },
+    {
+      "guildId": "1511398901813346424",
+      "guildName": "Hima Gamer 🫶🎀",
+      "emojis": [
+        {
+          "id": "1511403524406120739",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1511403524406120739>"
+        },
+        {
+          "id": "1511403527602311379",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1511403527602311379>"
+        },
+        {
+          "id": "1511403530525606072",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1511403530525606072>"
+        },
+        {
+          "id": "1511403533952618619",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1511403533952618619>"
+        },
+        {
+          "id": "1511403537630757005",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1511403537630757005>"
+        },
+        {
+          "id": "1511403540755644539",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1511403540755644539>"
+        },
+        {
+          "id": "1511403544241111050",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1511403544241111050>"
+        },
+        {
+          "id": "1511403547386708001",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1511403547386708001>"
+        },
+        {
+          "id": "1511403550742282391",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1511403550742282391>"
+        },
+        {
+          "id": "1511403554009518282",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1511403554009518282>"
+        },
+        {
+          "id": "1511403557369282763",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1511403557369282763>"
+        },
+        {
+          "id": "1511403561064468550",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1511403561064468550>"
+        },
+        {
+          "id": "1511403564831084555",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1511403564831084555>"
+        },
+        {
+          "id": "1511403568047980705",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1511403568047980705>"
+        },
+        {
+          "id": "1511403571273531542",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1511403571273531542>"
+        },
+        {
+          "id": "1511403574637232209",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1511403574637232209>"
+        },
+        {
+          "id": "1511403578101731439",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1511403578101731439>"
+        },
+        {
+          "id": "1511403581482340493",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1511403581482340493>"
+        },
+        {
+          "id": "1511403584904888533",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1511403584904888533>"
+        },
+        {
+          "id": "1511403588532834476",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1511403588532834476>"
+        },
+        {
+          "id": "1511403592152776895",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1511403592152776895>"
+        },
+        {
+          "id": "1511403595566682153",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1511403595566682153>"
+        },
+        {
+          "id": "1511403598553026778",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1511403598553026778>"
+        },
+        {
+          "id": "1511403603414220860",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1511403603414220860>"
+        },
+        {
+          "id": "1511403607155675248",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1511403607155675248>"
+        },
+        {
+          "id": "1511403610775228586",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1511403610775228586>"
+        }
+      ]
+    },
+    {
+      "guildId": "1515321080103829605",
+      "guildName": "HOMIES",
+      "emojis": [
+        {
+          "id": "1515321868666536049",
+          "name": "download14",
+          "animated": false,
+          "formatted": "<:download14:1515321868666536049>"
+        },
+        {
+          "id": "1515321872982610023",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1515321872982610023>"
+        },
+        {
+          "id": "1515321877244153916",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1515321877244153916>"
+        },
+        {
+          "id": "1515321881744642118",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1515321881744642118>"
+        },
+        {
+          "id": "1515321886836396173",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1515321886836396173>"
+        },
+        {
+          "id": "1515321891731013812",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1515321891731013812>"
+        },
+        {
+          "id": "1515321896000950343",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1515321896000950343>"
+        },
+        {
+          "id": "1515321901088768102",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1515321901088768102>"
+        },
+        {
+          "id": "1515321905954029608",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1515321905954029608>"
+        },
+        {
+          "id": "1515321910995583078",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1515321910995583078>"
+        },
+        {
+          "id": "1515321914657210418",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1515321914657210418>"
+        },
+        {
+          "id": "1515321918788472945",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1515321918788472945>"
+        },
+        {
+          "id": "1515321922454421524",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1515321922454421524>"
+        },
+        {
+          "id": "1515321926241746954",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1515321926241746954>"
+        },
+        {
+          "id": "1515321931124178965",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1515321931124178965>"
+        },
+        {
+          "id": "1515321935582593066",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1515321935582593066>"
+        },
+        {
+          "id": "1515321939168723135",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1515321939168723135>"
+        },
+        {
+          "id": "1515321942352199781",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1515321942352199781>"
+        },
+        {
+          "id": "1515321947255476254",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1515321947255476254>"
+        },
+        {
+          "id": "1515321951663685676",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1515321951663685676>"
+        },
+        {
+          "id": "1515321957430595735",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1515321957430595735>"
+        },
+        {
+          "id": "1515321962472276069",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1515321962472276069>"
+        },
+        {
+          "id": "1515321966901461042",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1515321966901461042>"
+        },
+        {
+          "id": "1515321971062079630",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1515321971062079630>"
+        },
+        {
+          "id": "1515321975793516625",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1515321975793516625>"
+        },
+        {
+          "id": "1515321980553793637",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1515321980553793637>"
+        },
+        {
+          "id": "1515321985188495540",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1515321985188495540>"
+        }
+      ]
+    },
+    {
+      "guildId": "1517780409985794138",
+      "guildName": "𝐖𝐢𝒛  𝐂𝒉𝒂𝒎𝒑𝒛",
+      "emojis": []
+    },
+    {
+      "guildId": "1524343224607440926",
+      "guildName": "Wtf    Void's server",
+      "emojis": []
+    },
+    {
+      "guildId": "1524869545590915262",
+      "guildName": "Rage  Development",
+      "emojis": [
+        {
+          "id": "1524878787450376383",
+          "name": "Samp",
+          "animated": false,
+          "formatted": "<:Samp:1524878787450376383>"
+        },
+        {
+          "id": "1524879355753271418",
+          "name": "arrow",
+          "animated": true,
+          "formatted": "<a:arrow:1524879355753271418>"
+        },
+        {
+          "id": "1524879393120452628",
+          "name": "verify",
+          "animated": true,
+          "formatted": "<a:verify:1524879393120452628>"
+        },
+        {
+          "id": "1524879435474669688",
+          "name": "blacktick",
+          "animated": true,
+          "formatted": "<a:blacktick:1524879435474669688>"
+        },
+        {
+          "id": "1528410976011948102",
+          "name": "YouTube",
+          "animated": false,
+          "formatted": "<:YouTube:1528410976011948102>"
+        },
+        {
+          "id": "1528411005993095309",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1528411005993095309>"
+        },
+        {
+          "id": "1528411025576169532",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1528411025576169532>"
+        },
+        {
+          "id": "1528411049416724603",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1528411049416724603>"
+        },
+        {
+          "id": "1528411069243195472",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1528411069243195472>"
+        },
+        {
+          "id": "1528411110657490974",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1528411110657490974>"
+        },
+        {
+          "id": "1528411143440437289",
+          "name": "verified",
+          "animated": true,
+          "formatted": "<a:verified:1528411143440437289>"
+        },
+        {
+          "id": "1528411169910427688",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1528411169910427688>"
+        },
+        {
+          "id": "1528411196145930270",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1528411196145930270>"
+        },
+        {
+          "id": "1528411368288555050",
+          "name": "void",
+          "animated": false,
+          "formatted": "<:void:1528411368288555050>"
+        },
+        {
+          "id": "1529475300604252180",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1529475300604252180>"
+        },
+        {
+          "id": "1529475333135405279",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1529475333135405279>"
+        },
+        {
+          "id": "1529475379054510152",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1529475379054510152>"
+        }
+      ]
+    },
+    {
+      "guildId": "1525512465750691941",
+      "guildName": "TAMIL AURA ZONERZ",
+      "emojis": []
+    },
+    {
+      "guildId": "1531329984785023008",
+      "guildName": "🕷🕸✦ 𝗦𝗣𝗜𝗗𝗘𝗥-𝗠𝗔𝗡 ✦🕸🕷",
+      "emojis": [
+        {
+          "id": "1536369507055173744",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1536369507055173744>"
+        },
+        {
+          "id": "1536369512134484150",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1536369512134484150>"
+        },
+        {
+          "id": "1536369517389676555",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1536369517389676555>"
+        },
+        {
+          "id": "1536369522582491289",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1536369522582491289>"
+        },
+        {
+          "id": "1536369527204614184",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1536369527204614184>"
+        },
+        {
+          "id": "1536369531751104623",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1536369531751104623>"
+        },
+        {
+          "id": "1536369537258229800",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1536369537258229800>"
+        },
+        {
+          "id": "1536369543629381742",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1536369543629381742>"
+        },
+        {
+          "id": "1536369548117282866",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1536369548117282866>"
+        },
+        {
+          "id": "1536369552609513622",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1536369552609513622>"
+        },
+        {
+          "id": "1536369557277769848",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1536369557277769848>"
+        },
+        {
+          "id": "1536369562017206365",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1536369562017206365>"
+        },
+        {
+          "id": "1536369567629189194",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1536369567629189194>"
+        },
+        {
+          "id": "1536369572859351100",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1536369572859351100>"
+        },
+        {
+          "id": "1536369577783722006",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1536369577783722006>"
+        },
+        {
+          "id": "1536369582607048774",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1536369582607048774>"
+        },
+        {
+          "id": "1536369587270979604",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1536369587270979604>"
+        },
+        {
+          "id": "1536369592694476870",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1536369592694476870>"
+        },
+        {
+          "id": "1536369597740097677",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1536369597740097677>"
+        },
+        {
+          "id": "1536369602374926368",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1536369602374926368>"
+        },
+        {
+          "id": "1536369607152107602",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1536369607152107602>"
+        },
+        {
+          "id": "1536369612361441430",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1536369612361441430>"
+        },
+        {
+          "id": "1536369617474420796",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1536369617474420796>"
+        },
+        {
+          "id": "1536369621991432202",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1536369621991432202>"
+        },
+        {
+          "id": "1536369626194255934",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1536369626194255934>"
+        },
+        {
+          "id": "1536369631068037212",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1536369631068037212>"
+        },
+        {
+          "id": "1536369641298075649",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1536369641298075649>"
+        },
+        {
+          "id": "1536369647023165552",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1536369647023165552>"
+        },
+        {
+          "id": "1536369652798722119",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1536369652798722119>"
+        },
+        {
+          "id": "1536369657471041606",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1536369657471041606>"
+        },
+        {
+          "id": "1536369663720554526",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1536369663720554526>"
+        },
+        {
+          "id": "1536369668938268812",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1536369668938268812>"
+        },
+        {
+          "id": "1536369674340802712",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1536369674340802712>"
+        },
+        {
+          "id": "1536369679252328468",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1536369679252328468>"
+        },
+        {
+          "id": "1536369684470042665",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1536369684470042665>"
+        },
+        {
+          "id": "1536369688710352978",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1536369688710352978>"
+        },
+        {
+          "id": "1536369693898571827",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1536369693898571827>"
+        },
+        {
+          "id": "1536369698755711046",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1536369698755711046>"
+        },
+        {
+          "id": "1536369703939866704",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1536369703939866704>"
+        },
+        {
+          "id": "1536369708817711205",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1536369708817711205>"
+        },
+        {
+          "id": "1536369719395885156",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1536369719395885156>"
+        },
+        {
+          "id": "1536369725389414440",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1536369725389414440>"
+        },
+        {
+          "id": "1536369730842136688",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1536369730842136688>"
+        },
+        {
+          "id": "1536369735921434717",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1536369735921434717>"
+        },
+        {
+          "id": "1536369740304486501",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1536369740304486501>"
+        },
+        {
+          "id": "1536369746017128500",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1536369746017128500>"
+        },
+        {
+          "id": "1536369750534389770",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1536369750534389770>"
+        },
+        {
+          "id": "1536369755093598210",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1536369755093598210>"
+        },
+        {
+          "id": "1536369760336355458",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1536369760336355458>"
+        },
+        {
+          "id": "1536369765008801942",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1536369765008801942>"
+        },
+        {
+          "id": "1536384610517254204",
+          "name": "verifiedblack",
+          "animated": false,
+          "formatted": "<:verifiedblack:1536384610517254204>"
+        },
+        {
+          "id": "1536384615583981568",
+          "name": "verifiedyellow",
+          "animated": false,
+          "formatted": "<:verifiedyellow:1536384615583981568>"
+        },
+        {
+          "id": "1536384645954928690",
+          "name": "verifiedlightblue",
+          "animated": false,
+          "formatted": "<:verifiedlightblue:1536384645954928690>"
+        },
+        {
+          "id": "1536384651172778059",
+          "name": "5verified",
+          "animated": false,
+          "formatted": "<:5verified:1536384651172778059>"
+        },
+        {
+          "id": "1536384662417707050",
+          "name": "verifiedtwitter",
+          "animated": true,
+          "formatted": "<a:verifiedtwitter:1536384662417707050>"
+        },
+        {
+          "id": "1536384692603981864",
+          "name": "35776gethopofftwitterxbeansign",
+          "animated": true,
+          "formatted": "<a:35776gethopofftwitterxbeansign:1536384692603981864>"
+        },
+        {
+          "id": "1536384697553129514",
+          "name": "41981doghop",
+          "animated": true,
+          "formatted": "<a:41981doghop:1536384697553129514>"
+        },
+        {
+          "id": "1536384708340879502",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1536384708340879502>"
+        },
+        {
+          "id": "1536384713625698445",
+          "name": "63407ijbol",
+          "animated": true,
+          "formatted": "<a:63407ijbol:1536384713625698445>"
+        },
+        {
+          "id": "1536384719875477645",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1536384719875477645>"
+        },
+        {
+          "id": "1536384731225006132",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1536384731225006132>"
+        },
+        {
+          "id": "1536384736749158501",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1536384736749158501>"
+        },
+        {
+          "id": "1536384741899767860",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1536384741899767860>"
+        },
+        {
+          "id": "1536384746676944927",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1536384746676944927>"
+        },
+        {
+          "id": "1536384751781412925",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1536384751781412925>"
+        },
+        {
+          "id": "1536384756134977638",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1536384756134977638>"
+        },
+        {
+          "id": "1536384762321829959",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1536384762321829959>"
+        },
+        {
+          "id": "1536384767216324698",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1536384767216324698>"
+        },
+        {
+          "id": "1536384773100933200",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1536384773100933200>"
+        },
+        {
+          "id": "1536384777861603439",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1536384777861603439>"
+        },
+        {
+          "id": "1536384782706020535",
+          "name": "1941blackbutterfly2",
+          "animated": true,
+          "formatted": "<a:1941blackbutterfly2:1536384782706020535>"
+        },
+        {
+          "id": "1536384787697115237",
+          "name": "blackbat",
+          "animated": true,
+          "formatted": "<a:blackbat:1536384787697115237>"
+        },
+        {
+          "id": "1536384796769517650",
+          "name": "animatedarrowpink2",
+          "animated": true,
+          "formatted": "<a:animatedarrowpink2:1536384796769517650>"
+        },
+        {
+          "id": "1536384808186552330",
+          "name": "animatedarroworange",
+          "animated": true,
+          "formatted": "<a:animatedarroworange:1536384808186552330>"
+        },
+        {
+          "id": "1536384817401172118",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1536384817401172118>"
+        },
+        {
+          "id": "1536384821884887123",
+          "name": "lovemail",
+          "animated": true,
+          "formatted": "<a:lovemail:1536384821884887123>"
+        },
+        {
+          "id": "1536384829514457190",
+          "name": "redtick",
+          "animated": true,
+          "formatted": "<a:redtick:1536384829514457190>"
+        },
+        {
+          "id": "1536384835625558066",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1536384835625558066>"
+        },
+        {
+          "id": "1536384841313030234",
+          "name": "pinkarrow",
+          "animated": true,
+          "formatted": "<a:pinkarrow:1536384841313030234>"
+        },
+        {
+          "id": "1536384847566602312",
+          "name": "animatedarrowwhite",
+          "animated": true,
+          "formatted": "<a:animatedarrowwhite:1536384847566602312>"
+        },
+        {
+          "id": "1536384852121886812",
+          "name": "whatsapp",
+          "animated": true,
+          "formatted": "<a:whatsapp:1536384852121886812>"
+        },
+        {
+          "id": "1536384856601399386",
+          "name": "approved",
+          "animated": true,
+          "formatted": "<a:approved:1536384856601399386>"
+        }
+      ]
+    },
+    {
+      "guildId": "1533153691752992788",
+      "guildName": "NOPE",
+      "emojis": []
+    },
+    {
+      "guildId": "1535673059321577524",
+      "guildName": "Sɪᴅᴇ Eꜰꜰᴇᴄᴛ",
+      "emojis": []
+    },
+    {
+      "guildId": "1536372894643261592",
+      "guildName": "zoro home's",
+      "emojis": [
+        {
+          "id": "1536377883218681856",
+          "name": "catpfp",
+          "animated": false,
+          "formatted": "<:catpfp:1536377883218681856>"
+        },
+        {
+          "id": "1536377886297296980",
+          "name": "kittymiddlefinger",
+          "animated": false,
+          "formatted": "<:kittymiddlefinger:1536377886297296980>"
+        },
+        {
+          "id": "1536377889753141248",
+          "name": "foxydealz",
+          "animated": false,
+          "formatted": "<:foxydealz:1536377889753141248>"
+        },
+        {
+          "id": "1536377892877897890",
+          "name": "awawa",
+          "animated": false,
+          "formatted": "<:awawa:1536377892877897890>"
+        },
+        {
+          "id": "1536377898158784665",
+          "name": "kitterknife",
+          "animated": false,
+          "formatted": "<:kitterknife:1536377898158784665>"
+        },
+        {
+          "id": "1536377901786595419",
+          "name": "40699uh",
+          "animated": false,
+          "formatted": "<:40699uh:1536377901786595419>"
+        },
+        {
+          "id": "1536377904634531923",
+          "name": "zoeykpdh",
+          "animated": false,
+          "formatted": "<:zoeykpdh:1536377904634531923>"
+        },
+        {
+          "id": "1536377908497612850",
+          "name": "jinukpdh",
+          "animated": false,
+          "formatted": "<:jinukpdh:1536377908497612850>"
+        },
+        {
+          "id": "1536377911571914773",
+          "name": "1_",
+          "animated": false,
+          "formatted": "<:1_:1536377911571914773>"
+        },
+        {
+          "id": "1536377914671636513",
+          "name": "sus3",
+          "animated": false,
+          "formatted": "<:sus3:1536377914671636513>"
+        },
+        {
+          "id": "1536377917670555774",
+          "name": "nekopout",
+          "animated": false,
+          "formatted": "<:nekopout:1536377917670555774>"
+        },
+        {
+          "id": "1536377933042815107",
+          "name": "kawaiibear",
+          "animated": false,
+          "formatted": "<:kawaiibear:1536377933042815107>"
+        },
+        {
+          "id": "1536377936540733511",
+          "name": "reeeeee23",
+          "animated": false,
+          "formatted": "<:reeeeee23:1536377936540733511>"
+        },
+        {
+          "id": "1536377939594182727",
+          "name": "ygonnakillyou80",
+          "animated": false,
+          "formatted": "<:ygonnakillyou80:1536377939594182727>"
+        },
+        {
+          "id": "1536377943599616140",
+          "name": "drmomoscandy",
+          "animated": false,
+          "formatted": "<:drmomoscandy:1536377943599616140>"
+        },
+        {
+          "id": "1536377947349323916",
+          "name": "hunter",
+          "animated": false,
+          "formatted": "<:hunter:1536377947349323916>"
+        },
+        {
+          "id": "1536377950851829791",
+          "name": "tabien",
+          "animated": false,
+          "formatted": "<:tabien:1536377950851829791>"
+        },
+        {
+          "id": "1536377954718842890",
+          "name": "angy",
+          "animated": false,
+          "formatted": "<:angy:1536377954718842890>"
+        },
+        {
+          "id": "1536377957684215831",
+          "name": "dogohehe1",
+          "animated": false,
+          "formatted": "<:dogohehe1:1536377957684215831>"
+        },
+        {
+          "id": "1536377961626734703",
+          "name": "sitting",
+          "animated": false,
+          "formatted": "<:sitting:1536377961626734703>"
+        },
+        {
+          "id": "1536377965905182801",
+          "name": "cathurt",
+          "animated": false,
+          "formatted": "<:cathurt:1536377965905182801>"
+        },
+        {
+          "id": "1536377969356972134",
+          "name": "nekoshy",
+          "animated": false,
+          "formatted": "<:nekoshy:1536377969356972134>"
+        },
+        {
+          "id": "1536377973244952576",
+          "name": "kitten99",
+          "animated": false,
+          "formatted": "<:kitten99:1536377973244952576>"
+        },
+        {
+          "id": "1536377976894001233",
+          "name": "pat",
+          "animated": false,
+          "formatted": "<:pat:1536377976894001233>"
+        },
+        {
+          "id": "1536377980425740360",
+          "name": "emoji",
+          "animated": false,
+          "formatted": "<:emoji:1536377980425740360>"
+        },
+        {
+          "id": "1536377984221708318",
+          "name": "poldarkuzgun13",
+          "animated": false,
+          "formatted": "<:poldarkuzgun13:1536377984221708318>"
+        },
+        {
+          "id": "1536377987547537438",
+          "name": "download1",
+          "animated": false,
+          "formatted": "<:download1:1536377987547537438>"
+        },
+        {
+          "id": "1536377991016489000",
+          "name": "1115crown3",
+          "animated": true,
+          "formatted": "<a:1115crown3:1536377991016489000>"
+        },
+        {
+          "id": "1536377994514272376",
+          "name": "Spin",
+          "animated": true,
+          "formatted": "<a:Spin:1536377994514272376>"
+        },
+        {
+          "id": "1536377998125568092",
+          "name": "verify",
+          "animated": false,
+          "formatted": "<:verify:1536377998125568092>"
+        },
+        {
+          "id": "1536378001766355087",
+          "name": "5789bel",
+          "animated": false,
+          "formatted": "<:5789bel:1536378001766355087>"
+        },
+        {
+          "id": "1536378005121925150",
+          "name": "twittergoldcheckmark",
+          "animated": false,
+          "formatted": "<:twittergoldcheckmark:1536378005121925150>"
+        },
+        {
+          "id": "1536378008607129620",
+          "name": "goldcrown",
+          "animated": false,
+          "formatted": "<:goldcrown:1536378008607129620>"
+        },
+        {
+          "id": "1536378011815772261",
+          "name": "nitrogold",
+          "animated": false,
+          "formatted": "<:nitrogold:1536378011815772261>"
+        },
+        {
+          "id": "1536378014915502111",
+          "name": "6verified",
+          "animated": false,
+          "formatted": "<:6verified:1536378014915502111>"
+        },
+        {
+          "id": "1536378018044448890",
+          "name": "4734nitrokey",
+          "animated": false,
+          "formatted": "<:4734nitrokey:1536378018044448890>"
+        },
+        {
+          "id": "1536378021437775973",
+          "name": "crown3",
+          "animated": true,
+          "formatted": "<a:crown3:1536378021437775973>"
+        },
+        {
+          "id": "1536378025556574219",
+          "name": "goldnitro",
+          "animated": true,
+          "formatted": "<a:goldnitro:1536378025556574219>"
+        },
+        {
+          "id": "1536378028974800977",
+          "name": "9100youtube",
+          "animated": false,
+          "formatted": "<:9100youtube:1536378028974800977>"
+        },
+        {
+          "id": "1536378032636301383",
+          "name": "snapchat",
+          "animated": false,
+          "formatted": "<:snapchat:1536378032636301383>"
+        },
+        {
+          "id": "1536378035996070009",
+          "name": "facebook",
+          "animated": false,
+          "formatted": "<:facebook:1536378035996070009>"
+        },
+        {
+          "id": "1536378039556907029",
+          "name": "instagram",
+          "animated": false,
+          "formatted": "<:instagram:1536378039556907029>"
+        },
+        {
+          "id": "1536378044195807352",
+          "name": "discord",
+          "animated": false,
+          "formatted": "<:discord:1536378044195807352>"
+        },
+        {
+          "id": "1536378049145340005",
+          "name": "twitter",
+          "animated": false,
+          "formatted": "<:twitter:1536378049145340005>"
+        },
+        {
+          "id": "1536378052399857714",
+          "name": "modernverify",
+          "animated": false,
+          "formatted": "<:modernverify:1536378052399857714>"
+        },
+        {
+          "id": "1536378055298388110",
+          "name": "verifiedblue",
+          "animated": false,
+          "formatted": "<:verifiedblue:1536378055298388110>"
+        },
+        {
+          "id": "1536378058804699177",
+          "name": "verifiedwhite",
+          "animated": false,
+          "formatted": "<:verifiedwhite:1536378058804699177>"
+        },
+        {
+          "id": "1536378062185169027",
+          "name": "verifiedgreen",
+          "animated": false,
+          "formatted": "<:verifiedgreen:1536378062185169027>"
+        },
+        {
+          "id": "1536378065528037488",
+          "name": "verifiedturquoise",
+          "animated": false,
+          "formatted": "<:verifiedturquoise:1536378065528037488>"
+        },
+        {
+          "id": "1536378068787273878",
+          "name": "verifiedpurple",
+          "animated": false,
+          "formatted": "<:verifiedpurple:1536378068787273878>"
+        },
+        {
+          "id": "1536392988216000602",
+          "name": "verifiedblack",
+          "animated": false,
+          "formatted": "<:verifiedblack:1536392988216000602>"
+        },
+        {
+          "id": "1536392991382577262",
+          "name": "verifiedyellow",
+          "animated": false,
+          "formatted": "<:verifiedyellow:1536392991382577262>"
+        },
+        {
+          "id": "1536392994671038504",
+          "name": "verifiedlightblue",
+          "animated": false,
+          "formatted": "<:verifiedlightblue:1536392994671038504>"
+        },
+        {
+          "id": "1536392998265425960",
+          "name": "5verified",
+          "animated": false,
+          "formatted": "<:5verified:1536392998265425960>"
+        },
+        {
+          "id": "1536393003759968286",
+          "name": "verifiedtwitter",
+          "animated": true,
+          "formatted": "<a:verifiedtwitter:1536393003759968286>"
+        },
+        {
+          "id": "1536393018628767776",
+          "name": "35776gethopofftwitterxbeansign",
+          "animated": true,
+          "formatted": "<a:35776gethopofftwitterxbeansign:1536393018628767776>"
+        },
+        {
+          "id": "1536393021950529628",
+          "name": "41981doghop",
+          "animated": true,
+          "formatted": "<a:41981doghop:1536393021950529628>"
+        },
+        {
+          "id": "1536393028808343682",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1536393028808343682>"
+        },
+        {
+          "id": "1536393034214809621",
+          "name": "63407ijbol",
+          "animated": true,
+          "formatted": "<a:63407ijbol:1536393034214809621>"
+        },
+        {
+          "id": "1536393037955997757",
+          "name": "90772welp",
+          "animated": true,
+          "formatted": "<a:90772welp:1536393037955997757>"
+        },
+        {
+          "id": "1536393044339986623",
+          "name": "line1",
+          "animated": true,
+          "formatted": "<a:line1:1536393044339986623>"
+        },
+        {
+          "id": "1536393048173580461",
+          "name": "Developer",
+          "animated": true,
+          "formatted": "<a:Developer:1536393048173580461>"
+        },
+        {
+          "id": "1536393051520372787",
+          "name": "left",
+          "animated": true,
+          "formatted": "<a:left:1536393051520372787>"
+        },
+        {
+          "id": "1536393055110824057",
+          "name": "announcements",
+          "animated": true,
+          "formatted": "<a:announcements:1536393055110824057>"
+        },
+        {
+          "id": "1536393058327863407",
+          "name": "darrow",
+          "animated": true,
+          "formatted": "<a:darrow:1536393058327863407>"
+        },
+        {
+          "id": "1536393061494554695",
+          "name": "rarrow",
+          "animated": true,
+          "formatted": "<a:rarrow:1536393061494554695>"
+        },
+        {
+          "id": "1536393064615256115",
+          "name": "larrow",
+          "animated": true,
+          "formatted": "<a:larrow:1536393064615256115>"
+        },
+        {
+          "id": "1536393068654239805",
+          "name": "line",
+          "animated": true,
+          "formatted": "<a:line:1536393068654239805>"
+        },
+        {
+          "id": "1536393072823377960",
+          "name": "soundwave",
+          "animated": true,
+          "formatted": "<a:soundwave:1536393072823377960>"
+        },
+        {
+          "id": "1536393075763581019",
+          "name": "ls",
+          "animated": true,
+          "formatted": "<a:ls:1536393075763581019>"
+        },
+        {
+          "id": "1536393079085334638",
+          "name": "1941blackbutterfly2",
+          "animated": true,
+          "formatted": "<a:1941blackbutterfly2:1536393079085334638>"
+        },
+        {
+          "id": "1536393082411688027",
+          "name": "blackbat",
+          "animated": true,
+          "formatted": "<a:blackbat:1536393082411688027>"
+        },
+        {
+          "id": "1536393088531046589",
+          "name": "animatedarrowpink2",
+          "animated": true,
+          "formatted": "<a:animatedarrowpink2:1536393088531046589>"
+        },
+        {
+          "id": "1536393094683959427",
+          "name": "animatedarroworange",
+          "animated": true,
+          "formatted": "<a:animatedarroworange:1536393094683959427>"
+        },
+        {
+          "id": "1536393099125985334",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1536393099125985334>"
+        },
+        {
+          "id": "1536393103190003762",
+          "name": "lovemail",
+          "animated": true,
+          "formatted": "<a:lovemail:1536393103190003762>"
+        },
+        {
+          "id": "1536393108575756461",
+          "name": "redtick",
+          "animated": true,
+          "formatted": "<a:redtick:1536393108575756461>"
+        },
+        {
+          "id": "1536393114699169865",
+          "name": "animatedarrowred",
+          "animated": true,
+          "formatted": "<a:animatedarrowred:1536393114699169865>"
+        },
+        {
+          "id": "1536393120407748771",
+          "name": "pinkarrow",
+          "animated": true,
+          "formatted": "<a:pinkarrow:1536393120407748771>"
+        },
+        {
+          "id": "1536393124799057945",
+          "name": "animatedarrowwhite",
+          "animated": true,
+          "formatted": "<a:animatedarrowwhite:1536393124799057945>"
+        },
+        {
+          "id": "1536393128146374767",
+          "name": "whatsapp",
+          "animated": true,
+          "formatted": "<a:whatsapp:1536393128146374767>"
+        },
+        {
+          "id": "1536393131715469414",
+          "name": "approved",
+          "animated": true,
+          "formatted": "<a:approved:1536393131715469414>"
+        }
+      ]
+    }
+  ],
+  "allIcons": {
+    "CATPFP_ICON": "<:catpfp:1536377883218681856>",
+    "KITTYMIDDLEFINGER_ICON": "<:kittymiddlefinger:1536377886297296980>",
+    "FOXYDEALZ_ICON": "<:foxydealz:1536377889753141248>",
+    "AWAWA_ICON": "<:awawa:1536377892877897890>",
+    "KITTERKNIFE_ICON": "<:kitterknife:1536377898158784665>",
+    "40699UH_ICON": "<:40699uh:1536377901786595419>",
+    "ZOEYKPDH_ICON": "<:zoeykpdh:1536377904634531923>",
+    "JINUKPDH_ICON": "<:jinukpdh:1536377908497612850>",
+    "1__ICON": "<:1_:1536377911571914773>",
+    "SUS3_ICON": "<:sus3:1536377914671636513>",
+    "NEKOPOUT_ICON": "<:nekopout:1536377917670555774>",
+    "KAWAIIBEAR_ICON": "<:kawaiibear:1536377933042815107>",
+    "REEEEEE23_ICON": "<:reeeeee23:1536377936540733511>",
+    "YGONNAKILLYOU80_ICON": "<:ygonnakillyou80:1536377939594182727>",
+    "DRMOMOSCANDY_ICON": "<:drmomoscandy:1536377943599616140>",
+    "HUNTER_ICON": "<:hunter:1536377947349323916>",
+    "TABIEN_ICON": "<:tabien:1536377950851829791>",
+    "ANGY_ICON": "<:angy:1536377954718842890>",
+    "DOGOHEHE1_ICON": "<:dogohehe1:1536377957684215831>",
+    "SITTING_ICON": "<:sitting:1536377961626734703>",
+    "CATHURT_ICON": "<:cathurt:1536377965905182801>",
+    "NEKOSHY_ICON": "<:nekoshy:1536377969356972134>",
+    "KITTEN99_ICON": "<:kitten99:1536377973244952576>",
+    "PAT_ICON": "<:pat:1536377976894001233>",
+    "EMOJI_ICON": "<:emoji:1536377980425740360>",
+    "POLDARKUZGUN13_ICON": "<:poldarkuzgun13:1536377984221708318>",
+    "DOWNLOAD1_ICON": "<:download1:1536377987547537438>",
+    "1115CROWN3_ICON": "<a:1115crown3:1536377991016489000>",
+    "SPIN_ICON": "<a:Spin:1536377994514272376>",
+    "VERIFY_ICON": "<:verify:1536377998125568092>",
+    "5789BEL_ICON": "<:5789bel:1536378001766355087>",
+    "TWITTERGOLDCHECKMARK_ICON": "<:twittergoldcheckmark:1536378005121925150>",
+    "GOLDCROWN_ICON": "<:goldcrown:1536378008607129620>",
+    "NITROGOLD_ICON": "<:nitrogold:1536378011815772261>",
+    "6VERIFIED_ICON": "<:6verified:1536378014915502111>",
+    "4734NITROKEY_ICON": "<:4734nitrokey:1536378018044448890>",
+    "CROWN3_ICON": "<a:crown3:1536378021437775973>",
+    "GOLDNITRO_ICON": "<a:goldnitro:1536378025556574219>",
+    "9100YOUTUBE_ICON": "<:9100youtube:1536378028974800977>",
+    "SNAPCHAT_ICON": "<:snapchat:1536378032636301383>",
+    "FACEBOOK_ICON": "<:facebook:1536378035996070009>",
+    "INSTAGRAM_ICON": "<:instagram:1536378039556907029>",
+    "DISCORD_ICON": "<:discord:1536378044195807352>",
+    "TWITTER_ICON": "<:twitter:1536378049145340005>",
+    "MODERNVERIFY_ICON": "<:modernverify:1536378052399857714>",
+    "VERIFIEDBLUE_ICON": "<:verifiedblue:1536378055298388110>",
+    "VERIFIEDWHITE_ICON": "<:verifiedwhite:1536378058804699177>",
+    "VERIFIEDGREEN_ICON": "<:verifiedgreen:1536378062185169027>",
+    "VERIFIEDTURQUOISE_ICON": "<:verifiedturquoise:1536378065528037488>",
+    "VERIFIEDPURPLE_ICON": "<:verifiedpurple:1536378068787273878>",
+    "VERIFIEDBLACK_ICON": "<:verifiedblack:1536392988216000602>",
+    "VERIFIEDYELLOW_ICON": "<:verifiedyellow:1536392991382577262>",
+    "VERIFIEDLIGHTBLUE_ICON": "<:verifiedlightblue:1536392994671038504>",
+    "5VERIFIED_ICON": "<:5verified:1536392998265425960>",
+    "GOLDENVERIFIED_ICON": "<:goldenverified:1518869587049844787>",
+    "VERIFIEDTWITTER_ICON": "<a:verifiedtwitter:1536393003759968286>",
+    "3VERIFIED_ICON": "<:3verified:1518869614183055501>",
+    "1VERIFIED_ICON": "<:1verified:1518869628783165551>",
+    "2VERIFIED_ICON": "<:2verified:1518869641525723207>",
+    "VERIFIED_ICON": "<a:verified:1528411143440437289>",
+    "SOPHIERAINSTARE_ICON": "<:sophierainstare:1518869743019360306>",
+    "SOPHIERAINHEADACHE_ICON": "<:sophierainheadache:1518869761969360936>",
+    "TWITTEROX_ICON": "<:twitterox:1518869794076495994>",
+    "35776GETHOPOFFTWITTERXBEANSIGN_ICON": "<a:35776gethopofftwitterxbeansign:1536393018628767776>",
+    "41981DOGHOP_ICON": "<a:41981doghop:1536393021950529628>",
+    "SOPHIERAINSMILE_ICON": "<:sophierainsmile:1518869924989112451>",
+    "90772WELP_ICON": "<a:90772welp:1536393037955997757>",
+    "63407IJBOL_ICON": "<a:63407ijbol:1536393034214809621>",
+    "REACTED_ICON": "<:reacted:1522698401559347250>",
+    "YOUTUBE_ICON": "<:YouTube:1528410976011948102>",
+    "LINE1_ICON": "<a:line1:1536393044339986623>",
+    "DEVELOPER_ICON": "<a:Developer:1536393048173580461>",
+    "LEFT_ICON": "<a:left:1536393051520372787>",
+    "ANNOUNCEMENTS_ICON": "<a:announcements:1536393055110824057>",
+    "DARROW_ICON": "<a:darrow:1536393058327863407>",
+    "RARROW_ICON": "<a:rarrow:1536393061494554695>",
+    "LARROW_ICON": "<a:larrow:1536393064615256115>",
+    "LINE_ICON": "<a:line:1536393068654239805>",
+    "SOUNDWAVE_ICON": "<a:soundwave:1536393072823377960>",
+    "LS_ICON": "<a:ls:1536393075763581019>",
+    "1941BLACKBUTTERFLY2_ICON": "<a:1941blackbutterfly2:1536393079085334638>",
+    "BLACKBAT_ICON": "<a:blackbat:1536393082411688027>",
+    "BLACKBAT1_ICON": "<:blackbat1:1527646996519981086>",
+    "ANIMATEDARROWPINK2_ICON": "<a:animatedarrowpink2:1536393088531046589>",
+    "ANIMATEDARROWORANGE_ICON": "<a:animatedarroworange:1536393094683959427>",
+    "ANIMATEDARROWRED_ICON": "<a:animatedarrowred:1536393114699169865>",
+    "LOVEMAIL_ICON": "<a:lovemail:1536393103190003762>",
+    "REDTICK_ICON": "<a:redtick:1536393108575756461>",
+    "PINKARROW_ICON": "<a:pinkarrow:1536393120407748771>",
+    "ANIMATEDARROWWHITE_ICON": "<a:animatedarrowwhite:1536393124799057945>",
+    "WHATSAPP_ICON": "<a:whatsapp:1536393128146374767>",
+    "APPROVED_ICON": "<a:approved:1536393131715469414>",
+    "WRONG_ICON": "<:wrong:1532390628330307634>",
+    "SHIELD_ICON": "<:shield:1532620785187815454>",
+    "UNLOCKEDID_ICON": "<:unlockedid:1532403057470476559>",
+    "REDTICKET_ICON": "<:redticket:1532425679017087086>",
+    "CONFIG_ICON": "<:config:1532425712844144701>",
+    "VOICECHANNELGREEN_ICON": "<:voicechannelgreen:1532425750278438962>",
+    "PAPERPLANE_ICON": "<:paperplane:1532425779860734004>",
+    "VOICECHANNELLIMITEDGREEN_ICON": "<:voicechannellimitedgreen:1532425826019184750>",
+    "MEMBERICONS_ICON": "<:membericons:1532426097428267180>",
+    "50738HOME_ICON": "<:50738home:1532426273366741143>",
+    "STATS_ICON": "<:stats:1532429110775779459>",
+    "MOONOUTLINE_ICON": "<:moonoutline:1532620447693279302>",
+    "TIMER_ICON": "<:timer:1532620491662037123>",
+    "TICKS_ICON": "<:ticks:1532620580266836148>",
+    "TICKET_ICON": "<:ticket:1532620631466836021>",
+    "FORWARDSLASH_ICON": "<:forwardslash:1532620723397595276>",
+    "VIP_ICON": "<:vip:1532620837117759508>",
+    "MENTION_ICON": "<:mention:1532620893661036585>",
+    "LINK_ICON": "<:link:1532620952087826602>",
+    "ARROW_ICON": "<a:arrow:1524879355753271418>",
+    "GAVEL_ICON": "<:gavel:1532621057318584380>",
+    "BOT_ICON": "<:bot:1532621107746570391>",
+    "CART_ICON": "<:cart:1532621146208473115>",
+    "BOOSTER_ICON": "<:booster:1532621228492460172>",
+    "INFORMATION_ICON": "<:information:1532621274092929124>",
+    "MEMBER_ICON": "<:member:1532621317487071426>",
+    "LIGHTPURPLEARROW_ICON": "<:lightpurplearrow:1532621364115013693>",
+    "FREE_FIRE_ICON": "<:Free_Fire:1534196322943373453>",
+    "VALO_ICON": "<:VALO:1534198653286354984>",
+    "ROBOLOX_ICON": "<:ROBOLOX:1534198700275142927>",
+    "387155APPROVED_ICON": "<a:387155approved:1538586763226779658>",
+    "DEIIIII_ICON": "<a:deiiiii:1500747140287172628>",
+    "ANGRY_ICON": "<:ANGRY:1500747232557928458>",
+    "HEHE_ICON": "<:HEHE:1500747472039968768>",
+    "DOG_DING_DING_ICON": "<a:DOG_DING_DING:1500747601937436682>",
+    "SABASH_KANNA_ICON": "<a:SABASH_KANNA:1500749210226655363>",
+    "PING_PONG_ICON": "<a:PING_PONG:1500749575772700743>",
+    "OMALA_DEIIIII_ICON": "<a:OMALA_DEIIIII:1500749720111550494>",
+    "DISHHHHHHHH_ICON": "<a:DISHHHHHHHH:1500749803359834182>",
+    "HEHEHEEEEE_ICON": "<:HEHEHEEEEE:1500749928664797278>",
+    "UMBUUU_ICON": "<a:UMBUUU:1500750037431353344>",
+    "MEOWWWWW_ICON": "<a:MEOWWWWW:1500750098932564091>",
+    "DANCE_BRO_ICON": "<a:DANCE_BRO:1500751533338263562>",
+    "HIIIIIII_ICON": "<a:HIIIIIII:1500751699231506473>",
+    "OVER____ICON": "<:OVER___:1500752202996912169>",
+    "CHECK_ICON": "<:check:1518686825768812695>",
+    "51004CASTORICECURSE_ICON": "<:51004castoricecurse:1518687507011604600>",
+    "180984ALUNEDISGUSTED_ICON": "<:180984alunedisgusted:1518687574619586814>",
+    "1543_SCREAM_ICON": "<a:1543_scream:1518688940897337516>",
+    "523754CATHAPPY_ICON": "<:523754cathappy:1518689085777121290>",
+    "501481NOBRAIN_ICON": "<:501481nobrain:1518689433845502152>",
+    "440174REDCARD_ICON": "<:440174redcard:1518690007962091610>",
+    "869666REDCROWN_ICON": "<a:869666redcrown:1518690363580092496>",
+    "DARK4LUVONTOP_ICON": "<:Dark4luvontop:1518970578768232499>",
+    "4EVR_ICON": "<a:4evr:1529822822669746246>",
+    "1522_FLYING_HEARTS_BLUE_ICON": "<a:1522_Flying_Hearts_Blue:1538578888924332032>",
+    "AMAZED_PANDA_ICON": "<a:amazed_panda:1538578919454933002>",
+    "PANDAPEEKING_ICON": "<a:PandaPeeking:1538578991466942496>",
+    "ZZ_CUTEPANDAEHEH_ICON": "<a:zz_cutePandaEheh:1538579021212688505>",
+    "5736NEKOCATWOAH_ICON": "<:5736nekocatwoah:1538579049876692992>",
+    "259419DARKBLUEARROW_ICON": "<a:259419darkbluearrow:1538579078658007155>",
+    "9780_WHITE_CHRISTMAS_SPARKLES_ICON": "<a:9780_White_Christmas_Sparkles:1538579099872788560>",
+    "UTILITYDEVELOPER_ICON": "<a:UtilityDeveloper:1538579128129822800>",
+    "MINECRAFTLOGOPNG2_ICON": "<:minecraftlogopng2:1538579165375242340>",
+    "YOUTUBE_LOGO_ICON": "<:YouTube_Logo:1538579195872157757>",
+    "UH_STAFFLOGO_ICON": "<a:uh_stafflogo:1538579233482346567>",
+    "DISCORD_LOGO_ICON": "<a:discord_logo:1538579267619917905>",
+    "NEKOCATSIP_ICON": "<:nekocatsip:1538579294396227634>",
+    "SPARKLES_BLUE_ICON": "<a:sparkles_blue:1538579336146460823>",
+    "CROWNKINGBLUE_ICON": "<a:crownkingblue:1538579369809674310>",
+    "BUTTERFLY_BLUE_ICON": "<a:butterfly_blue:1538579450705354834>",
+    "FIREAESTHETICPASTELBLUE_ICON": "<a:Fireaestheticpastelblue:1538579493726330982>",
+    "PANDA_KATIL_ICON": "<a:panda_katil:1538579537284169809>",
+    "PANDA_HACKER_ICON": "<a:panda_hacker:1538579654615506945>",
+    "PANDA_SLEEPY_CLAP_ICON": "<a:Panda_Sleepy_Clap:1538579705702121472>",
+    "PANDA_RAGE_ICON": "<a:Panda_Rage:1538579778473558067>",
+    "PANDA_HAPPY_ANIMATED_ICON": "<a:Panda_Happy_Animated:1538579814062227497>",
+    "PANDA_POPCORN_ANIMATED_ICON": "<a:Panda_Popcorn_Animated:1538579851366113340>",
+    "943832ALERTASTAFF2000_ICON": "<a:943832alertastaff2000:1538580453077024818>",
+    "1466815950182678670_ICON": "<a:1466815950182678670:1538619062790131712>",
+    "1504180974337134608_ICON": "<a:1504180974337134608:1538620220904574996>",
+    "DOWNLOAD14_ICON": "<:download14:1515321868666536049>",
+    "SAMP_ICON": "<:Samp:1524878787450376383>",
+    "BLACKTICK_ICON": "<a:blacktick:1524879435474669688>",
+    "VOID_ICON": "<:void:1528411368288555050>"
+  }
+}

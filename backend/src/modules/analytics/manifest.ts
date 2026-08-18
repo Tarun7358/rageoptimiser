@@ -4,6 +4,7 @@ import {
   Colors, buildRichCard, buildListCard, buildStatusCard,
   VERIFIED_ICON, WRONG_ICON, BOT_ICON, MEMBER_ICON, INFO_ICON, TIMER_ICON, CONFIG_ICON,
 } from '../../core/UIFactory.js';
+import { PrefixRegistry } from '../../core/prefix/PrefixRegistry.js';
 
 export const AnalyticsManifest: any = {
   id: 'analytics',
@@ -162,3 +163,31 @@ export const AnalyticsManifest: any = {
     }
   ]
 };
+
+export function registerAnalyticsCommands() {
+  PrefixRegistry.register({
+    name: 'analytics',
+    description: 'Enterprise Real-Time Server Telemetry, Voice & Growth Metrics Tracker',
+    category: 'Management',
+    usage: 'r!analytics [guild | voice | commands | retention | live | reports | export]',
+    aliases: ['stats', 'telemetry', 'metrics', 'growth'],
+    userPermissions: [],
+    cooldownSeconds: 3,
+    examples: [
+      'r!analytics',
+      'r!analytics guild',
+      'r!analytics voice',
+      'r!analytics commands',
+      'r!analytics live'
+    ],
+    moduleOwnerId: 'analytics',
+    subcommands: [
+      { name: 'guild', description: 'View 7-day server growth, member joins/leaves, and net gain', examples: ['r!analytics guild'] },
+      { name: 'voice', description: 'View active voice users, total hours spent, and peak voice times', examples: ['r!analytics voice'] },
+      { name: 'commands', description: 'View top executed prefix and slash commands leaderboard', examples: ['r!analytics commands'] },
+      { name: 'retention', description: 'Track 1-day, 7-day, and 30-day member retention rates', examples: ['r!analytics retention'] },
+      { name: 'live', description: 'View real-time online members and current voice channel count', examples: ['r!analytics live'] }
+    ]
+  });
+}
+
