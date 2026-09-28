@@ -208,7 +208,8 @@ async function bootstrap() {
       (guildId) => registry.getRegistry(guildId),
       (guildId, reg) => registry.setRegistry(guildId, reg),
       (guildId) => registry.reevaluateAllModules(guildId),
-      () => {},
+      // FIX: was () => {} (no-op) — broadcast MUST route through webServer to reach WS clients
+      (msg) => { if (webServer) webServer.broadcast(msg); },
       (guildId) => registry.getModulesState(guildId),
       (guildId) => registry.getGlobalSettings(guildId),
       null as any,
@@ -219,6 +220,8 @@ async function bootstrap() {
 
     webServer.getBotMetrics = () => gateway ? gateway.getMetrics() : { latency: 0, uptime: '0s' };
     webServer.getDiscordClient = () => gateway ? gateway.client : null;
+    // Wire gateway sync to webServer so /api/sync/refresh triggers a real Discord data pull
+    webServer.syncRegistryCallback = (guildId?: string) => { if (gateway) gateway.syncRegistry(guildId); };
     webServer.deployCommandsCallback = async () => {
       if (gateway && (gateway as any).deployCommands) {
         await (gateway as any).deployCommands();

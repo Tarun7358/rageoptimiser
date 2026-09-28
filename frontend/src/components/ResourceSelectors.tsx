@@ -164,9 +164,15 @@ export function RoleSelect({
 
             {/* List */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '4px' }}>
-              {filtered.length === 0 ? (
+              {roles.length === 0 ? (
+                <div style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  <div style={{ marginBottom: '6px', fontSize: '18px' }}>⏳</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Syncing from Discord…</div>
+                  <div style={{ fontSize: '11px' }}>Roles will appear once the bot connects to your server. Use the Sync button on the dashboard to refresh.</div>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  No roles match query
+                  No roles match your search
                 </div>
               ) : (
                 filtered.map(role => {
@@ -354,9 +360,15 @@ export function ChannelSelect({
 
             {/* List */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '4px' }}>
-              {filtered.length === 0 ? (
+              {channels.length === 0 ? (
+                <div style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  <div style={{ marginBottom: '6px', fontSize: '18px' }}>⏳</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>Syncing from Discord…</div>
+                  <div style={{ fontSize: '11px' }}>Channels will appear once the bot connects to your server. Use the Sync button on the dashboard to refresh.</div>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  No channels match query
+                  No channels match your search
                 </div>
               ) : (
                 filtered.map(channel => {

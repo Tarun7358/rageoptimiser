@@ -144,6 +144,9 @@ export function useDiscordSync() {
           setRegistry(data.registry);
           setSyncLogs(data.syncLogs);
           setGlobalSettings(data.globalSettings || {});
+          // Kick a live Discord sync immediately so dropdowns show roles/channels
+          // without waiting for the next 30s background interval
+          fetch(`${API_BASE}/api/sync/refresh`, { method: 'POST', headers }).catch(() => {});
           fetch(`${API_BASE}/api/modules/music/player`, { headers })
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d) setMusicPlayerState(d); })

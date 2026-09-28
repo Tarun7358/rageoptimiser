@@ -26,6 +26,8 @@ export class WebServer {
   public triggerEmergencyLock: (() => Promise<void>) | null = null;
   public onApprovalAction?: (guildId: string, action: string, reason?: string) => Promise<void>;
   public publicFeed?: PublicFeedManager;
+  // Wired by index.ts after gateway is initialized — triggers a live Discord registry sync
+  public syncRegistryCallback: ((guildId?: string) => void) | null = null;
 
   constructor(private registry?: ModuleRegistry) {
     this.app = express();
@@ -759,10 +761,14 @@ export class WebServer {
       }
     });
 
-    // Refresh sync endpoint
+    // Refresh sync endpoint — also triggers a live Discord registry pull (roles/channels)
     this.app.post('/api/sync/refresh', authenticateToken, (req: Request, res: Response) => {
       const targetGuildId = (req.headers['x-guild-id'] as string) || (req.query.guildId as string) || undefined;
       if (this.registry) this.registry.reevaluateAllModules(targetGuildId);
+      // Trigger a live Discord data pull so roles/channels populate in dropdowns
+      if (this.syncRegistryCallback) {
+        this.syncRegistryCallback(targetGuildId);
+      }
       res.json({ success: true });
     });
 
