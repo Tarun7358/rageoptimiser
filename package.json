@@ -8,12 +8,12 @@
     "frontend"
   ],
   "scripts": {
-    "build": "node build-netlify.js",
-    "build:backend": "npm run build --workspace=backend",
-    "build:frontend": "node build-netlify.js",
-    "build:netlify": "node build-netlify.js",
-    "build:all": "npm run build --workspace=backend && node build-netlify.js",
+    "build": "node start.js",
     "start": "node start.js",
+    "build:backend": "npm run build --workspace=backend",
+    "build:netlify": "node build-netlify.js",
+    "build:frontend": "node build-netlify.js",
+    "build:all": "npm run build --workspace=backend && node build-netlify.js",
     "health": "node health.js"
   },
   "dependencies": {
