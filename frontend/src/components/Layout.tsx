@@ -4,7 +4,7 @@ import {
   LineChart, Settings, ShieldAlert, Bell, Search, Play, Pause, 
   Terminal, Server, Activity, ChevronDown, ChevronRight, Menu, X, AlertTriangle,
   Volume2, ShieldCheck, LogOut, LayoutTemplate, RefreshCw,
-  Gift, Send, Sparkles, Award, Radio, MessageSquare, Bot, Layers, Database, History, Cpu
+  Gift, Send, Sparkles, Award, Radio, MessageSquare, Bot, Layers, Database, History, Cpu, Crown
 } from 'lucide-react';
 import type { NotificationItem } from '../hooks/useActivityFeed';
 import { NotificationsMenu } from './NotificationsMenu';
@@ -47,6 +47,7 @@ export function Layout({
   const { user, activeGuildId, managedGuilds, setActiveGuildId, guildApprovals } = useAuth();
 
   const isGuildManager = user?.role === 'guild_manager';
+  const isOwner = user?.discordId === '830993126301630485' || user?.role === 'owner';
   const activeGuild = managedGuilds.find(g => g.id === activeGuildId);
   const avatarUrl = isGuildManager && user?.discordId && user?.avatar
     ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png`
@@ -342,6 +343,30 @@ export function Layout({
             );
           })}
         </nav>
+
+        {/* Owner-Only Admin Panel Button */}
+        {isOwner && (
+          <div style={{ padding: '8px 10px 4px', borderTop: '1px solid var(--border-color)' }}>
+            <button
+              onClick={() => { onPageChange('admin'); setMobileMenuOpen(false); }}
+              className={`nav-item ${activePage === 'admin' ? 'active' : ''}`}
+              title="Owner Admin Panel"
+              style={{
+                width: '100%',
+                background: activePage === 'admin'
+                  ? 'linear-gradient(135deg, #EAB308 0%, #CA8A04 100%)'
+                  : 'linear-gradient(135deg, rgba(234,179,8,0.1) 0%, rgba(202,138,4,0.1) 100%)',
+                color: activePage === 'admin' ? '#09090B' : '#92400E',
+                border: '1px solid rgba(234,179,8,0.4)',
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+              }}
+            >
+              <Crown size={14} color={activePage === 'admin' ? '#09090B' : '#D97706'} />
+              <span>Admin Panel</span>
+            </button>
+          </div>
+        )}
 
         {/* User profile footer */}
         <div className="sidebar-footer" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: '1px solid var(--border-color)', backgroundColor: '#FAFAFA' }}>

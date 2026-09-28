@@ -847,3 +847,8 @@ input:checked + .slider:before { transform: translateX(20px); }
   .page-title { font-size: 18px; }
   .search-trigger { width: 160px; }
 }
+
+/* ── Spin utility (RefreshCw / loading indicators) ── */
+@keyframes spin-anim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.spin { animation: spin-anim 0.8s linear infinite; }
+

@@ -56,6 +56,7 @@ const SecurityLogs = React.lazy(() => import('./pages/SecurityLogs').then(m => (
 const EnterpriseHealth = React.lazy(() => import('./pages/EnterpriseHealth').then(m => ({ default: m.EnterpriseHealth })));
 const Terms = React.lazy(() => import('./pages/Terms').then(m => ({ default: m.Terms })));
 const Privacy = React.lazy(() => import('./pages/Privacy').then(m => ({ default: m.Privacy })));
+const AdminPanel = React.lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
 
 
 // Status & Error Pages
@@ -501,6 +502,8 @@ function App() {
       case 'unauthorized':
       case '401':
         return <Unauthorized />;
+      case 'admin':
+        return <AdminPanel onNavigate={handleNavigate} />;
       default:
         return <NotFound onNavigate={handleNavigate} />;
     }

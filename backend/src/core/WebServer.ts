@@ -776,9 +776,162 @@ export class WebServer {
     this.app.post('/api/simulate', authenticateToken, (req: Request, res: Response) => {
       res.json({ success: true });
     });
+
+    // ── OWNER ADMIN PANEL ROUTES ──────────────────────────────────────────────
+    // Middleware: only allow the OWNER_ID Discord user or legacy 'owner' role
+    const requireOwner = (req: any, res: Response, next: NextFunction) => {
+      const u = req.user;
+      if (!u) return res.status(401).json({ error: 'Authentication required.' });
+      const ownerId = process.env.OWNER_ID;
+      if (u.role === 'owner' || (ownerId && u.discordId === ownerId)) return next();
+      return res.status(403).json({ error: 'Admin access denied. Owner only.' });
+    };
+
+    // GET /api/admin/overview — all guilds summary
+    this.app.get('/api/admin/overview', authenticateToken, requireOwner, async (_req: Request, res: Response) => {
+      try {
+        const client = this.getDiscordClient ? this.getDiscordClient() : null;
+        const mem = process.memoryUsage();
+        const metrics = this.getBotMetrics ? this.getBotMetrics() : { latency: 0, uptime: '0s' };
+        const db = Database.getDb();
+
+        const guilds: any[] = [];
+        if (client && client.guilds?.cache) {
+          for (const [id, guild] of client.guilds.cache) {
+            const modules = this.registry ? this.registry.getModulesState(id) : [];
+            const enabledCount = modules.filter((m: any) => m.status === 'ready' || m.status === 'enabled').length;
+            const errorCount = modules.filter((m: any) => m.status === 'validation_failed').length;
+            let memberCount = guild.memberCount || 0;
+            let approvalStatus = 'Unknown';
+            try {
+              if (db) {
+                const row = await db.get<any>('SELECT status FROM approvals WHERE guildId = ?', [id]);
+                if (row) approvalStatus = row.status;
+              }
+            } catch {}
+            guilds.push({
+              id,
+              name: guild.name,
+              icon: guild.icon ? `https://cdn.discordapp.com/icons/${id}/${guild.icon}.png` : null,
+              memberCount,
+              enabledModules: enabledCount,
+              errorModules: errorCount,
+              totalModules: modules.length,
+              approvalStatus,
+              securityScore: Math.max(0, Math.round(100 - (errorCount / Math.max(modules.length, 1)) * 100))
+            });
+          }
+        }
+
+        // Recent audit log entries across all guilds
+        let recentLogs: any[] = [];
+        try {
+          if (db) {
+            recentLogs = await db.all<any>(
+              `SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 100`
+            );
+          }
+        } catch {}
+
+        res.json({
+          guilds,
+          system: {
+            botOnline: client ? client.ws.status === 0 : false,
+            latencyMs: metrics.latency,
+            uptime: metrics.uptime,
+            memoryMb: Math.round(mem.heapUsed / 1024 / 1024),
+            totalMemMb: Math.round(mem.heapTotal / 1024 / 1024),
+            guildCount: guilds.length,
+            pid: process.pid,
+            nodeVersion: process.version,
+            startedAt: new Date(Date.now() - process.uptime() * 1000).toISOString()
+          },
+          recentLogs
+        });
+      } catch (e: any) {
+        console.error('[Admin] /api/admin/overview error:', e);
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    // GET /api/admin/guild/:guildId/logs — per-guild audit log stream
+    this.app.get('/api/admin/guild/:guildId/logs', authenticateToken, requireOwner, async (req: Request, res: Response) => {
+      try {
+        const { guildId } = req.params;
+        const limit = Math.min(parseInt(req.query.limit as string) || 200, 500);
+        const db = Database.getDb();
+        let logs: any[] = [];
+        if (db) {
+          try {
+            logs = await db.all<any>(
+              `SELECT * FROM audit_logs WHERE guildId = ? ORDER BY timestamp DESC LIMIT ?`,
+              [guildId, limit]
+            );
+          } catch {
+            // table may not exist yet
+          }
+        }
+        // Also include in-memory sync logs from registry
+        const syncLogs = this.registry ? this.registry.getSyncLogs(guildId) : [];
+        res.json({ guildId, logs, syncLogs });
+      } catch (e: any) {
+        res.status(500).json({ error: e.message });
+      }
+    });
+
+    // GET /api/admin/guild/:guildId/modules — per-guild module state
+    this.app.get('/api/admin/guild/:guildId/modules', authenticateToken, requireOwner, (req: Request, res: Response) => {
+      const { guildId } = req.params;
+      const modules = this.registry ? this.registry.getModulesState(guildId) : [];
+      res.json({ guildId, modules });
+    });
+
+    // POST /api/admin/action — owner global admin actions
+    this.app.post('/api/admin/action', authenticateToken, requireOwner, async (req: Request, res: Response) => {
+      const { action, guildId, payload } = req.body;
+      try {
+        const client = this.getDiscordClient ? this.getDiscordClient() : null;
+        if (action === 'emergency_lock_all') {
+          if (this.triggerEmergencyLock) await this.triggerEmergencyLock();
+          this.broadcast({ type: 'ADMIN_ACTION', action: 'emergency_lock_all', ts: Date.now() });
+          return res.json({ success: true, action });
+        }
+        if (action === 'sync_all') {
+          if (this.syncRegistryCallback) this.syncRegistryCallback();
+          return res.json({ success: true, action });
+        }
+        if (action === 'broadcast_message' && client && guildId && payload?.message) {
+          const guild = client.guilds.cache.get(guildId);
+          if (!guild) return res.status(404).json({ error: 'Guild not found' });
+          const channels = guild.channels.cache.filter((c: any) => c.type === 0 && c.permissionsFor(client.user)?.has('SendMessages'));
+          const channel = channels.first();
+          if (channel) await (channel as any).send(payload.message);
+          return res.json({ success: true, action, channelId: channel?.id });
+        }
+        if (action === 'approve_guild' && guildId) {
+          if (this.onApprovalAction) await this.onApprovalAction(guildId, 'approve');
+          return res.json({ success: true });
+        }
+        if (action === 'reject_guild' && guildId) {
+          if (this.onApprovalAction) await this.onApprovalAction(guildId, 'reject', payload?.reason);
+          return res.json({ success: true });
+        }
+        if (action === 'kick_guild' && guildId && client) {
+          const guild = client.guilds.cache.get(guildId);
+          if (guild) await guild.leave();
+          return res.json({ success: true });
+        }
+        res.status(400).json({ error: 'Unknown or unsupported admin action.' });
+      } catch (e: any) {
+        console.error('[Admin] action error:', e);
+        res.status(500).json({ error: e.message });
+      }
+    });
+    // ─────────────────────────────────────────────────────────────────────────
   }
 
   public listen(port: number) {
+
     // Serve production frontend build if available (supports live all-in-one dashboard on server)
     const candidates = [
       path.resolve(process.cwd(), '../frontend/dist'),
